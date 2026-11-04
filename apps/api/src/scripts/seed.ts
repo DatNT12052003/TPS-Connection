@@ -1,6 +1,7 @@
 import { v7 as uuidv7 } from 'uuid';
 import { loadEnv } from '../config/env.js';
 import { createDataSource } from '../db/data-source.js';
+import { importRegions, type RegionRow } from '../modules/catalog/import-regions.js';
 
 const SUBJECTS: [string, string][] = [
   ['Toán', 'Mathematics'],
@@ -8,6 +9,33 @@ const SUBJECTS: [string, string][] = [
   ['Tiếng Anh', 'English'],
   ['Vật lý', 'Physics'],
   ['Hóa học', 'Chemistry'],
+];
+
+// A sample for development only. Real data comes from catalog:import-regions.
+const SAMPLE_REGIONS: RegionRow[] = [
+  { code: 'DEV-HN', level: 'province', nameVi: 'Hà Nội', nameEn: 'Hanoi' },
+  { code: 'DEV-HCM', level: 'province', nameVi: 'TP. Hồ Chí Minh', nameEn: 'Ho Chi Minh City' },
+  {
+    code: 'DEV-HN-1',
+    level: 'commune',
+    nameVi: 'Phường Ba Đình',
+    nameEn: 'Ba Dinh Ward',
+    parentCode: 'DEV-HN',
+  },
+  {
+    code: 'DEV-HN-2',
+    level: 'commune',
+    nameVi: 'Phường Hoàn Kiếm',
+    nameEn: 'Hoan Kiem Ward',
+    parentCode: 'DEV-HN',
+  },
+  {
+    code: 'DEV-HCM-1',
+    level: 'commune',
+    nameVi: 'Phường Sài Gòn',
+    nameEn: 'Sai Gon Ward',
+    parentCode: 'DEV-HCM',
+  },
 ];
 
 const env = loadEnv();
@@ -30,7 +58,10 @@ try {
       [uuidv7(), `Lớp ${grade}`, `Grade ${grade}`, grade],
     );
   }
-  console.log(`Seeded ${SUBJECTS.length} subjects and 12 grades.`);
+  await importRegions(db, SAMPLE_REGIONS);
+  console.log(
+    `Seeded ${SUBJECTS.length} subjects, 12 grades and ${SAMPLE_REGIONS.length} sample regions.`,
+  );
 } finally {
   await db.destroy();
 }

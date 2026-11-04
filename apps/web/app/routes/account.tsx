@@ -57,6 +57,20 @@ export default function Account({ params, loaderData, actionData }: Route.Compon
             {translate(locale, 'account.security')}
           </Link>
         </li>
+        {account.role === 'tutor' && (
+          <li>
+            <Link className="underline" to={`/${locale}/account/tutor-profile`}>
+              {translate(locale, 'account.tutorProfile')}
+            </Link>
+          </li>
+        )}
+        {account.role === 'admin' && (
+          <li>
+            <Link className="underline" to={`/${locale}/admin/catalog`}>
+              {translate(locale, 'account.adminCatalog')}
+            </Link>
+          </li>
+        )}
         {account.role === 'parent' && (
           <li>
             <Link className="underline" to={`/${locale}/account/students`}>

@@ -78,7 +78,7 @@ erDiagram
 | Bảng | Cột chính | Ràng buộc và ghi chú |
 | --- | --- | --- |
 | `tutor_profiles` | `user_id`, `legal_name`, `tutor_type`, `organization`, `introduction`, `experience`, `teaching_method`, `price_per_lesson_vnd`, `lesson_minutes`, `teaching_modes`, `accepting_students`, `verification_status`, `student_label_expires_at` | Khóa chính `user_id`. `verification_status` theo máy trạng thái mục 2. `price_per_lesson_vnd` > 0 (BR-810). |
-| `tutor_subjects`, `tutor_grades`, `tutor_regions` | `tutor_id` cùng `subject_id`, `grade_id`, `region_id` | Khóa ghép; phục vụ bộ lọc tìm kiếm. |
+| `tutor_subjects`, `tutor_grades`, `tutor_regions` | `tutor_id` cùng `subject_id`, `grade_id`, `region_id` | Khóa ghép; phục vụ bộ lọc tìm kiếm. `tutor_regions` có thể trỏ tới tỉnh hoặc xã, nhưng trang công khai chỉ hiện tỉnh (BR-301). |
 | `tutor_availability` | `tutor_id`, `weekday`, `start_time`, `end_time` | `CHECK start_time < end_time`. |
 | `tutor_credentials` | `tutor_id`, `verification_request_id`, `title`, `status` | Huy hiệu bằng cấp (BR-203). |
 | `parent_profiles` | `user_id`, `region_id` | Khóa chính `user_id`. |

@@ -97,6 +97,136 @@
         }
       }
     },
+    "/api/v1/catalog/regions": {
+      "get": {
+        "summary": "List active provinces, or the active communes of one province",
+        "tags": [
+          "Catalog"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "parentId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "code": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "province",
+                              "commune"
+                            ]
+                          },
+                          "parentId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "uuid"
+                          },
+                          "nameVi": {
+                            "type": "string"
+                          },
+                          "nameEn": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "code",
+                          "level",
+                          "parentId",
+                          "nameVi",
+                          "nameEn"
+                        ]
+                      }
+                    },
+                    "page": {
+                      "type": "object",
+                      "properties": {
+                        "number": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "number",
+                        "limit",
+                        "total"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "page"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/catalog/grades": {
       "get": {
         "summary": "List active grades",
@@ -1693,6 +1823,1550 @@
                   },
                   "required": [
                     "status"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/tutor-profile": {
+      "get": {
+        "summary": "Get your own tutor profile, with fields the public never sees",
+        "tags": [
+          "Tutors"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "verificationStatus": {
+                      "type": "string",
+                      "enum": [
+                        "incomplete",
+                        "pending_review",
+                        "verified",
+                        "rejected",
+                        "revoked"
+                      ]
+                    },
+                    "profile": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "legalName": {
+                          "type": "string"
+                        },
+                        "tutorType": {
+                          "type": "string",
+                          "enum": [
+                            "student",
+                            "teacher",
+                            "freelance"
+                          ]
+                        },
+                        "organization": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "introduction": {
+                          "type": "string"
+                        },
+                        "experience": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "teachingMethod": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "pricePerLessonVnd": {
+                          "type": "number"
+                        },
+                        "lessonMinutes": {
+                          "type": "number"
+                        },
+                        "teachingModes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "online",
+                              "offline"
+                            ]
+                          }
+                        },
+                        "acceptingStudents": {
+                          "type": "boolean"
+                        },
+                        "subjectIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "gradeIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "regionIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "availability": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "weekday": {
+                                "type": "number"
+                              },
+                              "startTime": {
+                                "type": "string"
+                              },
+                              "endTime": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "weekday",
+                              "startTime",
+                              "endTime"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "legalName",
+                        "tutorType",
+                        "organization",
+                        "introduction",
+                        "experience",
+                        "teachingMethod",
+                        "pricePerLessonVnd",
+                        "lessonMinutes",
+                        "teachingModes",
+                        "acceptingStudents",
+                        "subjectIds",
+                        "gradeIds",
+                        "regionIds",
+                        "availability"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "verificationStatus",
+                    "profile"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Create or replace your own tutor profile",
+        "tags": [
+          "Tutors"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "legalName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "tutorType": {
+                    "type": "string",
+                    "enum": [
+                      "student",
+                      "teacher",
+                      "freelance"
+                    ]
+                  },
+                  "organization": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "introduction": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 5000
+                  },
+                  "experience": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 5000
+                  },
+                  "teachingMethod": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "maxLength": 5000
+                  },
+                  "pricePerLessonVnd": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000000
+                  },
+                  "lessonMinutes": {
+                    "type": "integer",
+                    "minimum": 15,
+                    "maximum": 480
+                  },
+                  "teachingModes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "online",
+                        "offline"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 2
+                  },
+                  "acceptingStudents": {
+                    "type": "boolean"
+                  },
+                  "subjectIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  },
+                  "gradeIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  },
+                  "regionIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  },
+                  "availability": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "weekday": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 6
+                        },
+                        "startTime": {
+                          "type": "string",
+                          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                        },
+                        "endTime": {
+                          "type": "string",
+                          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                        }
+                      },
+                      "required": [
+                        "weekday",
+                        "startTime",
+                        "endTime"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 50
+                  }
+                },
+                "required": [
+                  "legalName",
+                  "tutorType",
+                  "introduction",
+                  "pricePerLessonVnd",
+                  "lessonMinutes",
+                  "teachingModes",
+                  "acceptingStudents",
+                  "subjectIds",
+                  "gradeIds",
+                  "regionIds",
+                  "availability"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "verificationStatus": {
+                      "type": "string",
+                      "enum": [
+                        "incomplete",
+                        "pending_review",
+                        "verified",
+                        "rejected",
+                        "revoked"
+                      ]
+                    },
+                    "profile": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "properties": {
+                        "legalName": {
+                          "type": "string"
+                        },
+                        "tutorType": {
+                          "type": "string",
+                          "enum": [
+                            "student",
+                            "teacher",
+                            "freelance"
+                          ]
+                        },
+                        "organization": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "introduction": {
+                          "type": "string"
+                        },
+                        "experience": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "teachingMethod": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "pricePerLessonVnd": {
+                          "type": "number"
+                        },
+                        "lessonMinutes": {
+                          "type": "number"
+                        },
+                        "teachingModes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "online",
+                              "offline"
+                            ]
+                          }
+                        },
+                        "acceptingStudents": {
+                          "type": "boolean"
+                        },
+                        "subjectIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "gradeIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "regionIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "availability": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "weekday": {
+                                "type": "number"
+                              },
+                              "startTime": {
+                                "type": "string"
+                              },
+                              "endTime": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "weekday",
+                              "startTime",
+                              "endTime"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "legalName",
+                        "tutorType",
+                        "organization",
+                        "introduction",
+                        "experience",
+                        "teachingMethod",
+                        "pricePerLessonVnd",
+                        "lessonMinutes",
+                        "teachingModes",
+                        "acceptingStudents",
+                        "subjectIds",
+                        "gradeIds",
+                        "regionIds",
+                        "availability"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "verificationStatus",
+                    "profile"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/public/tutors/{id}": {
+      "get": {
+        "summary": "Get the public page of a verified tutor",
+        "tags": [
+          "Public"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "displayName": {
+                      "type": "string"
+                    },
+                    "avatarUrl": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "introduction": {
+                      "type": "string"
+                    },
+                    "experience": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "teachingMethod": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "pricePerLessonVnd": {
+                      "type": "number"
+                    },
+                    "lessonMinutes": {
+                      "type": "number"
+                    },
+                    "teachingModes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "online",
+                          "offline"
+                        ]
+                      }
+                    },
+                    "acceptingStudents": {
+                      "type": "boolean"
+                    },
+                    "subjects": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nameVi": {
+                            "type": "string"
+                          },
+                          "nameEn": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nameVi",
+                          "nameEn"
+                        ]
+                      }
+                    },
+                    "grades": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nameVi": {
+                            "type": "string"
+                          },
+                          "nameEn": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nameVi",
+                          "nameEn"
+                        ]
+                      }
+                    },
+                    "provinces": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nameVi": {
+                            "type": "string"
+                          },
+                          "nameEn": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nameVi",
+                          "nameEn"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "displayName",
+                    "avatarUrl",
+                    "introduction",
+                    "experience",
+                    "teachingMethod",
+                    "pricePerLessonVnd",
+                    "lessonMinutes",
+                    "teachingModes",
+                    "acceptingStudents",
+                    "subjects",
+                    "grades",
+                    "provinces"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/catalog/subjects": {
+      "get": {
+        "summary": "List all subjects, including switched-off ones",
+        "tags": [
+          "Admin catalog"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nameVi": {
+                            "type": "string"
+                          },
+                          "nameEn": {
+                            "type": "string"
+                          },
+                          "isActive": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nameVi",
+                          "nameEn",
+                          "isActive"
+                        ]
+                      }
+                    },
+                    "page": {
+                      "type": "object",
+                      "properties": {
+                        "number": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "number",
+                        "limit",
+                        "total"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "page"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a subject",
+        "tags": [
+          "Admin catalog"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nameVi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "nameEn": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "nameVi",
+                  "nameEn"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "nameVi": {
+                      "type": "string"
+                    },
+                    "nameEn": {
+                      "type": "string"
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nameVi",
+                    "nameEn",
+                    "isActive"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/catalog/subjects/{id}": {
+      "patch": {
+        "summary": "Rename a subject or switch it on or off",
+        "tags": [
+          "Admin catalog"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nameVi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "nameEn": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "nameVi": {
+                      "type": "string"
+                    },
+                    "nameEn": {
+                      "type": "string"
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nameVi",
+                    "nameEn",
+                    "isActive"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/catalog/grades": {
+      "get": {
+        "summary": "List all grades, including switched-off ones",
+        "tags": [
+          "Admin catalog"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nameVi": {
+                            "type": "string"
+                          },
+                          "nameEn": {
+                            "type": "string"
+                          },
+                          "isActive": {
+                            "type": "boolean"
+                          },
+                          "sortOrder": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nameVi",
+                          "nameEn",
+                          "isActive",
+                          "sortOrder"
+                        ]
+                      }
+                    },
+                    "page": {
+                      "type": "object",
+                      "properties": {
+                        "number": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "number",
+                        "limit",
+                        "total"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "page"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a grade",
+        "tags": [
+          "Admin catalog"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nameVi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "nameEn": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "sortOrder": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "nameVi",
+                  "nameEn",
+                  "sortOrder"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "nameVi": {
+                      "type": "string"
+                    },
+                    "nameEn": {
+                      "type": "string"
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    },
+                    "sortOrder": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nameVi",
+                    "nameEn",
+                    "isActive",
+                    "sortOrder"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/catalog/grades/{id}": {
+      "patch": {
+        "summary": "Rename a grade or switch it on or off",
+        "tags": [
+          "Admin catalog"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nameVi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "nameEn": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "nameVi": {
+                      "type": "string"
+                    },
+                    "nameEn": {
+                      "type": "string"
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    },
+                    "sortOrder": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nameVi",
+                    "nameEn",
+                    "isActive",
+                    "sortOrder"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/catalog/regions": {
+      "get": {
+        "summary": "List provinces, or the communes of one province, including switched-off ones",
+        "tags": [
+          "Admin catalog"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "parentId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nameVi": {
+                            "type": "string"
+                          },
+                          "nameEn": {
+                            "type": "string"
+                          },
+                          "isActive": {
+                            "type": "boolean"
+                          },
+                          "code": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "province",
+                              "commune"
+                            ]
+                          },
+                          "parentId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "uuid"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nameVi",
+                          "nameEn",
+                          "isActive",
+                          "code",
+                          "level",
+                          "parentId"
+                        ]
+                      }
+                    },
+                    "page": {
+                      "type": "object",
+                      "properties": {
+                        "number": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "number",
+                        "limit",
+                        "total"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "page"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a province, or a commune under a province",
+        "tags": [
+          "Admin catalog"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  },
+                  "nameVi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "nameEn": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "parentId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "code",
+                  "nameVi",
+                  "nameEn"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "nameVi": {
+                      "type": "string"
+                    },
+                    "nameEn": {
+                      "type": "string"
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "province",
+                        "commune"
+                      ]
+                    },
+                    "parentId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nameVi",
+                    "nameEn",
+                    "isActive",
+                    "code",
+                    "level",
+                    "parentId"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/catalog/regions/{id}": {
+      "patch": {
+        "summary": "Rename a region or switch it on or off",
+        "tags": [
+          "Admin catalog"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nameVi": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "nameEn": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "nameVi": {
+                      "type": "string"
+                    },
+                    "nameEn": {
+                      "type": "string"
+                    },
+                    "isActive": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "province",
+                        "commune"
+                      ]
+                    },
+                    "parentId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nameVi",
+                    "nameEn",
+                    "isActive",
+                    "code",
+                    "level",
+                    "parentId"
                   ]
                 }
               }

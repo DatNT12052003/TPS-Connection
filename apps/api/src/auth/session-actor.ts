@@ -17,11 +17,13 @@ export const sessionActorResolver =
     const claims = await verifyAccessToken(token, config);
     if (!claims) return guest;
 
-    const rows: { role: Role; email_verified: boolean }[] = await db.query(
-      `SELECT r.role, u.email_verified_at IS NOT NULL AS email_verified
+    const rows: { role: Role; email_verified: boolean; tutor_verified: boolean }[] = await db.query(
+      `SELECT r.role, u.email_verified_at IS NOT NULL AS email_verified,
+              COALESCE(t.verification_status = 'verified', false) AS tutor_verified
          FROM user_sessions s
          JOIN users u ON u.id = s.user_id
          JOIN user_roles r ON r.user_id = u.id
+         LEFT JOIN tutor_profiles t ON t.user_id = u.id
         WHERE s.id = $1 AND s.user_id = $2
           AND s.revoked_at IS NULL AND s.expires_at > now()
           AND u.deleted_at IS NULL AND u.status = 'active'
@@ -36,8 +38,7 @@ export const sessionActorResolver =
       userId: claims.userId,
       role: row.role,
       emailVerified: row.email_verified,
-      // Set by the verification module in a later change. Until then nobody is verified.
-      tutorVerified: false,
+      tutorVerified: row.tutor_verified,
       familyId: claims.familyId,
       csrfToken: csrfTokenFor(claims.familyId, config),
     };

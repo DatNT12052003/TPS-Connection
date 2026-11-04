@@ -21,6 +21,8 @@
     "db:revert": "tsx src/scripts/migrate.ts down",
     "db:seed": "tsx src/scripts/seed.ts",
     "storage:setup": "tsx src/scripts/setup-storage.ts",
+    "admin:create": "tsx src/scripts/create-admin.ts",
+    "catalog:import-regions": "tsx src/scripts/import-regions.ts",
     "openapi:generate": "tsx src/scripts/generate-openapi.ts"
   },
   "dependencies": {

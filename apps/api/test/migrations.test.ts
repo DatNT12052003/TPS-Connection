@@ -18,7 +18,7 @@ describe('migrations', () => {
     await owner.destroy();
   });
 
-  it('reverts the latest one and applies it again with real data present', async () => {
+  it('reverts the latest two and applies them again with real data present', async () => {
     const userId = uuidv7();
     const fileId = uuidv7();
     const gradeId = uuidv7();
@@ -51,10 +51,18 @@ describe('migrations', () => {
       [uuidv7(), userId, studentId],
     );
 
+    await owner.query(
+      `INSERT INTO tutor_profiles (user_id, legal_name, tutor_type, introduction,
+         price_per_lesson_vnd, lesson_minutes, teaching_modes)
+       VALUES ($1, 'L', 'teacher', 'I', 1, 60, '{online}')`,
+      [userId],
+    );
+
+    await owner.undoLastMigration({ transaction: 'each' });
     await owner.undoLastMigration({ transaction: 'each' });
     const applied = await owner.runMigrations({ transaction: 'each' });
 
-    expect(applied).toHaveLength(1);
+    expect(applied).toHaveLength(2);
     const [user] = await owner.query(`SELECT avatar_file_id FROM users WHERE id = $1`, [userId]);
     expect(user.avatar_file_id).toBeNull();
   });

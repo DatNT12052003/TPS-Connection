@@ -82,7 +82,7 @@ Khối lượng dưới đây là ước lượng thô cho **một lập trình 
 | --- | --- | --- |
 | 1 | Đăng ký, xác thực email, đăng nhập, phiên, quên mật khẩu (UC-ACC-01 đến 04); outbox, Worker và email ở mức cần cho các luồng này | Đang rà soát |
 | 2 | Thông tin cá nhân, hồ sơ học sinh, kho tệp (UC-ACC-05, UC-ACC-06) | Đang rà soát |
-| 3 | Danh mục, hồ sơ gia sư, trang gia sư công khai (UC-MOD-05, UC-MKT-01, UC-MKT-05) | Chưa làm |
+| 3 | Danh mục, hồ sơ gia sư, trang gia sư công khai (UC-MOD-05, UC-MKT-01, UC-MKT-05) | Đang rà soát |
 | 4 | Xác minh gia sư (verification.md, UC-VER-01 đến 09) | Chưa làm |
 | 5 | Thao tác Admin, xóa tài khoản, thông báo trong app (UC-ACC-08, UC-ACC-09, UC-NOT-01, UC-NOT-02) | Chưa làm |
 
@@ -91,6 +91,10 @@ Các phần phải đợi mốc sau:
 - AC-ACC-03.6 mới đạt phần REST ở lát 1; phần ngắt socket làm cùng chat ở M2.
 - AC-ACC-06.1, chặn gửi yêu cầu kết nối khi chưa có hồ sơ học sinh, làm cùng UC-CON-01 ở M2.
 - Ngoại lệ không xóa được hồ sơ học sinh đang có lớp (UC-ACC-06) làm khi có lớp ở M3. Trước đó hồ sơ nào cũng xóa được.
+- AC-MOD-05.3 cần danh mục đơn vị hành chính thật từ chủ sản phẩm. Script nhập đã có (`npm run catalog:import-regions`); môi trường phát triển dùng vài khu vực mẫu.
+- Phần tìm kiếm và sitemap của AC-MKT-01.1, AC-VER-02.4 làm cùng tìm kiếm ở M2. Sitemap chưa tồn tại nên chưa thể chứa hồ sơ nào.
+- AC-MKT-05.4 (LCP dưới 2,5 giây) đo trên staging, cùng NFR-F04.
+- Đổi họ tên khi đã xác minh hiện bị từ chối (409). UC-VER-05 ở lát 4 sẽ thay bằng luồng xác minh lại.
 
 ### M2: Tìm kiếm và kết nối
 

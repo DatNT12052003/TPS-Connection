@@ -52,6 +52,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active provinces, or the active communes of one province */
+        get: {
+            parameters: {
+                query?: {
+                    parentId?: string;
+                    page?: number;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** Format: uuid */
+                                id: string;
+                                code: string;
+                                /** @enum {string} */
+                                level: "province" | "commune";
+                                /** Format: uuid */
+                                parentId: string | null;
+                                nameVi: string;
+                                nameEn: string;
+                            }[];
+                            page: {
+                                number: number;
+                                limit: number;
+                                total: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog/grades": {
         parameters: {
             query?: never;
@@ -1219,6 +1285,744 @@ export interface paths {
                             gradeId: string;
                             gradeNameVi: string;
                             gradeNameEn: string;
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/me/tutor-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get your own tutor profile, with fields the public never sees */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            verificationStatus: "incomplete" | "pending_review" | "verified" | "rejected" | "revoked";
+                            profile: {
+                                legalName: string;
+                                /** @enum {string} */
+                                tutorType: "student" | "teacher" | "freelance";
+                                organization: string | null;
+                                introduction: string;
+                                experience: string | null;
+                                teachingMethod: string | null;
+                                pricePerLessonVnd: number;
+                                lessonMinutes: number;
+                                teachingModes: ("online" | "offline")[];
+                                acceptingStudents: boolean;
+                                subjectIds: string[];
+                                gradeIds: string[];
+                                regionIds: string[];
+                                availability: {
+                                    weekday: number;
+                                    startTime: string;
+                                    endTime: string;
+                                }[];
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        /** Create or replace your own tutor profile */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        legalName: string;
+                        /** @enum {string} */
+                        tutorType: "student" | "teacher" | "freelance";
+                        organization?: string | null;
+                        introduction: string;
+                        experience?: string | null;
+                        teachingMethod?: string | null;
+                        pricePerLessonVnd: number;
+                        lessonMinutes: number;
+                        teachingModes: ("online" | "offline")[];
+                        acceptingStudents: boolean;
+                        subjectIds: string[];
+                        gradeIds: string[];
+                        regionIds: string[];
+                        availability: {
+                            weekday: number;
+                            startTime: string;
+                            endTime: string;
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {string} */
+                            verificationStatus: "incomplete" | "pending_review" | "verified" | "rejected" | "revoked";
+                            profile: {
+                                legalName: string;
+                                /** @enum {string} */
+                                tutorType: "student" | "teacher" | "freelance";
+                                organization: string | null;
+                                introduction: string;
+                                experience: string | null;
+                                teachingMethod: string | null;
+                                pricePerLessonVnd: number;
+                                lessonMinutes: number;
+                                teachingModes: ("online" | "offline")[];
+                                acceptingStudents: boolean;
+                                subjectIds: string[];
+                                gradeIds: string[];
+                                regionIds: string[];
+                                availability: {
+                                    weekday: number;
+                                    startTime: string;
+                                    endTime: string;
+                                }[];
+                            } | null;
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/tutors/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the public page of a verified tutor */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            displayName: string;
+                            avatarUrl: string | null;
+                            introduction: string;
+                            experience: string | null;
+                            teachingMethod: string | null;
+                            pricePerLessonVnd: number;
+                            lessonMinutes: number;
+                            teachingModes: ("online" | "offline")[];
+                            acceptingStudents: boolean;
+                            subjects: {
+                                /** Format: uuid */
+                                id: string;
+                                nameVi: string;
+                                nameEn: string;
+                            }[];
+                            grades: {
+                                /** Format: uuid */
+                                id: string;
+                                nameVi: string;
+                                nameEn: string;
+                            }[];
+                            provinces: {
+                                /** Format: uuid */
+                                id: string;
+                                nameVi: string;
+                                nameEn: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/subjects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all subjects, including switched-off ones */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** Format: uuid */
+                                id: string;
+                                nameVi: string;
+                                nameEn: string;
+                                isActive: boolean;
+                            }[];
+                            page: {
+                                number: number;
+                                limit: number;
+                                total: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Add a subject */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        nameVi: string;
+                        nameEn: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            nameVi: string;
+                            nameEn: string;
+                            isActive: boolean;
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/subjects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename a subject or switch it on or off */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        nameVi?: string;
+                        nameEn?: string;
+                        isActive?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            nameVi: string;
+                            nameEn: string;
+                            isActive: boolean;
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/grades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all grades, including switched-off ones */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** Format: uuid */
+                                id: string;
+                                nameVi: string;
+                                nameEn: string;
+                                isActive: boolean;
+                                sortOrder: number;
+                            }[];
+                            page: {
+                                number: number;
+                                limit: number;
+                                total: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Add a grade */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        nameVi: string;
+                        nameEn: string;
+                        sortOrder: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            nameVi: string;
+                            nameEn: string;
+                            isActive: boolean;
+                            sortOrder: number;
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/grades/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename a grade or switch it on or off */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        nameVi?: string;
+                        nameEn?: string;
+                        isActive?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            nameVi: string;
+                            nameEn: string;
+                            isActive: boolean;
+                            sortOrder: number;
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List provinces, or the communes of one province, including switched-off ones */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    limit?: number;
+                    parentId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: {
+                                /** Format: uuid */
+                                id: string;
+                                nameVi: string;
+                                nameEn: string;
+                                isActive: boolean;
+                                code: string;
+                                /** @enum {string} */
+                                level: "province" | "commune";
+                                /** Format: uuid */
+                                parentId: string | null;
+                            }[];
+                            page: {
+                                number: number;
+                                limit: number;
+                                total: number;
+                            };
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Add a province, or a commune under a province */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        code: string;
+                        nameVi: string;
+                        nameEn: string;
+                        /** Format: uuid */
+                        parentId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            nameVi: string;
+                            nameEn: string;
+                            isActive: boolean;
+                            code: string;
+                            /** @enum {string} */
+                            level: "province" | "commune";
+                            /** Format: uuid */
+                            parentId: string | null;
+                        };
+                    };
+                };
+                /** @description Error */
+                default: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["Problem"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/catalog/regions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename a region or switch it on or off */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        nameVi?: string;
+                        nameEn?: string;
+                        isActive?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Success */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            nameVi: string;
+                            nameEn: string;
+                            isActive: boolean;
+                            code: string;
+                            /** @enum {string} */
+                            level: "province" | "commune";
+                            /** Format: uuid */
+                            parentId: string | null;
                         };
                     };
                 };
