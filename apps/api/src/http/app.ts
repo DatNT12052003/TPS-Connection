@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import cors from 'cors';
 import express, {
+  type CookieOptions,
   type Express,
   type NextFunction,
   type Request,
@@ -12,6 +13,8 @@ import { pinoHttp } from 'pino-http';
 import type { Logger } from 'pino';
 import { z } from 'zod';
 import type { ActorResolver } from '../auth/actor.js';
+import { parseCookies } from '../auth/cookies.js';
+import { csrfMatches } from '../auth/tokens.js';
 import { publicAccess } from '../policies/policy.js';
 import { ApiError, forbidden, notFound, unauthorized, type FieldError } from './errors.js';
 import type { AnyRoute } from './route.js';
@@ -48,19 +51,38 @@ function handle(route: AnyRoute, resolveActor: ActorResolver): RequestHandler {
   return async (req, res, next) => {
     try {
       const actor = await resolveActor(req.headers);
+
+      // Public routes act on no signed-in identity, so a forged request gains nothing.
+      if ((route.policy as unknown) !== publicAccess) {
+        if (actor.kind === 'guest') throw unauthorized();
+        if (route.method !== 'get' && !csrfMatches(req.get('x-csrf-token'), actor.csrfToken)) {
+          throw forbidden('CSRF_TOKEN_INVALID');
+        }
+        if (!actor.emailVerified && !route.allowUnverifiedEmail) {
+          throw forbidden('EMAIL_NOT_VERIFIED');
+        }
+      }
+
       const params = parseInput(route.input.params, req.params, 'params');
       const query = parseInput(route.input.query, req.query, 'query');
       const body = route.input.body ? parseInput(route.input.body, req.body, 'body') : undefined;
-
-      const isPublic = (route.policy as unknown) === publicAccess;
-      if (!isPublic && actor.kind === 'guest') throw unauthorized();
 
       const context = { actor, params, query, body } as never;
       const decision = await route.policy(context);
       if (!decision.allow) throw decision.reveal ? forbidden(decision.code) : notFound();
 
+      const cookies = parseCookies(req.headers.cookie);
       const result = await route.handler({
         ...(context as object),
+        cookies: {
+          get: (name: string) => cookies[name],
+          set: (name: string, value: string, options: CookieOptions) => {
+            res.cookie(name, value, options);
+          },
+          clear: (name: string, options: CookieOptions) => {
+            res.clearCookie(name, options);
+          },
+        },
         requestId: res.locals.requestId as string,
       } as never);
 
@@ -74,6 +96,7 @@ function handle(route: AnyRoute, resolveActor: ActorResolver): RequestHandler {
 
 function sendProblem(res: Response, error: ApiError): void {
   res
+    .set(error.headers)
     .status(error.status)
     .type('application/problem+json')
     .json({

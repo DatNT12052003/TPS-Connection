@@ -32,12 +32,20 @@ flowchart TD
 ```ts
 type Actor =
   | { kind: 'guest' }
-  | { kind: 'user'; userId: string; role: Role; tutorVerified: boolean };
+  | {
+      kind: 'user';
+      userId: string;
+      role: Role;
+      emailVerified: boolean;
+      tutorVerified: boolean;
+      csrfToken: string;
+    };
 ```
 
 - `role`, `tutorVerified` và trạng thái tài khoản được đọc từ cơ sở dữ liệu ở mỗi yêu cầu, không lấy từ token. Token chỉ dùng để biết `userId`.
 - Nhờ vậy tài khoản bị khóa hoặc gia sư bị thu hồi xác minh mất quyền ngay, tốt hơn mục tiêu 15 phút của NFR-S04. Việc này thêm một truy vấn theo khóa chính cho mỗi yêu cầu.
-- Tài khoản chưa xác thực email chỉ được gọi các endpoint của chính tài khoản (AC-ACC-02.2).
+- Phiên đã thu hồi, tài khoản bị khóa hoặc đã xóa được xem như khách. Token hợp lệ về chữ ký vẫn không có tác dụng nếu dòng `user_sessions` đã bị thu hồi, nên đăng xuất và đặt lại mật khẩu cũng có hiệu lực ngay.
+- Tài khoản chưa xác thực email chỉ được gọi các endpoint của chính tài khoản (AC-ACC-02.2). Lớp xử lý chung từ chối mặc định; route muốn mở phải khai báo `allowUnverifiedEmail` và có trong danh sách `APPROVED_UNVERIFIED_EMAIL_ROUTES`, được test đối chiếu.
 
 ## Khai báo route
 

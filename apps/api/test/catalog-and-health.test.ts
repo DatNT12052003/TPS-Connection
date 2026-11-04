@@ -2,7 +2,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DataSource } from 'typeorm';
 import { buildRoutes } from '../src/routes.js';
-import { connect, ownerDatabaseUrl, testApp } from './helpers.js';
+import { authConfig, connect, ownerDatabaseUrl, testApp } from './helpers.js';
 
 const activeId = '00000000-0000-7000-8000-00000000000a';
 const inactiveId = '00000000-0000-7000-8000-00000000000b';
@@ -29,7 +29,7 @@ describe('catalog and health', () => {
   });
 
   it('lists active subjects from the database, with allowed fields only', async () => {
-    const res = await request(testApp(buildRoutes(db))).get('/api/v1/catalog/subjects');
+    const res = await request(testApp(buildRoutes(db, authConfig))).get('/api/v1/catalog/subjects');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       data: [{ id: activeId, nameVi: 'Toán', nameEn: 'Mathematics' }],
@@ -37,7 +37,7 @@ describe('catalog and health', () => {
   });
 
   it('reports healthy when the database answers', async () => {
-    const res = await request(testApp(buildRoutes(db))).get('/api/v1/health');
+    const res = await request(testApp(buildRoutes(db, authConfig))).get('/api/v1/health');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ status: 'ok' });
   });
@@ -46,9 +46,9 @@ describe('catalog and health', () => {
     const broken = {
       query: () => Promise.reject(new Error('connect ECONNREFUSED db-host')),
     };
-    const res = await request(testApp(buildRoutes(broken as unknown as DataSource))).get(
-      '/api/v1/health',
-    );
+    const res = await request(
+      testApp(buildRoutes(broken as unknown as DataSource, authConfig)),
+    ).get('/api/v1/health');
     expect(res.status).toBe(503);
     expect(JSON.stringify(res.body)).not.toContain('db-host');
   });

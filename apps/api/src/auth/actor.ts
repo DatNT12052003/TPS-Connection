@@ -6,7 +6,10 @@ export type UserActor = {
   kind: 'user';
   userId: string;
   role: Role;
+  emailVerified: boolean;
   tutorVerified: boolean;
+  /** What this caller must send in X-CSRF-Token on unsafe requests. */
+  csrfToken: string;
 };
 
 export type Actor = GuestActor | UserActor;
@@ -16,6 +19,3 @@ export type Actor = GuestActor | UserActor;
  * every request, not from the token, so that a lock takes effect immediately.
  */
 export type ActorResolver = (headers: Record<string, unknown>) => Promise<Actor>;
-
-/** Sign-in arrives in M1. Until then every caller is a guest. */
-export const guestOnlyResolver: ActorResolver = async () => ({ kind: 'guest' });

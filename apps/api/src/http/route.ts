@@ -1,17 +1,26 @@
+import type { CookieOptions } from 'express';
 import { z } from 'zod';
 import type { Actor } from '../auth/actor.js';
 import type { Policy } from '../policies/policy.js';
 
 export type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
+export type SuccessStatus = 200 | 201 | 202;
 
 const empty = z.object({});
 type ZodObjectAny = z.ZodObject<z.ZodRawShape>;
+
+export type CookieJar = {
+  get(name: string): string | undefined;
+  set(name: string, value: string, options: CookieOptions): void;
+  clear(name: string, options: CookieOptions): void;
+};
 
 export type HandlerContext<P, Q, B> = {
   actor: Actor;
   params: P;
   query: Q;
   body: B;
+  cookies: CookieJar;
   requestId: string;
 };
 
@@ -29,9 +38,14 @@ export type RouteDefinition<
   input?: { params?: P; query?: Q; body?: B };
   /** Required on purpose: a route without a policy does not compile or start. */
   policy: Policy<z.output<P>, z.output<Q>, z.output<B>>;
+  /**
+   * Only for the caller's own account endpoints. Everything else refuses
+   * accounts that have not verified their email (AC-ACC-02.2).
+   */
+  allowUnverifiedEmail?: boolean;
   /** Fields not listed here are stripped from the response. */
   output: O;
-  successStatus?: 200 | 201;
+  successStatus?: SuccessStatus;
   handler: (context: HandlerContext<z.output<P>, z.output<Q>, z.output<B>>) => Promise<z.input<O>>;
 };
 
@@ -42,8 +56,9 @@ export type AnyRoute = {
   tag: string;
   input: { params: ZodObjectAny; query: ZodObjectAny; body?: z.ZodType };
   policy: Policy<never, never, never>;
+  allowUnverifiedEmail: boolean;
   output: z.ZodType;
-  successStatus: 200 | 201;
+  successStatus: SuccessStatus;
   handler: (context: HandlerContext<never, never, never>) => Promise<unknown>;
 };
 
@@ -71,6 +86,7 @@ export function defineRoute<
       body: definition.input?.body,
     },
     policy: definition.policy as unknown as AnyRoute['policy'],
+    allowUnverifiedEmail: definition.allowUnverifiedEmail ?? false,
     output: definition.output,
     successStatus: definition.successStatus ?? 200,
     handler: definition.handler as unknown as AnyRoute['handler'],

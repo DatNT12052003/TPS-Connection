@@ -1,5 +1,6 @@
 import { pino } from 'pino';
 import type { Actor } from '../src/auth/actor.js';
+import type { AuthConfig } from '../src/auth/tokens.js';
 import { createDataSource } from '../src/db/data-source.js';
 import { createApp } from '../src/http/app.js';
 import type { AnyRoute } from '../src/http/route.js';
@@ -21,5 +22,12 @@ export const parent: Actor = {
   kind: 'user',
   userId: '00000000-0000-7000-8000-000000000001',
   role: 'parent',
+  emailVerified: true,
   tutorVerified: false,
+  csrfToken: 'test-csrf-token',
+};
+
+export const authConfig: AuthConfig = {
+  secret: 'test-secret-test-secret-test-secret',
+  cookieSecure: true,
 };

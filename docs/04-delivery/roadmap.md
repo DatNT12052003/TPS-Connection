@@ -76,6 +76,18 @@ Khối lượng dưới đây là ước lượng thô cho **một lập trình 
 - Gia sư thật đi hết luồng từ đăng ký đến hồ sơ công khai trên staging.
 - Số CCCD không xuất hiện trong cơ sở dữ liệu và log.
 
+**Thứ tự làm:** mỗi lát chạy được từ Web đến cơ sở dữ liệu trước khi sang lát sau.
+
+| Lát | Nội dung | Trạng thái |
+| --- | --- | --- |
+| 1 | Đăng ký, xác thực email, đăng nhập, phiên, quên mật khẩu (UC-ACC-01 đến 04); outbox, Worker và email ở mức cần cho các luồng này | Đang rà soát |
+| 2 | Thông tin cá nhân, hồ sơ học sinh, kho tệp (UC-ACC-05, UC-ACC-06) | Chưa làm |
+| 3 | Danh mục, hồ sơ gia sư, trang gia sư công khai (UC-MOD-05, UC-MKT-01, UC-MKT-05) | Chưa làm |
+| 4 | Xác minh gia sư (verification.md, UC-VER-01 đến 09) | Chưa làm |
+| 5 | Thao tác Admin, xóa tài khoản, thông báo trong app (UC-ACC-08, UC-ACC-09, UC-NOT-01, UC-NOT-02) | Chưa làm |
+
+AC-ACC-03.6 mới đạt phần REST ở lát 1; phần ngắt socket làm cùng chat ở M2.
+
 ### M2: Tìm kiếm và kết nối
 
 **Phạm vi:** phần còn lại của [marketplace.md](../01-requirements/use-cases/marketplace.md), [connection.md](../01-requirements/use-cases/connection.md), [messaging.md](../01-requirements/use-cases/messaging.md), phần còn lại của [notifications.md](../01-requirements/use-cases/notifications.md). UC-MKT-07 làm nếu kịp.
