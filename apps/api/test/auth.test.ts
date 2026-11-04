@@ -10,7 +10,7 @@ import type { OutgoingEmail } from '../src/email/mailer.js';
 import { createApp } from '../src/http/app.js';
 import { drainOutbox, MAX_ATTEMPTS, processNextEvent } from '../src/outbox/process-outbox.js';
 import { buildRoutes } from '../src/routes.js';
-import { authConfig, connect, ownerDatabaseUrl } from './helpers.js';
+import { authConfig, connect, ownerDatabaseUrl, noFileStore } from './helpers.js';
 
 const PASSWORD = 'correct horse battery';
 const silent = pino({ level: 'silent' });
@@ -24,7 +24,7 @@ describe('accounts and sessions', () => {
 
   const buildApp = () =>
     createApp({
-      routes: buildRoutes(db, authConfig),
+      routes: buildRoutes(db, authConfig, noFileStore),
       resolveActor: sessionActorResolver(db, authConfig),
       logger: pino(
         { level: 'info' },
@@ -50,6 +50,21 @@ describe('accounts and sessions', () => {
     },
   });
 
+  // The clock of a database in a VM can step back by seconds, which would make a
+  // new event look not yet due. Tests must not depend on that.
+  const makeNewEventsDue = () =>
+    owner.query(
+      `UPDATE outbox_events SET next_attempt_at = now() - interval '1 minute' WHERE attempts = 0`,
+    );
+  const drain = async () => {
+    await makeNewEventsDue();
+    return drainOutbox(deps());
+  };
+  const nextEvent = async () => {
+    await makeNewEventsDue();
+    return processNextEvent(deps());
+  };
+
   const signUp = (overrides: Record<string, unknown> = {}) =>
     request(buildApp())
       .post('/api/v1/auth/register')
@@ -70,7 +85,7 @@ describe('accounts and sessions', () => {
   };
 
   const lastEmail = async () => {
-    await drainOutbox(deps());
+    await drain();
     return sent.at(-1);
   };
 
@@ -116,7 +131,7 @@ describe('accounts and sessions', () => {
     logOutput = '';
     await owner.query(`
       TRUNCATE outbox_events, rate_limit_events, consents, one_time_tokens,
-               user_sessions, user_roles, users
+               user_sessions, user_roles, users CASCADE
     `);
   });
 
@@ -163,7 +178,7 @@ describe('accounts and sessions', () => {
 
     it('tells the real owner when their email is signed up again', async () => {
       await signUp({ locale: 'en' });
-      await drainOutbox(deps());
+      await drain();
       await signUp({ password: 'another long password', locale: 'vi' });
       const email = await lastEmail();
       expect(email?.subject).toBe(
@@ -231,7 +246,7 @@ describe('accounts and sessions', () => {
       );
       expect(row.lifetime.hours ?? row.lifetime.days * 24).toBe(24);
 
-      await owner.query(`UPDATE one_time_tokens SET expires_at = now() - interval '1 second'`);
+      await owner.query(`UPDATE one_time_tokens SET expires_at = now() - interval '1 minute'`);
       expect((await confirm(token)).status).toBe(422);
     });
 
@@ -455,7 +470,7 @@ describe('accounts and sessions', () => {
 
     it('refuses an expired token and a locked account', async () => {
       const first = await login();
-      await owner.query(`UPDATE user_sessions SET expires_at = now() - interval '1 second'`);
+      await owner.query(`UPDATE user_sessions SET expires_at = now() - interval '1 minute'`);
       expect((await refresh(cookiePair(first, 'tps_refresh'))).status).toBe(401);
 
       const second = await login();
@@ -492,7 +507,7 @@ describe('accounts and sessions', () => {
       const unknown = await forgot('nobody@example.com');
       expect(unknown.status).toBe(known.status);
       expect(unknown.body).toEqual(known.body);
-      await drainOutbox(deps());
+      await drain();
       expect(sent.filter((email) => email.to === 'nobody@example.com')).toEqual([]);
     });
 
@@ -513,7 +528,7 @@ describe('accounts and sessions', () => {
           WHERE purpose = 'reset_password'`,
       );
       expect(row.lifetime.minutes).toBe(30);
-      await owner.query(`UPDATE one_time_tokens SET expires_at = now() - interval '1 second'`);
+      await owner.query(`UPDATE one_time_tokens SET expires_at = now() - interval '1 minute'`);
       expect((await reset(token)).status).toBe(422);
     });
 
@@ -575,15 +590,15 @@ describe('accounts and sessions', () => {
 
     it('does not send an event twice when run again (AC-NOT-01.3)', async () => {
       await signUp();
-      await drainOutbox(deps());
-      await drainOutbox(deps());
+      await drain();
+      await drain();
       expect(sent).toHaveLength(1);
     });
 
     it('undoes the token when sending fails, then retries later (NFR-R06)', async () => {
       await signUp();
       failSending = true;
-      await processNextEvent(deps());
+      await nextEvent();
       expect(await db.query('SELECT id FROM one_time_tokens')).toEqual([]);
       const [event] = await db.query(
         'SELECT attempts, processed_at, failed_at, next_attempt_at > now() AS later FROM outbox_events',
@@ -596,11 +611,11 @@ describe('accounts and sessions', () => {
       });
 
       // Not due yet, so the Worker leaves it alone.
-      expect(await processNextEvent(deps())).toBe(false);
+      expect(await nextEvent()).toBe(false);
 
       failSending = false;
-      await owner.query(`UPDATE outbox_events SET next_attempt_at = now()`);
-      await drainOutbox(deps());
+      await owner.query(`UPDATE outbox_events SET next_attempt_at = now() - interval '1 minute'`);
+      await drain();
       expect((await confirm(tokenIn(sent[0]))).status).toBe(200);
     });
 
@@ -618,7 +633,7 @@ describe('accounts and sessions', () => {
         }),
       );
       for (let i = 0; i < MAX_ATTEMPTS; i += 1) {
-        await owner.query(`UPDATE outbox_events SET next_attempt_at = now()`);
+        await owner.query(`UPDATE outbox_events SET next_attempt_at = now() - interval '1 minute'`);
         await processNextEvent({ ...deps(), logger });
       }
       const [event] = await db.query('SELECT attempts, failed_at FROM outbox_events');
@@ -627,21 +642,21 @@ describe('accounts and sessions', () => {
       expect(errors).toHaveLength(1);
       expect(JSON.stringify(errors)).not.toContain('an@example.com');
 
-      await owner.query(`UPDATE outbox_events SET next_attempt_at = now()`);
-      expect(await processNextEvent(deps())).toBe(false);
+      await owner.query(`UPDATE outbox_events SET next_attempt_at = now() - interval '1 minute'`);
+      expect(await nextEvent()).toBe(false);
     });
 
     it('sends nothing to deleted or locked accounts (AC-NOT-02.4)', async () => {
       await signUp();
       await owner.query(`UPDATE users SET status = 'locked'`);
-      await drainOutbox(deps());
+      await drain();
       expect(sent).toEqual([]);
     });
 
     it('does not resend verification to an account that verified meanwhile', async () => {
       await signUp();
       await owner.query(`UPDATE users SET email_verified_at = now()`);
-      await drainOutbox(deps());
+      await drain();
       expect(sent).toEqual([]);
     });
   });
@@ -656,11 +671,13 @@ describe('accounts and sessions', () => {
     it('returns only the allowed fields', async () => {
       const res = await me(cookiePair(await login(), 'tps_access'));
       expect(Object.keys(res.body).sort()).toEqual([
+        'avatarUrl',
         'displayName',
         'email',
         'emailVerified',
         'id',
         'locale',
+        'phone',
         'role',
       ]);
     });

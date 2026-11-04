@@ -4,7 +4,9 @@ export type EmailContent =
   | { template: 'verify_email'; link: string; hours: number }
   | { template: 'already_registered'; link: string }
   | { template: 'reset_password'; link: string; minutes: number }
-  | { template: 'password_changed'; link: string };
+  | { template: 'password_changed'; link: string }
+  | { template: 'change_email'; link: string; hours: number }
+  | { template: 'email_change_requested'; link: string };
 
 export type RenderedEmail = { subject: string; text: string };
 
@@ -30,10 +32,20 @@ const render: Record<Locale, (content: EmailContent) => RenderedEmail> = {
           subject: 'Đặt lại mật khẩu TPS-Connection',
           text: `Chào bạn,\n\nMở liên kết dưới đây để đặt mật khẩu mới:\n${content.link}\n\nLiên kết có hiệu lực trong ${content.minutes} phút và chỉ dùng được một lần.\n\nNếu bạn không yêu cầu, hãy bỏ qua email này. Mật khẩu của bạn không thay đổi.`,
         };
+      case 'change_email':
+        return {
+          subject: 'Xác nhận email mới cho TPS-Connection',
+          text: `Chào bạn,\n\nMở liên kết dưới đây để dùng email này cho tài khoản TPS-Connection:\n${content.link}\n\nLiên kết có hiệu lực trong ${content.hours} giờ và chỉ dùng được một lần.\n\nNếu bạn không yêu cầu, hãy bỏ qua email này.`,
+        };
+      case 'email_change_requested':
+        return {
+          subject: 'Có yêu cầu đổi email tài khoản TPS-Connection',
+          text: `Chào bạn,\n\nCó yêu cầu đổi email đăng nhập của tài khoản này. Email hiện tại vẫn dùng được cho đến khi email mới được xác nhận.\n\nNếu không phải bạn, hãy đặt lại mật khẩu ngay:\n${content.link}`,
+        };
       case 'password_changed':
         return {
           subject: 'Mật khẩu TPS-Connection của bạn đã được đổi',
-          text: `Chào bạn,\n\nMật khẩu tài khoản của bạn vừa được đổi và mọi phiên đăng nhập cũ đã bị đăng xuất.\n\nNếu không phải bạn, hãy đặt lại mật khẩu ngay:\n${content.link}`,
+          text: `Chào bạn,\n\nMật khẩu tài khoản của bạn vừa được đổi và các phiên đăng nhập trên thiết bị khác đã bị đăng xuất.\n\nNếu không phải bạn, hãy đặt lại mật khẩu ngay:\n${content.link}`,
         };
     }
   },
@@ -54,10 +66,20 @@ const render: Record<Locale, (content: EmailContent) => RenderedEmail> = {
           subject: 'Reset your TPS-Connection password',
           text: `Hello,\n\nOpen the link below to choose a new password:\n${content.link}\n\nThe link works for ${content.minutes} minutes and can be used once.\n\nIf you did not ask for this, ignore this email. Your password has not changed.`,
         };
+      case 'change_email':
+        return {
+          subject: 'Confirm your new email for TPS-Connection',
+          text: `Hello,\n\nOpen the link below to use this email for your TPS-Connection account:\n${content.link}\n\nThe link works for ${content.hours} hours and can be used once.\n\nIf you did not ask for this, ignore this email.`,
+        };
+      case 'email_change_requested':
+        return {
+          subject: 'A request to change your TPS-Connection email',
+          text: `Hello,\n\nSomeone asked to change the sign-in email of this account. Your current email keeps working until the new one is confirmed.\n\nIf this was not you, reset your password now:\n${content.link}`,
+        };
       case 'password_changed':
         return {
           subject: 'Your TPS-Connection password was changed',
-          text: `Hello,\n\nYour account password was just changed and all earlier sessions were signed out.\n\nIf this was not you, reset your password now:\n${content.link}`,
+          text: `Hello,\n\nYour account password was just changed and sessions on other devices were signed out.\n\nIf this was not you, reset your password now:\n${content.link}`,
         };
     }
   },

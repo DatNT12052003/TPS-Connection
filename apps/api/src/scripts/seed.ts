@@ -23,7 +23,14 @@ try {
       [uuidv7(), nameVi, nameEn],
     );
   }
-  console.log(`Seeded ${SUBJECTS.length} subjects.`);
+  for (let grade = 1; grade <= 12; grade += 1) {
+    await db.query(
+      `INSERT INTO grades (id, name_vi, name_en, sort_order) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (name_vi) DO NOTHING`,
+      [uuidv7(), `Lớp ${grade}`, `Grade ${grade}`, grade],
+    );
+  }
+  console.log(`Seeded ${SUBJECTS.length} subjects and 12 grades.`);
 } finally {
   await db.destroy();
 }

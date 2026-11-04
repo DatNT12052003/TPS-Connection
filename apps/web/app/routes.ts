@@ -12,6 +12,12 @@ export default [
     route('verify-email', 'routes/verify-email.tsx'),
     route('forgot-password', 'routes/forgot-password.tsx'),
     route('reset-password', 'routes/reset-password.tsx'),
+    route('confirm-email-change', 'routes/confirm-email-change.tsx'),
     route('account', 'routes/account.tsx'),
+    route('account/profile', 'routes/account-profile.tsx'),
+    route('account/security', 'routes/account-security.tsx'),
+    route('account/students', 'routes/students.tsx'),
+    route('account/students/new', 'routes/student-new.tsx'),
+    route('account/students/:id', 'routes/student-edit.tsx'),
   ]),
 ] satisfies RouteConfig;

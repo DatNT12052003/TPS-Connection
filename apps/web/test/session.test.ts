@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { toFormResult } from '~/lib/form-errors';
-import { relaySetCookies, safeNextPath } from '~/lib/session.server';
+import {
+  csrfTokenOf,
+  pagePathOf,
+  redirectToRefresh,
+  relaySetCookies,
+  safeNextPath,
+} from '~/lib/session.server';
 
 describe('safeNextPath', () => {
   it.each(['/vi/account', '/en/account?tab=1'])('keeps a path on this site: %s', (next) => {
@@ -51,5 +57,39 @@ describe('toFormResult', () => {
     );
     expect(toFormResult({ code: 'SOMETHING_NEW', fields: [] }).formError).toBe('code.DEFAULT');
     expect(toFormResult(undefined).formError).toBe('code.DEFAULT');
+  });
+});
+
+describe('csrfTokenOf', () => {
+  it('reads the token among other cookies', () => {
+    const request = new Request('http://web.test', {
+      headers: { cookie: 'a=1; tps_csrf=abc-_123; b=2' },
+    });
+    expect(csrfTokenOf(request)).toBe('abc-_123');
+  });
+
+  it('answers empty when there is none', () => {
+    expect(csrfTokenOf(new Request('http://web.test'))).toBe('');
+  });
+});
+
+describe('pagePathOf', () => {
+  it.each([
+    ['http://web.test/vi/account', '/vi/account'],
+    ['http://web.test/vi/account?page=2', '/vi/account?page=2'],
+    ['http://web.test/vi/account.data', '/vi/account'],
+    ['http://web.test/vi/account.data?_routes=routes%2Faccount', '/vi/account'],
+    ['http://web.test/vi/account/students.data?page=2&_routes=x', '/vi/account/students?page=2'],
+    ['http://web.test/vi?index', '/vi'],
+    ['http://web.test/_root.data', '/'],
+  ])('%s is the page %s', (url, page) => {
+    expect(pagePathOf(new Request(url))).toBe(page);
+  });
+
+  it('never sends a person back to an internal data address', () => {
+    const response = redirectToRefresh(new Request('http://web.test/vi/account/students/1.data'));
+    const target = response.headers.get('location') ?? '';
+    expect(decodeURIComponent(target)).toContain('next=/vi/account/students/1');
+    expect(decodeURIComponent(target)).not.toContain('.data');
   });
 });

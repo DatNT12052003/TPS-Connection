@@ -104,8 +104,6 @@ export const authService = (db: DataSource, config: AuthConfig) => {
   }
 
   return {
-    findAccount: (userId: string) => findAccount(db, userId),
-
     async register(input: {
       role: 'tutor' | 'parent';
       email: string;

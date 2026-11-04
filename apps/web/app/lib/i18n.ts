@@ -5,6 +5,9 @@ export const DEFAULT_LOCALE: Locale = 'vi';
 export const isLocale = (value: string | undefined): value is Locale =>
   LOCALES.includes(value as Locale);
 
+export const localeOf = (lang: string | undefined): Locale =>
+  isLocale(lang) ? lang : DEFAULT_LOCALE;
+
 const vi = {
   'meta.title': 'TPS-Connection: Kết nối gia sư, phụ huynh và học sinh',
   'meta.description': 'Tìm gia sư phù hợp và theo dõi việc học trên cùng một nền tảng.',
@@ -69,6 +72,63 @@ const vi = {
   'account.greeting': 'Xin chào',
   'account.logout': 'Đăng xuất',
 
+  'nav.back': 'Quay lại tài khoản',
+  'account.profile': 'Thông tin cá nhân',
+  'account.security': 'Mật khẩu và email',
+  'account.students': 'Hồ sơ học sinh',
+  'form.saved': 'Đã lưu.',
+
+  'profile.title': 'Thông tin cá nhân',
+  'profile.phone': 'Số điện thoại (tự khai)',
+  'profile.phoneHint': 'Đây là thông tin bạn tự khai, hệ thống không xác minh. Có thể để trống.',
+  'profile.locale': 'Ngôn ngữ',
+  'profile.save': 'Lưu thay đổi',
+  'profile.avatar': 'Ảnh đại diện',
+  'profile.avatarAlt': 'Ảnh đại diện của bạn',
+  'profile.avatarNone': 'Bạn chưa có ảnh đại diện.',
+  'profile.avatarHint': 'Ảnh JPEG, PNG hoặc WebP, tối đa 5 MB.',
+  'profile.avatarUpload': 'Tải ảnh lên',
+
+  'security.title': 'Mật khẩu và email',
+  'security.currentPassword': 'Mật khẩu hiện tại',
+  'security.passwordHeading': 'Đổi mật khẩu',
+  'security.passwordSubmit': 'Đổi mật khẩu',
+  'security.passwordDone': 'Đã đổi mật khẩu. Các thiết bị khác đã bị đăng xuất.',
+  'security.emailHeading': 'Đổi email',
+  'security.emailCurrent': 'Email hiện tại',
+  'security.newEmail': 'Email mới',
+  'security.emailSubmit': 'Gửi liên kết xác nhận',
+  'security.emailDone':
+    'Hãy mở liên kết chúng tôi gửi tới email mới. Email hiện tại vẫn dùng được cho đến khi đó.',
+
+  'emailChange.title': 'Xác nhận email mới',
+  'emailChange.intro': 'Bấm nút dưới đây để dùng email này cho tài khoản của bạn.',
+  'emailChange.submit': 'Xác nhận email mới',
+  'emailChange.done': 'Email đăng nhập của bạn đã được đổi.',
+  'emailChange.invalid':
+    'Liên kết không hợp lệ, đã hết hạn, đã được dùng hoặc email đã có người dùng.',
+
+  'students.title': 'Hồ sơ học sinh',
+  'students.intro': 'Bạn chỉ cần tạo hồ sơ khi muốn gửi yêu cầu kết nối với gia sư.',
+  'students.empty': 'Bạn chưa có hồ sơ học sinh nào.',
+  'students.add': 'Thêm hồ sơ',
+  'students.newTitle': 'Thêm hồ sơ học sinh',
+  'students.editTitle': 'Sửa hồ sơ học sinh',
+  'students.nickname': 'Tên gọi',
+  'students.fullName': 'Họ tên đầy đủ (không bắt buộc)',
+  'students.grade': 'Lớp',
+  'students.gradeChoose': 'Chọn lớp',
+  'students.consent':
+    'Tôi là phụ huynh của học sinh này và đồng ý thay cho con với chính sách quyền riêng tư.',
+  'students.save': 'Lưu hồ sơ',
+  'students.delete': 'Xóa hồ sơ',
+  'students.prevPage': 'Trang trước',
+  'students.nextPage': 'Trang sau',
+  'students.parentsOnly': 'Chỉ tài khoản phụ huynh mới có hồ sơ học sinh.',
+  'students.verifyFirst': 'Hãy xác thực email trước khi tạo hồ sơ học sinh.',
+
+  'code.EMAIL_NOT_VERIFIED': 'Hãy xác thực email trước khi thực hiện thao tác này.',
+  'code.CSRF_TOKEN_INVALID': 'Phiên làm việc đã thay đổi. Hãy tải lại trang rồi thử lại.',
   'code.INVALID_CREDENTIALS': 'Email hoặc mật khẩu không đúng.',
   'code.LOGIN_TEMPORARILY_BLOCKED':
     'Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau ít phút hoặc đặt lại mật khẩu.',
@@ -83,6 +143,14 @@ const vi = {
   'fieldError.role': 'Hãy chọn vai trò của bạn.',
   'fieldError.terms': 'Bạn cần đồng ý để tạo tài khoản.',
   'fieldError.required': 'Trường này chưa hợp lệ.',
+  'fieldError.phone': 'Số điện thoại không hợp lệ.',
+  'fieldError.wrongPassword': 'Mật khẩu hiện tại không đúng.',
+  'fieldError.emailUnchanged': 'Đây đã là email hiện tại của bạn.',
+  'fieldError.nickname': 'Hãy nhập tên gọi, tối đa 50 ký tự.',
+  'fieldError.fullName': 'Họ tên tối đa 100 ký tự.',
+  'fieldError.grade': 'Hãy chọn một lớp còn hoạt động.',
+  'fieldError.consent': 'Bạn cần đồng ý để tạo hồ sơ.',
+  'fieldError.avatar': 'Tệp phải là ảnh JPEG, PNG hoặc WebP thật, tối đa 5 MB.',
 };
 
 export type MessageKey = keyof typeof vi;
@@ -151,6 +219,62 @@ const en: Record<MessageKey, string> = {
   'account.greeting': 'Hello',
   'account.logout': 'Sign out',
 
+  'nav.back': 'Back to account',
+  'account.profile': 'Personal information',
+  'account.security': 'Password and email',
+  'account.students': 'Student profiles',
+  'form.saved': 'Saved.',
+
+  'profile.title': 'Personal information',
+  'profile.phone': 'Phone number (self-declared)',
+  'profile.phoneHint': 'You enter this yourself and we do not verify it. You can leave it empty.',
+  'profile.locale': 'Language',
+  'profile.save': 'Save changes',
+  'profile.avatar': 'Profile picture',
+  'profile.avatarAlt': 'Your profile picture',
+  'profile.avatarNone': 'You have no profile picture yet.',
+  'profile.avatarHint': 'A JPEG, PNG or WebP image of up to 5 MB.',
+  'profile.avatarUpload': 'Upload picture',
+
+  'security.title': 'Password and email',
+  'security.currentPassword': 'Current password',
+  'security.passwordHeading': 'Change password',
+  'security.passwordSubmit': 'Change password',
+  'security.passwordDone': 'Password changed. Other devices were signed out.',
+  'security.emailHeading': 'Change email',
+  'security.emailCurrent': 'Current email',
+  'security.newEmail': 'New email',
+  'security.emailSubmit': 'Send confirmation link',
+  'security.emailDone':
+    'Open the link we sent to the new email. Your current email keeps working until then.',
+
+  'emailChange.title': 'Confirm your new email',
+  'emailChange.intro': 'Press the button below to use this email for your account.',
+  'emailChange.submit': 'Confirm new email',
+  'emailChange.done': 'Your sign-in email has been changed.',
+  'emailChange.invalid': 'This link is invalid, expired or used, or the email is already taken.',
+
+  'students.title': 'Student profiles',
+  'students.intro': 'You only need a profile when you want to send a tutor a connection request.',
+  'students.empty': 'You have no student profiles yet.',
+  'students.add': 'Add a profile',
+  'students.newTitle': 'Add a student profile',
+  'students.editTitle': 'Edit student profile',
+  'students.nickname': 'Nickname',
+  'students.fullName': 'Full name (optional)',
+  'students.grade': 'Grade',
+  'students.gradeChoose': 'Choose a grade',
+  'students.consent':
+    'I am the parent of this student and accept the privacy policy on their behalf.',
+  'students.save': 'Save profile',
+  'students.delete': 'Delete profile',
+  'students.prevPage': 'Previous page',
+  'students.nextPage': 'Next page',
+  'students.parentsOnly': 'Only parent accounts have student profiles.',
+  'students.verifyFirst': 'Please verify your email before creating a student profile.',
+
+  'code.EMAIL_NOT_VERIFIED': 'Please verify your email before doing this.',
+  'code.CSRF_TOKEN_INVALID': 'Your session has changed. Please reload the page and try again.',
   'code.INVALID_CREDENTIALS': 'The email or password is incorrect.',
   'code.LOGIN_TEMPORARILY_BLOCKED':
     'Too many incorrect attempts. Please try again in a few minutes or reset your password.',
@@ -165,6 +289,14 @@ const en: Record<MessageKey, string> = {
   'fieldError.role': 'Choose your role.',
   'fieldError.terms': 'You need to agree in order to create an account.',
   'fieldError.required': 'This field is not valid.',
+  'fieldError.phone': 'This phone number is not valid.',
+  'fieldError.wrongPassword': 'The current password is incorrect.',
+  'fieldError.emailUnchanged': 'This is already your email.',
+  'fieldError.nickname': 'Enter a nickname of up to 50 characters.',
+  'fieldError.fullName': 'The full name can be up to 100 characters.',
+  'fieldError.grade': 'Choose a grade that is still active.',
+  'fieldError.consent': 'You need to agree in order to create a profile.',
+  'fieldError.avatar': 'The file must be a real JPEG, PNG or WebP image of up to 5 MB.',
 };
 
 export const MESSAGES: Record<Locale, Record<MessageKey, string>> = { vi, en };

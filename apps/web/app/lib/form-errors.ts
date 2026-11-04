@@ -14,13 +14,30 @@ const KNOWN_CODES = new Set([
   'LOGIN_TEMPORARILY_BLOCKED',
   'ACCOUNT_LOCKED',
   'TOO_MANY_REQUESTS',
+  'EMAIL_NOT_VERIFIED',
+  'CSRF_TOKEN_INVALID',
 ]);
 
 const fieldMessage = (name: string, code: string): MessageKey => {
   if (code === 'PASSWORD_TOO_COMMON') return 'fieldError.passwordCommon';
+  if (code === 'WRONG_PASSWORD') return 'fieldError.wrongPassword';
+  if (code === 'EMAIL_UNCHANGED') return 'fieldError.emailUnchanged';
   switch (name) {
     case 'email':
+    case 'newEmail':
       return 'fieldError.email';
+    case 'phone':
+      return 'fieldError.phone';
+    case 'nickname':
+      return 'fieldError.nickname';
+    case 'fullName':
+      return 'fieldError.fullName';
+    case 'gradeId':
+      return 'fieldError.grade';
+    case 'acceptedOnBehalf':
+      return 'fieldError.consent';
+    case 'currentPassword':
+      return 'fieldError.wrongPassword';
     case 'password':
     case 'newPassword':
       return 'fieldError.password';

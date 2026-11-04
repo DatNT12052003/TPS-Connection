@@ -8,6 +8,8 @@ export type UserActor = {
   role: Role;
   emailVerified: boolean;
   tutorVerified: boolean;
+  /** The sign-in this request belongs to. */
+  familyId: string;
   /** What this caller must send in X-CSRF-Token on unsafe requests. */
   csrfToken: string;
 };

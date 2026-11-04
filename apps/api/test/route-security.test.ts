@@ -9,9 +9,9 @@ import {
   APPROVED_UNVERIFIED_EMAIL_ROUTES,
   buildRoutes,
 } from '../src/routes.js';
-import { authConfig, testApp } from './helpers.js';
+import { authConfig, testApp, noFileStore } from './helpers.js';
 
-const routes = buildRoutes({} as DataSource, authConfig);
+const routes = buildRoutes({} as DataSource, authConfig, noFileStore);
 const key = (route: { method: string; path: string }) => `${route.method} ${route.path}`;
 
 describe('route security', () => {

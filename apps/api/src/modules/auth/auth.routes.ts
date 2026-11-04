@@ -3,9 +3,9 @@ import { z } from 'zod';
 import { clearSessionCookies, REFRESH_COOKIE, setSessionCookies } from '../../auth/cookies.js';
 import { passwordSchema } from '../../auth/password.js';
 import type { AuthConfig } from '../../auth/tokens.js';
-import { notFound, unauthorized } from '../../http/errors.js';
+import { unauthorized } from '../../http/errors.js';
 import { defineRoute } from '../../http/route.js';
-import { ownAccount, publicAccess } from '../../policies/policy.js';
+import { publicAccess } from '../../policies/policy.js';
 import { authService } from './auth.service.js';
 
 const emailSchema = z
@@ -160,22 +160,6 @@ export const authRoutes = (db: DataSource, config: AuthConfig) => {
       handler: async ({ body }) => {
         await service.resetPassword(body.token, body.newPassword);
         return { status: 'ok' as const };
-      },
-    }),
-
-    defineRoute({
-      method: 'get',
-      path: '/me',
-      summary: 'Get the signed-in account',
-      tag: 'Account',
-      policy: ownAccount,
-      // People who have not verified yet need this to be reminded (AC-ACC-02.2).
-      allowUnverifiedEmail: true,
-      output: accountDto,
-      handler: async ({ actor }) => {
-        const account = actor.kind === 'user' ? await service.findAccount(actor.userId) : undefined;
-        if (!account) throw notFound();
-        return account;
       },
     }),
   ];

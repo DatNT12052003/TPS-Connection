@@ -1,12 +1,10 @@
-import { Form } from 'react-router';
+import { Form, Link } from 'react-router';
 import type { Route } from './+types/account';
 import { AuthPage, FormAlert, Notice, privatePageMeta, SubmitButton } from '~/components/auth-ui';
 import { publicApi } from '~/lib/api.server';
 import { toFormResult } from '~/lib/form-errors';
-import { DEFAULT_LOCALE, isLocale, translate, type Locale } from '~/lib/i18n';
+import { localeOf, translate } from '~/lib/i18n';
 import { requireAccount } from '~/lib/session.server';
-
-const localeOf = (lang: string | undefined): Locale => (isLocale(lang) ? lang : DEFAULT_LOCALE);
 
 export const meta: Route.MetaFunction = ({ params }) =>
   privatePageMeta(localeOf(params.lang), 'account.title');
@@ -48,6 +46,25 @@ export default function Account({ params, loaderData, actionData }: Route.Compon
         {translate(locale, 'account.greeting')}, {account.displayName}
       </p>
       <p className="text-slate-600">{account.email}</p>
+      <ul className="mt-6 space-y-2">
+        <li>
+          <Link className="underline" to={`/${locale}/account/profile`}>
+            {translate(locale, 'account.profile')}
+          </Link>
+        </li>
+        <li>
+          <Link className="underline" to={`/${locale}/account/security`}>
+            {translate(locale, 'account.security')}
+          </Link>
+        </li>
+        {account.role === 'parent' && (
+          <li>
+            <Link className="underline" to={`/${locale}/account/students`}>
+              {translate(locale, 'account.students')}
+            </Link>
+          </li>
+        )}
+      </ul>
       {/* A full page post, so that the browser includes the refresh cookie and takes the reply. */}
       <form method="post" action="/api/v1/auth/logout" className="mt-6">
         <input type="hidden" name="lang" value={locale} />

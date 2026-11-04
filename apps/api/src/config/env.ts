@@ -20,6 +20,10 @@ const schema = z.object({
   AUTH_SECRET: z.string().min(32).optional(),
   WEB_BASE_URL: z.url().default('http://localhost:5173'),
   SMTP_URL: z.string().min(1).default('smtp://localhost:1025'),
+  S3_ENDPOINT: z.url().default('http://localhost:9000'),
+  // Optional here for the same reason as AUTH_SECRET. See s3SettingsFromEnv.
+  S3_ACCESS_KEY: z.string().min(1).optional(),
+  S3_SECRET_KEY: z.string().min(1).optional(),
   MAIL_FROM: z.string().min(1).default('TPS-Connection <no-reply@tps-connection.local>'),
 });
 

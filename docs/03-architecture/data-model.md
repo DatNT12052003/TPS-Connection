@@ -83,9 +83,9 @@ erDiagram
 | `tutor_credentials` | `tutor_id`, `verification_request_id`, `title`, `status` | Huy hiệu bằng cấp (BR-203). |
 | `parent_profiles` | `user_id`, `region_id` | Khóa chính `user_id`. |
 | `students` | `id`, `guardian_user_id`, `user_id`, `nickname`, `full_name`, `grade_id`, `deleted_at` | Xem ghi chú bên dưới. |
-| `subjects`, `grades` | `id`, `name_vi`, `name_en`, `is_active` | Hai tên đều bắt buộc. Chỉ tắt, không xóa (AC-MOD-05.2). |
+| `subjects`, `grades` | `id`, `name_vi`, `name_en`, `is_active` | Hai tên đều bắt buộc. Chỉ tắt, không xóa (AC-MOD-05.2). `grades` có thêm `sort_order`, vì sắp theo tên thì "Lớp 10" đứng trước "Lớp 2". |
 | `regions` | `id`, `code`, `parent_id`, `level`, `name_vi`, `name_en`, `is_active` | Unique `code`. Cấp tỉnh và xã (D11). |
-| `files` | `id`, `owner_user_id`, `purpose`, `bucket`, `object_key`, `mime_type`, `size_bytes`, `deleted_at` | `purpose` quyết định bucket và quyền đọc. |
+| `files` | `id`, `owner_user_id`, `purpose`, `bucket`, `object_key`, `mime_type`, `size_bytes`, `completed_at`, `deleted_at`, `purged_at` | `purpose` quyết định bucket và quyền đọc. `completed_at` có giá trị khi nội dung đã qua kiểm tra; chỉ khi đó tệp mới dùng được. `deleted_at` là không dùng nữa; `purged_at` là Worker đã xóa khỏi kho. Tệp tải dở quá 1 ngày cũng bị xóa. |
 
 **Về bảng `students`:**
 

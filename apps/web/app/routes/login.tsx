@@ -9,10 +9,8 @@ import {
 } from '~/components/auth-ui';
 import { publicApi } from '~/lib/api.server';
 import { toFormResult } from '~/lib/form-errors';
-import { DEFAULT_LOCALE, isLocale, translate, type Locale } from '~/lib/i18n';
+import { localeOf, translate } from '~/lib/i18n';
 import { relaySetCookies } from '~/lib/session.server';
-
-const localeOf = (lang: string | undefined): Locale => (isLocale(lang) ? lang : DEFAULT_LOCALE);
 
 export const meta: Route.MetaFunction = ({ params }) =>
   privatePageMeta(localeOf(params.lang), 'login.title');

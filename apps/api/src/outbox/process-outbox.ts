@@ -32,8 +32,9 @@ type Recipient = {
 async function issueToken(
   db: Queryable,
   userId: string,
-  purpose: 'verify_email' | 'reset_password',
+  purpose: 'verify_email' | 'reset_password' | 'change_email',
   lifetimeMinutes: number,
+  payload: Record<string, unknown> = {},
 ): Promise<string> {
   await db.query(
     `UPDATE one_time_tokens SET used_at = now(), updated_at = now()
@@ -42,9 +43,9 @@ async function issueToken(
   );
   const token = randomToken();
   await db.query(
-    `INSERT INTO one_time_tokens (id, user_id, purpose, token_hash, expires_at)
-     VALUES ($1, $2, $3, $4, now() + make_interval(mins => $5))`,
-    [uuidv7(), userId, purpose, hashToken(token), lifetimeMinutes],
+    `INSERT INTO one_time_tokens (id, user_id, purpose, token_hash, payload, expires_at)
+     VALUES ($1, $2, $3, $4, $5, now() + make_interval(mins => $6))`,
+    [uuidv7(), userId, purpose, hashToken(token), payload, lifetimeMinutes],
   );
   return token;
 }
@@ -54,6 +55,7 @@ async function sendEmailEvent(
   deps: OutboxDeps,
   type: OutboxEventType,
   userId: string,
+  payload: { newEmail?: string },
 ): Promise<void> {
   const rows: Recipient[] = await db.query(
     `SELECT id, email, locale, status, email_verified_at FROM users
@@ -69,6 +71,7 @@ async function sendEmailEvent(
   // The token sits in the fragment, which browsers never send to a server or a log.
   const tokenLink = (path: string, token: string) => link(`${path}#token=${token}`);
 
+  let to = user.email;
   let email;
   switch (type) {
     case 'email.verify_email': {
@@ -96,6 +99,25 @@ async function sendEmailEvent(
       });
       break;
     }
+    case 'email.change_email': {
+      if (!payload.newEmail) return;
+      to = payload.newEmail;
+      const token = await issueToken(db, user.id, 'change_email', VERIFY_EMAIL_HOURS * 60, {
+        newEmail: payload.newEmail,
+      });
+      email = renderEmail(locale, {
+        template: 'change_email',
+        link: tokenLink('/confirm-email-change', token),
+        hours: VERIFY_EMAIL_HOURS,
+      });
+      break;
+    }
+    case 'email.email_change_requested':
+      email = renderEmail(locale, {
+        template: 'email_change_requested',
+        link: link('/forgot-password'),
+      });
+      break;
     case 'email.password_changed':
       email = renderEmail(locale, {
         template: 'password_changed',
@@ -103,17 +125,23 @@ async function sendEmailEvent(
       });
       break;
   }
-  await deps.mailer.send({ to: user.email, ...email });
+  await deps.mailer.send({ to, ...email });
 }
 
-type DueEvent = { id: string; type: OutboxEventType; aggregate_id: string; attempts: number };
+type DueEvent = {
+  id: string;
+  type: OutboxEventType;
+  aggregate_id: string;
+  payload: { newEmail?: string };
+  attempts: number;
+};
 
 /** Handles one due event. Answers false when there was nothing to do. */
 export async function processNextEvent(deps: OutboxDeps): Promise<boolean> {
   return deps.db.transaction(async (db) => {
     // SKIP LOCKED lets several Workers run without sending anything twice.
     const rows: DueEvent[] = await db.query(
-      `SELECT id, type, aggregate_id, attempts FROM outbox_events
+      `SELECT id, type, aggregate_id, payload, attempts FROM outbox_events
         WHERE processed_at IS NULL AND failed_at IS NULL AND next_attempt_at <= now()
         ORDER BY next_attempt_at, id
         LIMIT 1
@@ -124,8 +152,13 @@ export async function processNextEvent(deps: OutboxDeps): Promise<boolean> {
 
     try {
       // Nested, so that a failed send also undoes the token created for it.
-      await db.transaction((inner) => sendEmailEvent(inner, deps, event.type, event.aggregate_id));
-      await db.query(`UPDATE outbox_events SET processed_at = now() WHERE id = $1`, [event.id]);
+      await db.transaction((inner) =>
+        sendEmailEvent(inner, deps, event.type, event.aggregate_id, event.payload),
+      );
+      await db.query(
+        `UPDATE outbox_events SET processed_at = now(), payload = '{}' WHERE id = $1`,
+        [event.id],
+      );
     } catch (error) {
       const attempts = event.attempts + 1;
       const giveUp = attempts >= MAX_ATTEMPTS;
@@ -133,6 +166,7 @@ export async function processNextEvent(deps: OutboxDeps): Promise<boolean> {
         `UPDATE outbox_events
             SET attempts = $2,
                 failed_at = CASE WHEN $3 THEN now() END,
+                payload = CASE WHEN $3 THEN '{}'::jsonb ELSE payload END,
                 next_attempt_at = now() + make_interval(secs => $4)
           WHERE id = $1`,
         [event.id, attempts, giveUp, RETRY_BASE_SECONDS * 2 ** event.attempts],

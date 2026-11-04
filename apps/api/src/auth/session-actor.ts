@@ -38,6 +38,7 @@ export const sessionActorResolver =
       emailVerified: row.email_verified,
       // Set by the verification module in a later change. Until then nobody is verified.
       tutorVerified: false,
+      familyId: claims.familyId,
       csrfToken: csrfTokenFor(claims.familyId, config),
     };
   };

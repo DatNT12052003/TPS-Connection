@@ -10,7 +10,7 @@ Chủ sản phẩm làm một mình, toàn thời gian, và tạm thời chưa c
 | --- | --- | --- |
 | Thời gian | 18–25 tuần-người là khoảng 4–6 tháng nếu chỉ lập trình. Thực tế dài hơn vì cùng người đó còn lo pháp lý, tuyển gia sư, vận hành. Chưa đặt ngày ra mắt; sẽ hiệu chỉnh sau M1. | Đo tốc độ thực tế ở M0, M1 |
 | Hạ tầng | M0 đến M3 chạy được trên máy cá nhân bằng Docker, gần như không tốn chi phí hạ tầng. | Chỉ thuê hạ tầng khi cần staging thật, muộn nhất ở M4 |
-| Dịch vụ ngoài | Email và kho tệp có thể giả lập khi phát triển (ví dụ Mailpit, MinIO). | Chọn dịch vụ thật khi lên staging |
+| Dịch vụ ngoài | Email và kho tệp được giả lập khi phát triển (Mailpit, SeaweedFS). | Chọn dịch vụ thật khi lên staging |
 | Luật sư | Là điều kiện bắt buộc trước M5 (BR-1209) và chưa có nguồn chi. | Không được bỏ qua; cần có nguồn chi trước M5 |
 | Tách vai Manager và Admin | Một người giữ cả hai vai thì khiếu nại lại không còn độc lập (BR-704). | Tìm thêm một người giữ vai Admin hoặc Manager trước M5 |
 
@@ -81,12 +81,16 @@ Khối lượng dưới đây là ước lượng thô cho **một lập trình 
 | Lát | Nội dung | Trạng thái |
 | --- | --- | --- |
 | 1 | Đăng ký, xác thực email, đăng nhập, phiên, quên mật khẩu (UC-ACC-01 đến 04); outbox, Worker và email ở mức cần cho các luồng này | Đang rà soát |
-| 2 | Thông tin cá nhân, hồ sơ học sinh, kho tệp (UC-ACC-05, UC-ACC-06) | Chưa làm |
+| 2 | Thông tin cá nhân, hồ sơ học sinh, kho tệp (UC-ACC-05, UC-ACC-06) | Đang rà soát |
 | 3 | Danh mục, hồ sơ gia sư, trang gia sư công khai (UC-MOD-05, UC-MKT-01, UC-MKT-05) | Chưa làm |
 | 4 | Xác minh gia sư (verification.md, UC-VER-01 đến 09) | Chưa làm |
 | 5 | Thao tác Admin, xóa tài khoản, thông báo trong app (UC-ACC-08, UC-ACC-09, UC-NOT-01, UC-NOT-02) | Chưa làm |
 
-AC-ACC-03.6 mới đạt phần REST ở lát 1; phần ngắt socket làm cùng chat ở M2.
+Các phần phải đợi mốc sau:
+
+- AC-ACC-03.6 mới đạt phần REST ở lát 1; phần ngắt socket làm cùng chat ở M2.
+- AC-ACC-06.1, chặn gửi yêu cầu kết nối khi chưa có hồ sơ học sinh, làm cùng UC-CON-01 ở M2.
+- Ngoại lệ không xóa được hồ sơ học sinh đang có lớp (UC-ACC-06) làm khi có lớp ở M3. Trước đó hồ sơ nào cũng xóa được.
 
 ### M2: Tìm kiếm và kết nối
 
