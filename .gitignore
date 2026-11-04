@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.react-router/
+coverage/
+
+# Local configuration. Commit .env.example only.
+.env
+.env.*
+!.env.example
+
+# Backups and logs
+*.dump
+*.log
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

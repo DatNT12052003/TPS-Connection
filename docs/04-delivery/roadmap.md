@@ -60,9 +60,11 @@ Khối lượng dưới đây là ước lượng thô cho **một lập trình 
 
 **Điều kiện qua mốc:**
 
-- Một route mẫu chạy từ Web đến cơ sở dữ liệu trên staging.
+- Một route mẫu chạy từ Web đến cơ sở dữ liệu trên môi trường cục bộ; làm lại trên staging khi có hạ tầng.
 - Test quét route chặn được route thiếu policy.
 - Khôi phục sao lưu thành công một lần.
+
+**Chưa làm ở M0, vì chưa có hạ tầng:** môi trường staging, sao lưu tự động, image Docker cho API và Web. POC `zod-to-openapi` và SSR chuyển tiếp cookie đã đạt; phần đăng nhập thật sẽ kiểm chứng tiếp ở M1.
 
 ### M1: Tài khoản và xác minh
 

@@ -59,7 +59,7 @@ Lỗi theo dạng Problem Details (RFC 9457), thêm `code` ổn định và `req
 
 ```json
 {
-  "type": "https://api.example.com/errors/duplicate-open-request",
+  "type": "urn:tps-connection:error:connection-duplicate-open-request",
   "title": "Duplicate open request",
   "status": 409,
   "code": "CONNECTION_DUPLICATE_OPEN_REQUEST",
