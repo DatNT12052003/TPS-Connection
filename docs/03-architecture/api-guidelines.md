@@ -122,6 +122,12 @@ Bộ lọc và sắp xếp dùng query string và chỉ nhận các giá trị �
 
 Giấy tờ xác minh chỉ dùng bucket riêng và URL 5 phút.
 
+- Với Web, "client" ở bước 2 là máy chủ Web: trình duyệt gửi tệp cho Web, Web đẩy lên kho. Trình duyệt vì vậy chỉ nói chuyện với Web, kho tệp không cần mở CORS, và form vẫn chạy khi không có JavaScript. Mobile sẽ tải thẳng lên kho.
+- URL tải lên có ký cả dung lượng, nên kho từ chối tệp lớn hơn số đã khai. Bước 3 vẫn đo lại dung lượng thật.
+- Bước 3 giải mã toàn bộ ảnh, nên tệp đổi đuôi hoặc phần đầu thật nhưng dữ liệu hỏng đều bị từ chối. SVG bị từ chối vì có thể chứa script.
+- Ảnh đại diện được mã hóa lại thành WebP 512 px, nên thông tin vị trí và máy ảnh trong ảnh chụp không bao giờ tới người xem.
+- Ở môi trường phát triển và CI, kho tệp là SeaweedFS. Code chỉ dùng giao thức S3, nên không phụ thuộc vào máy chủ cụ thể.
+
 ## Thời gian thực
 
 Socket.IO chỉ dùng để đẩy sự kiện. Mọi thao tác ghi đều đi qua REST, nên quyền và kiểm tra dữ liệu chỉ có một đường đi.

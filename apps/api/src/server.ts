@@ -3,17 +3,19 @@ import { sessionActorResolver } from './auth/session-actor.js';
 import { authConfigFromEnv } from './auth/tokens.js';
 import { loadEnv } from './config/env.js';
 import { createDataSource } from './db/data-source.js';
+import { s3FileStore, s3SettingsFromEnv } from './files/file-store.js';
 import { createApp } from './http/app.js';
 import { buildRoutes } from './routes.js';
 
 const env = loadEnv();
 const authConfig = authConfigFromEnv(env);
+const fileStore = s3FileStore(s3SettingsFromEnv(env));
 const logger = pino({ level: env.LOG_LEVEL });
 const db = createDataSource(env.DATABASE_URL);
 await db.initialize();
 
 const app = createApp({
-  routes: buildRoutes(db, authConfig),
+  routes: buildRoutes(db, authConfig, fileStore),
   resolveActor: sessionActorResolver(db, authConfig),
   logger,
   webOrigins: env.WEB_ORIGINS,

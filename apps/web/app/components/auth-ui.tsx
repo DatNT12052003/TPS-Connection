@@ -47,6 +47,8 @@ export function TextField({
   hint,
   defaultValue,
   result,
+  required = true,
+  idSuffix,
 }: {
   locale: Locale;
   name: string;
@@ -56,19 +58,22 @@ export function TextField({
   hint?: MessageKey;
   defaultValue?: string;
   result?: FormResult | { ok: true };
+  required?: boolean;
+  idSuffix?: string;
 }) {
   const error = result && !result.ok ? result.fieldErrors[name] : undefined;
-  const describedBy = [hint && `${name}-hint`, error && `${name}-error`].filter(Boolean).join(' ');
+  const id = idSuffix ? `${name}-${idSuffix}` : name;
+  const describedBy = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(' ');
   return (
     <div className="mt-4">
-      <label className="block font-medium" htmlFor={name}>
+      <label className="block font-medium" htmlFor={id}>
         {translate(locale, label)}
       </label>
       <input
-        id={name}
+        id={id}
         name={name}
         type={type}
-        required
+        required={required}
         autoComplete={autoComplete}
         defaultValue={defaultValue}
         aria-invalid={error ? true : undefined}
@@ -76,11 +81,11 @@ export function TextField({
         className="mt-1 w-full rounded border border-slate-400 p-2"
       />
       {hint && (
-        <p id={`${name}-hint`} className="mt-1 text-sm text-slate-600">
+        <p id={`${id}-hint`} className="mt-1 text-sm text-slate-600">
           {translate(locale, hint)}
         </p>
       )}
-      <FieldError id={`${name}-error`} locale={locale} message={error} />
+      <FieldError id={`${id}-error`} locale={locale} message={error} />
     </div>
   );
 }
@@ -156,4 +161,9 @@ export function useFragmentToken(): string | undefined {
     }
   }, []);
   return token;
+}
+
+/** Goes in every form that writes as the signed-in user. */
+export function CsrfField({ token }: { token: string }) {
+  return <input type="hidden" name="csrf" value={token} />;
 }

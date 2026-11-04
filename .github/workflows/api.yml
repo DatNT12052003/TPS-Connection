@@ -33,8 +33,8 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: apps/api/package-lock.json
-      - name: Start PostgreSQL with the same roles as local development
-        run: docker compose up -d --wait postgres
+      - name: Start PostgreSQL and object storage, as in local development
+        run: docker compose up -d --wait postgres object-storage
         working-directory: .
       - run: npm ci
       - run: npm run typecheck

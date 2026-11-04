@@ -4,6 +4,8 @@ import { purgeExpiredRateLimits } from './auth/rate-limit.js';
 import { loadEnv } from './config/env.js';
 import { createDataSource } from './db/data-source.js';
 import { smtpMailer } from './email/mailer.js';
+import { s3FileStore, s3SettingsFromEnv } from './files/file-store.js';
+import { purgeFiles } from './files/purge-files.js';
 import { drainOutbox } from './outbox/process-outbox.js';
 
 const POLL_MS = 2_000;
@@ -19,6 +21,8 @@ const deps = {
   webBaseUrl: env.WEB_BASE_URL,
 };
 
+const fileStore = s3FileStore(s3SettingsFromEnv(env));
+
 let running = true;
 const stop = () => {
   running = false;
@@ -33,6 +37,7 @@ while (running) {
     await drainOutbox(deps);
     if (Date.now() - lastPurge >= PURGE_EVERY_MS) {
       await purgeExpiredRateLimits(db);
+      await purgeFiles(db, fileStore);
       lastPurge = Date.now();
     }
   } catch (error) {

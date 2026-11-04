@@ -33,5 +33,21 @@ services:
       - "127.0.0.1:1025:1025"
       - "127.0.0.1:8025:8025"
 
+  # Stands in for S3 in development. The code only speaks the S3 protocol.
+  object-storage:
+    image: chrislusf/seaweedfs:3.97
+    command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json -volume.max=20
+    ports:
+      - "127.0.0.1:9000:8333"
+    volumes:
+      - object-storage-data:/data
+      - ./infra/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8333"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
 volumes:
+  object-storage-data:
   postgres-data:
