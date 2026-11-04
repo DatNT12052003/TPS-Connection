@@ -44,7 +44,7 @@ type Actor =
 Route bắt buộc khai báo policy qua một hàm bọc. TypeScript báo lỗi khi thiếu, và có test quét toàn bộ route để chắc chắn không có route nào đi vòng qua.
 
 ```ts
-route({
+defineRoute({
   method: 'POST',
   path: '/connection-requests/:id/accept',
   input: acceptRequestSchema,
@@ -52,7 +52,7 @@ route({
   handler: acceptRequest,
 });
 
-route({
+defineRoute({
   method: 'GET',
   path: '/public/tutors',
   input: searchTutorsSchema,

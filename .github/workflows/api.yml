@@ -1,0 +1,58 @@
+name: API
+
+on:
+  pull_request:
+    paths:
+      - 'apps/api/**'
+      - 'docker-compose.yml'
+      - 'infra/**'
+      - '.github/workflows/api.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'docker-compose.yml'
+      - 'infra/**'
+      - '.github/workflows/api.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      - name: Start PostgreSQL with the same roles as local development
+        run: docker compose up -d --wait postgres
+        working-directory: .
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      # Includes the route security tests. A route without a policy fails here.
+      - run: npm test
+      - run: npm run build
+      - name: Block known high-severity vulnerabilities in production dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Block breaking changes to the API contract
+        if: github.event_name == 'pull_request'
+        working-directory: .
+        run: |
+          if ! git cat-file -e "origin/${{ github.base_ref }}:apps/api/openapi.json" 2>/dev/null; then
+            echo "The base branch has no openapi.json yet. Nothing to compare."
+            exit 0
+          fi
+          git show "origin/${{ github.base_ref }}:apps/api/openapi.json" > /tmp/base-openapi.json
+          docker run --rm -v /tmp:/base:ro -v "$PWD/apps/api:/rev:ro" tufin/oasdiff:v1.35.0 \
+            breaking --fail-on ERR /base/base-openapi.json /rev/openapi.json

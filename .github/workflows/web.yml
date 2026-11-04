@@ -1,0 +1,43 @@
+name: Web
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - 'apps/api/openapi.json'
+      - '.github/workflows/web.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'apps/api/openapi.json'
+      - '.github/workflows/web.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - name: Check the generated API client matches the contract
+        run: |
+          npm run api:generate
+          git diff --exit-code app/api/schema.d.ts
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build
+      - name: Block known high-severity vulnerabilities in production dependencies
+        run: npm audit --omit=dev --audit-level=high
