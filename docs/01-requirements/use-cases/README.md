@@ -22,12 +22,3 @@ Giá trị ghi `ĐX` là đề xuất, chưa được chủ sản phẩm xác nh
 | [moderation.md](moderation.md) | Báo cáo, kiểm duyệt, quản trị | Chờ duyệt |
 
 Bài tập và đánh giá làm ngay sau MVP (D10), nên chưa có file trong đợt này.
-
-## Câu hỏi cần xác nhận
-
-| Mã | Câu hỏi | Đề xuất | Ảnh hưởng |
-| --- | --- | --- | --- |
-| N4 | Phụ huynh có được tự kết thúc lớp không? Tài liệu phân quyền ban đầu chỉ cho gia sư, khiến phụ huynh không dừng được việc học của con, và cũng không xóa được tài khoản theo BR-1303. | Có. Cả hai bên đều tự kết thúc được, không cần bên kia đồng ý. | BR-611, UC-TCH-09 |
-| N5 | Khi có báo cáo về dấu hiệu xâm hại trẻ em, nền tảng làm gì ngoài việc khóa tài khoản? PRD chưa có quy trình báo cơ quan chức năng hay giữ bằng chứng. | Luật sư tư vấn và viết thành quy trình vận hành trước khi thử nghiệm. Phần mềm đã có tạm khóa khẩn cấp, ưu tiên hàng chờ và lưu bản sao nội dung. | UC-MOD-01, UC-MOD-02 |
-| N6 | Có cho chặn người đang dạy hoặc đang học với mình không? | Không. Phải kết thúc lớp trước, vì đang có lớp mà không liên lạc được thì không vận hành được. Người dùng vẫn báo cáo được ngay. | BR-512, UC-MSG-04 |
-| N7 | Bài đăng cần Manager duyệt trước khi hiện, hay hiện ngay rồi xử lý khi có báo cáo? C1 ghi Manager duyệt bài đăng, còn PRD §3.3 ghi kiểm duyệt nếu cần. | Hiện ngay rồi xử lý khi có báo cáo, vì gia sư đã xác minh danh tính và bài tìm gia sư không công khai. Duyệt trước sẽ tăng đáng kể việc cho Manager. | BR-307, UC-MKT-02 |

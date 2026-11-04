@@ -4,7 +4,7 @@ Tài liệu này biến các quyết định trong [decision-log.md](../00-produ
 
 **Cột Nguồn:**
 
-- `D..`, `C..`, `Q..`, `N..`: đã chốt trong nhật ký quyết định.
+- `D..`, `C..`, `Q..`, `N..`, `DM..`: đã chốt trong nhật ký quyết định.
 - `PRD §..`: PRD gợi ý và không có quyết định nào trái lại.
 - `ĐX`: đề xuất để lấp khoảng trống, chưa được chủ sản phẩm xác nhận.
 
@@ -65,7 +65,7 @@ Tài liệu này biến các quyết định trong [decision-log.md](../00-produ
 | BR-304 | Bài tìm gia sư không hiển thị họ tên đầy đủ, trường học, địa chỉ nhà, số điện thoại của trẻ. | PRD §3.4 |
 | BR-305 | Tìm kiếm lọc theo môn, lớp, học phí, hình thức và khu vực. Khu vực lọc theo tỉnh, xã; chưa lọc theo bán kính. | PRD §6.1, D11 |
 | BR-306 | Trả phí không được làm sai lệch kết quả tìm kiếm mà không công khai. | PRD §5.8 |
-| BR-307 | Bài đăng hiển thị ngay sau khi đăng. Manager xử lý khi có báo cáo. | ĐX, chờ N7 |
+| BR-307 | Bài đăng hiển thị ngay sau khi đăng. Manager xử lý khi có báo cáo. | N7 |
 | BR-308 | Bài tìm gia sư tự đóng khi hai bên xác nhận hợp tác từ một đề nghị của bài đó. | ĐX |
 | BR-309 | Gia sư tạm ngừng nhận học sinh vẫn có trang hồ sơ kèm nhãn, nhưng không nhận yêu cầu mới và không có trong kết quả tìm kiếm mặc định. | ĐX |
 
@@ -105,7 +105,7 @@ Chi tiết chuyển trạng thái nằm ở [state-machines.md](state-machines.m
 | BR-509 | Sau khi lớp kết thúc, hai bên không còn thấy số điện thoại và email của nhau. | ĐX |
 | BR-510 | Chat trong MVP gửi được văn bản và ảnh, chưa gửi được tệp khác. | Q6 |
 | BR-511 | Mỗi yêu cầu kết nối có một hội thoại. Sau khi lớp kết thúc, hội thoại chuyển sang chỉ đọc. | ĐX |
-| BR-512 | Không chặn được người đang có lớp với mình; phải kết thúc lớp trước. Việc báo cáo không bị ảnh hưởng. | ĐX, chờ N6 |
+| BR-512 | Không chặn được người đang có lớp với mình; phải kết thúc lớp trước. Việc báo cáo không bị ảnh hưởng. | N6 |
 
 ## Lớp, buổi học và điểm danh
 
@@ -123,7 +123,7 @@ Chi tiết chuyển trạng thái nằm ở [state-machines.md](state-machines.m
 | BR-608 | Chỉ buổi đã học mới cần phụ huynh xác nhận. Sau 48 giờ không phản hồi, hệ thống tự chốt theo điểm danh của gia sư. | C5, ĐX (phạm vi) |
 | BR-609 | Hệ thống nhắc phụ huynh một lần trước khi hết hạn 48 giờ. | C5 |
 | BR-610 | Quá 7 ngày gia sư chưa điểm danh thì buổi được gắn cờ và không tính tiền cho đến khi điểm danh. | ĐX |
-| BR-611 | Gia sư hoặc phụ huynh đều tự tạm nghỉ hoặc kết thúc được lớp, không cần bên kia đồng ý. Tiếp tục lớp tạm nghỉ cần cả hai bên đồng ý. | ĐX, chờ N4 |
+| BR-611 | Gia sư hoặc phụ huynh đều tự kết thúc được lớp, không cần bên kia đồng ý. Tạm nghỉ cũng vậy, còn tiếp tục lớp tạm nghỉ cần cả hai bên đồng ý. | N4, ĐX (tạm nghỉ, tiếp tục) |
 | BR-612 | Gia sư sửa được điểm danh trong 48 giờ khi buổi chưa chốt. Hệ thống lưu lịch sử, báo phụ huynh và tính lại 48 giờ. | ĐX |
 | BR-613 | Sau khi lớp kết thúc, gia sư có 7 ngày để điểm danh các buổi đã qua. | ĐX |
 | BR-614 | Hệ thống sinh sẵn các buổi cho 8 tuần tới từ lịch định kỳ. | ĐX |
@@ -201,6 +201,7 @@ Quyền của từng vai trò nằm ở [roles-permissions.md](roles-permissions
 | BR-1206 | Mỗi lần xem giấy tờ, tin nhắn bị báo cáo hoặc hồ sơ trẻ của Manager, Admin đều được ghi nhật ký. | C1 |
 | BR-1207 | Báo cáo an toàn trẻ em được ưu tiên đầu hàng chờ và cảnh báo ngay. Quá 24 giờ chưa xử lý thì cảnh báo Admin. | ĐX |
 | BR-1208 | Người bị báo cáo không biết ai đã báo cáo. | ĐX |
+| BR-1209 | Trước khi thử nghiệm với người dùng thật, phải có quy trình xử lý báo cáo dấu hiệu xâm hại trẻ em do luật sư tư vấn. | N5 |
 
 ## Xóa dữ liệu
 
@@ -212,3 +213,6 @@ Quyền của từng vai trò nằm ở [roles-permissions.md](roles-permissions
 | BR-1304 | Xóa tài khoản phụ huynh thì xóa luôn hồ sơ và tài khoản học sinh mà họ quản lý. | ĐX |
 | BR-1305 | Trong 6 tháng, Admin có thể khôi phục tài khoản theo yêu cầu của chủ tài khoản. | ĐX |
 | BR-1306 | Chưa xóa hẳn dữ liệu liên quan đến báo cáo hoặc tranh chấp đang mở. | ĐX |
+| BR-1307 | Người đã xóa tài khoản đăng ký lại được bằng email cũ trong 6 tháng. Khi email đã có người dùng thì tài khoản cũ không khôi phục được nữa. | DM1 |
+| BR-1308 | Sau 6 tháng, lớp và điểm số đã ẩn danh được giữ để thống kê, không còn liên kết với cá nhân. | DM2 |
+| BR-1309 | Khi phụ huynh xóa tài khoản, trong 6 tháng đầu gia sư xem được lịch sử lớp ở chế độ chỉ đọc nhưng ẩn tên; sau đó chỉ còn bản ẩn danh. | DM3 |

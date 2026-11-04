@@ -57,6 +57,13 @@ Dùng Express nên các phần sau phải tự xây và giữ kỷ luật bằng
 | N1 | Giấy tờ xác minh | Gia sư nộp thêm ảnh chân dung cầm CCCD. |
 | N2 | Trùng CCCD | Chặn một CCCD dùng cho nhiều tài khoản gia sư. Manager nhập số CCCD khi duyệt; hệ thống chỉ lưu giá trị băm có khóa, không lưu số gốc. Luật sư rà soát cùng các mốc lưu trữ. |
 | N3 | Tuổi gia sư | Từ 18 tuổi, Manager kiểm tra trên CCCD. |
+| N4 | Kết thúc lớp | Gia sư và phụ huynh đều tự kết thúc được lớp, không cần bên kia đồng ý. |
+| N5 | Báo cáo dấu hiệu xâm hại trẻ em | Luật sư tư vấn và viết thành quy trình vận hành trước khi thử nghiệm với người dùng thật. |
+| N6 | Chặn khi đang có lớp | Không chặn được người đang có lớp với mình; phải kết thúc lớp trước. Vẫn báo cáo được ngay. |
+| N7 | Kiểm duyệt bài đăng | Bài đăng hiện ngay, Manager xử lý khi có báo cáo. Đây là cách hiểu cụm "duyệt bài đăng" ở C1. |
+| DM1 | Đăng ký lại bằng email cũ | Người đã xóa tài khoản đăng ký lại được bằng email cũ trong 6 tháng. Khi email đã có người dùng thì tài khoản cũ không khôi phục được nữa. |
+| DM2 | Dữ liệu đã ẩn danh | Sau 6 tháng, lớp và điểm số đã ẩn danh được giữ để thống kê, không còn liên kết với cá nhân. Luật sư rà soát. |
+| DM3 | Lịch sử lớp khi phụ huynh xóa tài khoản | Trong 6 tháng đầu, gia sư xem được lịch sử ở chế độ chỉ đọc nhưng ẩn tên; sau đó chỉ còn bản ẩn danh. |
 
 ## Đề xuất kỹ thuật được ghi nhận
 
@@ -66,8 +73,9 @@ Chủ sản phẩm không phản đối các đề xuất ở mục 5 đến m�
 
 | Mã | Câu hỏi | Ảnh hưởng |
 | --- | --- | --- |
-| C13 | Quy mô đội ngũ, số giờ mỗi tuần, ngân sách hạ tầng, mốc ra mắt. | Kế hoạch, nơi triển khai |
+| C13 | Đã có: một người, toàn thời gian; tạm thời chưa có ngân sách. Chưa có: nguồn chi cho hạ tầng và luật sư trước thử nghiệm, mốc ra mắt. | Kế hoạch, nơi triển khai, pháp lý |
 | D4 | Ngưỡng tuổi để học sinh có tài khoản; cần tư vấn pháp lý. | Đăng ký, đồng ý dữ liệu |
 | D9 | Gia sư có được tạo lớp cho học sinh ngoài nền tảng không? | Teaching, chiến lược sản phẩm |
 | D11 | Thử nghiệm ở những khu vực nào? | Kế hoạch ra mắt |
-| Pháp lý | Dữ liệu trẻ em và giấy tờ tùy thân, gồm mốc lưu ở C2 và C4 và giá trị băm CCCD ở N2; điều kiện khi thu hộ tiền; danh mục đơn vị hành chính hiện hành. | Cần luật sư rà soát trước khi vận hành |
+| N5 | Quy trình xử lý báo cáo dấu hiệu xâm hại trẻ em. Chưa có thì chưa thử nghiệm với người dùng thật. | Vận hành, an toàn trẻ em |
+| Pháp lý | Dữ liệu trẻ em và giấy tờ tùy thân, gồm mốc lưu ở C2 và C4, giá trị băm CCCD ở N2 và dữ liệu ẩn danh ở DM2; điều kiện khi thu hộ tiền; danh mục đơn vị hành chính hiện hành. | Cần luật sư rà soát trước khi vận hành |

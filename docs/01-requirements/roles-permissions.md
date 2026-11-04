@@ -25,7 +25,7 @@ Vai trò chưa đủ để cấp quyền. Các quyền có ký hiệu trong bả
 | `GUARDIAN` | Người dùng là phụ huynh đang quản lý học sinh đó |
 | `STUDENT` | Người dùng là chính học sinh đó |
 | `TEACHING` | Gia sư có quan hệ dạy học đang hiệu lực với học sinh đó |
-| `TAUGHT` | Gia sư từng có quan hệ dạy học với học sinh đó và lớp đã kết thúc; chỉ đọc lịch sử (ĐX) |
+| `TAUGHT` | Gia sư từng có quan hệ dạy học với học sinh đó và lớp đã kết thúc; chỉ đọc lịch sử (ĐX). Nếu phụ huynh đã xóa tài khoản: ẩn tên trong 6 tháng, sau đó không còn quyền này (BR-1309) |
 | `PARTY` | Người dùng là một bên của yêu cầu kết nối hoặc hội thoại đó |
 | `CONFIRMED` | Hai bên đã xác nhận hợp tác và lớp chưa kết thúc |
 | `ASSIGNED` | Manager đang xử lý đúng hồ sơ hoặc báo cáo đó |
@@ -82,7 +82,7 @@ Học sinh không tìm gia sư trong MVP vì D3 và D4 giao việc này cho ph�
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Xem lớp và lịch | – | – | ✓ TEACHING, TAUGHT | ✓ GUARDIAN | ✓ STUDENT | – | – |
 | Sửa lớp, lịch | – | – | ✓ TEACHING | – | – | – | – |
-| Tạm nghỉ, tiếp tục, kết thúc lớp (BR-611, chờ N4) | – | – | ✓ TEACHING | ✓ GUARDIAN | – | – | – |
+| Tạm nghỉ, tiếp tục, kết thúc lớp (BR-611) | – | – | ✓ TEACHING | ✓ GUARDIAN | – | – | – |
 | Đề nghị đổi học phí, đồng ý đổi | – | – | ✓ TEACHING | ✓ GUARDIAN | – | – | – |
 | Hủy buổi học | – | – | ✓ TEACHING | ✓ GUARDIAN | – | – | – |
 | Điểm danh, ghi nội dung, điểm, nhận xét | – | – | ✓ TEACHING | – | – | – | – |
