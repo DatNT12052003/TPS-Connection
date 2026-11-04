@@ -1,5 +1,8 @@
 import type { Actor } from '../auth/actor.js';
 
+/** Someone identified by ID only, such as a person signing in. */
+export type AuditActor = Actor | { kind: 'user'; userId: string };
+
 export type AuditEntry = {
   action: string;
   targetType: string;
@@ -8,7 +11,7 @@ export type AuditEntry = {
   metadata?: Record<string, unknown>;
 };
 
-export type AuditWriter = (actor: Actor, entry: AuditEntry) => Promise<void>;
+export type AuditWriter = (actor: AuditActor, entry: AuditEntry) => Promise<void>;
 
 /**
  * Records the access before returning the data. If the record cannot be

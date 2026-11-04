@@ -29,7 +29,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const otherLocale: Locale = locale === 'vi' ? 'en' : 'vi';
   return (
     <main className="mx-auto max-w-2xl p-4">
-      <nav className="flex justify-end">
+      <nav className="flex justify-end gap-4">
+        <Link className="underline" to={`/${locale}/login`}>
+          {translate(locale, 'nav.login')}
+        </Link>
+        <Link className="underline" to={`/${locale}/register`}>
+          {translate(locale, 'nav.register')}
+        </Link>
         <Link className="underline" to={`/${otherLocale}`} hrefLang={otherLocale}>
           {translate(locale, 'language.switch')}
         </Link>

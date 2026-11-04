@@ -101,13 +101,17 @@ Bộ lọc và sắp xếp dùng query string và chỉ nhận các giá trị �
 
 | Client | Access token | Refresh token |
 | --- | --- | --- |
-| Web | Cookie `httpOnly`, `Secure`, `SameSite=Lax` | Cookie riêng, chỉ gửi tới đường dẫn refresh |
-| Mobile | Header `Authorization: Bearer` | SecureStore, gửi trong nội dung khi refresh |
+| Web | Cookie `httpOnly`, `Secure`, `SameSite=Lax` | Cookie riêng, chỉ gửi tới `/api/v1/auth` (refresh và đăng xuất đều cần) |
+| Mobile (chưa làm, D2) | Header `Authorization: Bearer` | SecureStore, gửi trong nội dung khi refresh |
 
 - Access token sống 15 phút; refresh token sống 30 ngày và xoay vòng (NFR-S03).
-- Web dùng thêm CSRF token cho mọi thao tác ghi vì đăng nhập bằng cookie.
+- Web dùng thêm CSRF token cho mọi thao tác ghi vì đăng nhập bằng cookie. API yêu cầu header `X-CSRF-Token` ở mọi route không công khai trừ `GET`. Token là HMAC của `family_id`, nên giữ nguyên qua các lần xoay vòng. Giá trị nằm trong cookie `tps_csrf`; Web phải đưa nó vào trang rồi nhận lại qua form, không được tự chép từ cookie sang header vì như vậy mất tác dụng.
+- Route công khai không kiểm tra CSRF vì không hành động theo danh tính đã đăng nhập. `refresh` và `logout` là route công khai, dựa vào `SameSite=Lax`.
 - CORS chỉ cho phép các domain Web đã khai báo.
+- Trình duyệt chỉ nói chuyện với Web. Web gọi API từ máy chủ và chuyển tiếp `Set-Cookie` về trình duyệt, nên cookie thuộc domain của Web. Vì cookie refresh chỉ gửi tới `/api/v1/auth`, Web có route trùng đường dẫn `/api/v1/auth/refresh` và `/api/v1/auth/logout`.
 - SSR của Web chuyển tiếp cookie người dùng khi gọi API. Trang công khai gọi các endpoint công khai và không dùng cookie, để có thể cache an toàn.
+- Liên kết trong email để token ở fragment (`#token=...`) để token không vào log máy chủ và header `Referer`. Trang chỉ xác nhận khi người dùng bấm nút, vì trình quét email cũng mở liên kết.
+- Đăng ký, gửi lại xác thực và quên mật khẩu trả `202` với nội dung như nhau dù email có tồn tại hay không. Giới hạn tần suất tính theo địa chỉ email, kể cả email chưa có tài khoản, nên `429` cũng không làm lộ thông tin.
 
 ## Tệp
 

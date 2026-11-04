@@ -67,7 +67,8 @@ erDiagram
 | Bảng | Cột chính | Ràng buộc và ghi chú |
 | --- | --- | --- |
 | `user_roles` | `user_id`, `role` | Khóa ghép. `role`: `tutor`, `parent`, `student`, `manager`, `admin`. MVP cho phép một vai trò mỗi tài khoản ở tầng ứng dụng (BR-102); để bảng nối vì PRD §2 có thể mở nhiều vai trò. |
-| `user_sessions` | `user_id`, `family_id`, `refresh_token_hash`, `expires_at`, `revoked_at` | Unique `refresh_token_hash`. Dùng `family_id` để thu hồi cả chuỗi khi token bị dùng lại (AC-ACC-03.4). |
+| `user_sessions` | `user_id`, `family_id`, `refresh_token_hash`, `expires_at`, `rotated_at`, `revoked_at` | Mỗi refresh token một dòng. Unique `refresh_token_hash`. `rotated_at` có giá trị mà token vẫn được gửi lại nghĩa là bị dùng lại; khi đó dùng `family_id` để thu hồi cả chuỗi (AC-ACC-03.4). |
+| `rate_limit_events` | `bucket`, `occurred_at` | Đếm số lần thử theo cửa sổ thời gian (NFR-S05). `bucket` là giá trị băm nên bảng không chứa email. Worker xóa dòng cũ hơn 1 ngày. |
 | `one_time_tokens` | `user_id`, `purpose`, `token_hash`, `payload`, `expires_at`, `used_at` | `purpose`: `verify_email`, `reset_password`, `change_email`, `student_invite`. Chỉ lưu băm. |
 | `consents` | `user_id`, `document`, `version`, `accepted_at`, `student_id` | `student_id` có giá trị khi phụ huynh đồng ý thay cho con (NFR-P04). |
 | `system_settings` | `key`, `value`, `updated_by` | Gồm cờ tài khoản học sinh, mặc định tắt (BR-107). |
@@ -169,7 +170,7 @@ Khoản đã `due` không đổi `amount_vnd`; thay đổi về sau là một d�
 | `notifications` | `user_id`, `type`, `data`, `dedupe_key`, `read_at` | Unique `(user_id, dedupe_key)` (AC-NOT-01.3). `data` không chứa nội dung tin nhắn. |
 | `notification_preferences` | `user_id`, `category`, `email_enabled` | Khóa ghép. Email bảo mật không có dòng tắt (AC-NOT-04.1). |
 | `device_tokens` | `user_id`, `platform`, `token`, `revoked_at` | Dùng khi ra Mobile (D2); tạo sau. |
-| `outbox_events` | `type`, `aggregate_id`, `payload`, `occurred_at`, `processed_at` | Ghi cùng giao dịch nghiệp vụ (NFR-R06). Index một phần với `processed_at IS NULL`. |
+| `outbox_events` | `type`, `aggregate_id`, `payload`, `occurred_at`, `attempts`, `next_attempt_at`, `processed_at`, `failed_at` | Ghi cùng giao dịch nghiệp vụ (NFR-R06). Thử tối đa 5 lần, sau đó ghi `failed_at` và cảnh báo. Index một phần với `processed_at IS NULL AND failed_at IS NULL`. Không chứa token: Worker tạo token khi gửi email. |
 
 ## Xác minh
 

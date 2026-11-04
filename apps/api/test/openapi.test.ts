@@ -3,9 +3,10 @@ import { describe, expect, it } from 'vitest';
 import type { DataSource } from 'typeorm';
 import { buildOpenApiDocument } from '../src/http/openapi.js';
 import { buildRoutes } from '../src/routes.js';
+import { authConfig } from './helpers.js';
 
 describe('OpenAPI contract', () => {
-  const document = buildOpenApiDocument(buildRoutes({} as DataSource));
+  const document = buildOpenApiDocument(buildRoutes({} as DataSource, authConfig));
 
   it('describes the sample route with its fields', () => {
     const get = document.paths?.['/api/v1/catalog/subjects']?.get;

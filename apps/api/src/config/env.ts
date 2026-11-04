@@ -16,6 +16,11 @@ const schema = z.object({
         .map((origin) => origin.trim())
         .filter(Boolean),
     ),
+  // Optional here because migrations and seeds do not need it. See authConfigFromEnv.
+  AUTH_SECRET: z.string().min(32).optional(),
+  WEB_BASE_URL: z.url().default('http://localhost:5173'),
+  SMTP_URL: z.string().min(1).default('smtp://localhost:1025'),
+  MAIL_FROM: z.string().min(1).default('TPS-Connection <no-reply@tps-connection.local>'),
 });
 
 export type Env = z.infer<typeof schema>;

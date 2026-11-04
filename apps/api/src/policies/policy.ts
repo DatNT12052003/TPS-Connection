@@ -31,3 +31,6 @@ export const deny = ({
 
 /** The only way to open a route to guests. Search the code for it to audit them. */
 export const publicAccess: Policy = () => allow();
+
+/** For endpoints that act only on the caller's own account. */
+export const ownAccount: Policy = ({ actor }) => (actor.kind === 'user' ? allow() : deny());

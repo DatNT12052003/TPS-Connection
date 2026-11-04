@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
+import type { Actor, UserActor } from '../src/auth/actor.js';
 import { defineRoute } from '../src/http/route.js';
 import { allow, deny, publicAccess, type Policy } from '../src/policies/policy.js';
 import { parent, testApp } from './helpers.js';
@@ -56,6 +57,57 @@ describe('authorization pipeline', () => {
     const res = await request(testApp([privateRoute(() => allow())], parent)).get('/api/v1/secret');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ value: 'secret' });
+  });
+});
+
+describe('pipeline checks before the policy', () => {
+  const write = (options: { allowUnverifiedEmail?: boolean } = {}) =>
+    defineRoute({
+      method: 'post',
+      path: '/write',
+      summary: 'x',
+      tag: 'x',
+      policy: () => allow(),
+      ...options,
+      output: z.object({ done: z.boolean() }),
+      handler: async () => ({ done: true }),
+    });
+  const unverified: Actor = { ...(parent as UserActor), emailVerified: false };
+
+  it('refuses an unsafe request without the CSRF token', async () => {
+    const res = await request(testApp([write()], parent)).post('/api/v1/write');
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('CSRF_TOKEN_INVALID');
+  });
+
+  it('refuses an unsafe request with the wrong CSRF token', async () => {
+    const res = await request(testApp([write()], parent))
+      .post('/api/v1/write')
+      .set('X-CSRF-Token', 'wrong');
+    expect(res.body.code).toBe('CSRF_TOKEN_INVALID');
+  });
+
+  it('accepts an unsafe request with the right CSRF token', async () => {
+    const res = await request(testApp([write()], parent))
+      .post('/api/v1/write')
+      .set('X-CSRF-Token', 'test-csrf-token');
+    expect(res.status).toBe(200);
+  });
+
+  it('refuses unverified accounts by default', async () => {
+    const res = await request(testApp([write()], unverified))
+      .post('/api/v1/write')
+      .set('X-CSRF-Token', 'test-csrf-token');
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('EMAIL_NOT_VERIFIED');
+  });
+
+  it('lets unverified accounts through only where a route allows it', async () => {
+    const route = write({ allowUnverifiedEmail: true });
+    const res = await request(testApp([route], unverified))
+      .post('/api/v1/write')
+      .set('X-CSRF-Token', 'test-csrf-token');
+    expect(res.status).toBe(200);
   });
 });
 
