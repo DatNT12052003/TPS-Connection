@@ -102,3 +102,9 @@ Chi tiết ở [danh mục hành chính](../danh_muc_hanh_chinh.md).
 | D42 | Nguồn dữ liệu danh mục hành chính | Nạp từ bộ dữ liệu mở `vietnamese-provinces-database` (MIT), cố định một bản phát hành (hiện là v5.2.0). Đối chiếu với Excel xuất từ danhmuchanhchinh.nso.gov.vn (Cục Thống kê) trước mỗi lần nạp; có sai lệch thì dừng và kiểm tra văn bản gốc. |
 | D43 | Tần suất cập nhật danh mục | Kiểm tra hằng tháng và ngay khi có nghị quyết sắp xếp mới. Script nạp chạy chế độ so sánh trước, Admin duyệt rồi mới ghi. |
 | D44 | Lưu danh mục | Mã là khóa ổn định; đổi tên, đổi loại cập nhật tại chỗ; sáp nhập, chia tách thì đơn vị cũ `is_active = false`, không xóa. Bảng có loại đơn vị, tên đầy đủ, tên tiếng Anh, mã bưu chính. |
+
+## 7. Chỉ số thành công của pilot ngày 2026-11-12 (D45)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D45 | Chỉ số thành công của pilot 12 tuần | Thay cho đề xuất ở C13. Mục tiêu: **10** gia sư đã xác minh danh tính, **30** phụ huynh đăng ký, **5** lớp được tạo từ kết nối, **≥ 50%** lớp còn học sau 4 tuần (có buổi học đã diễn ra từ tuần thứ 4). Theo dõi thêm, không đặt mục tiêu: tỷ lệ chuyển đổi gửi yêu cầu → chấp nhận → xác nhận hợp tác, thời gian duyệt xác minh, tỷ lệ buổi học được phụ huynh xác nhận so với tự chốt, số khiếu nại và báo cáo vi phạm. **Không đặt ngưỡng dừng**: chỉ số dùng để tham khảo, quyết định bước tiếp theo sau khi xem kết quả. Khu vực pilot: chưa chọn. |
