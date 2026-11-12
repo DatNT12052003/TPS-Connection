@@ -48,10 +48,12 @@ const fail = (msg) => {
 };
 
 const themes = source.color.themes.map((t) => t.id);
-if (themes[0] !== 'light' || !themes.includes('dark')) fail('cần hai theme "light" (đầu tiên) và "dark"');
+if (themes[0] !== 'light' || !themes.includes('dark'))
+  fail('cần hai theme "light" (đầu tiên) và "dark"');
 
 const colorNames = new Set(source.color.tokens.map((t) => t.name));
-const themed = (value, theme) => (typeof value === 'string' ? value : (value[theme] ?? value[themes[0]]));
+const themed = (value, theme) =>
+  typeof value === 'string' ? value : (value[theme] ?? value[themes[0]]);
 const resolveColor = (value) => {
   const alias = /^\{(.+)\}$/.exec(value);
   if (!alias) return value;
@@ -65,14 +67,16 @@ const indent = (text) => text.replace(/^/gm, '  ');
 
 function themeLines(theme) {
   const lines = [`  color-scheme: ${theme};`];
-  for (const t of source.color.tokens) lines.push(decl(t.name, resolveColor(themed(t.value, theme))));
+  for (const t of source.color.tokens)
+    lines.push(decl(t.name, resolveColor(themed(t.value, theme))));
   for (const t of source.shadow?.tokens ?? []) lines.push(decl(t.name, themed(t.value, theme)));
   return lines;
 }
 
 function staticLines() {
   const lines = [];
-  for (const [key, family] of Object.entries(source.type.families)) lines.push(decl(`font-${key}`, family));
+  for (const [key, family] of Object.entries(source.type.families))
+    lines.push(decl(`font-${key}`, family));
   for (const group of source.type.groups) {
     for (const s of group.styles) {
       lines.push(decl(`text-${s.name}-size`, s.fontSize));
@@ -90,10 +94,12 @@ function staticLines() {
 function shadcnLines() {
   const lines = [];
   for (const [shadcn, tps] of Object.entries(SHADCN)) {
-    if (!colorNames.has(tps)) fail(`ánh xạ shadcn --${shadcn} trỏ tới token màu không tồn tại: ${tps}`);
+    if (!colorNames.has(tps))
+      fail(`ánh xạ shadcn --${shadcn} trỏ tới token màu không tồn tại: ${tps}`);
     lines.push(`  --${shadcn}: var(--tps-${tps});`);
   }
-  if (!source.radius.tokens.some((t) => t.name === SHADCN_RADIUS)) fail(`không có token ${SHADCN_RADIUS}`);
+  if (!source.radius.tokens.some((t) => t.name === SHADCN_RADIUS))
+    fail(`không có token ${SHADCN_RADIUS}`);
   lines.push(`  --radius: var(--tps-${SHADCN_RADIUS});`);
   return lines;
 }
@@ -131,7 +137,8 @@ if (process.argv.includes('--check')) {
   } catch {
     // chưa có tệp: coi như lệch
   }
-  if (current !== css) fail('tokens.css lệch với tokens.json. Chạy `npm run tokens -w @tps/config`.');
+  if (current !== css)
+    fail('tokens.css lệch với tokens.json. Chạy `npm run tokens -w @tps/config`.');
   console.log('tokens: tokens.css khớp với tokens.json');
 } else {
   writeFileSync(outFile, css);

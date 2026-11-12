@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "TPS library (package biên dịch ra dist/, ví dụ @tps/shared)",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true
+  }
+}

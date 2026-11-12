@@ -5,15 +5,15 @@
  *   @import "@tps/config/tailwind.css";
  * Giá trị nằm ở tokens.css (sinh từ tokens.json); tệp này chỉ đặt tên lớp Tailwind cho các biến đó.
  */
-@import "./tokens.css";
+@import './tokens.css';
 
 /* dark: áp dụng khi <html data-theme="dark">, hoặc khi hệ điều hành ở chế độ tối và người dùng chưa chọn "light". */
 @custom-variant dark {
-  &:where([data-theme="dark"], [data-theme="dark"] *) {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
     @slot;
   }
   @media (prefers-color-scheme: dark) {
-    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+    &:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
       @slot;
     }
   }

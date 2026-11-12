@@ -1,2 +1,20 @@
 .claude
 CLAUDE.md
+
+# Phụ thuộc và sản phẩm build
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# Biến môi trường (chỉ commit .env.example)
+.env
+.env.*
+!.env.example
+
+# Hệ điều hành, trình soạn thảo
+.DS_Store
+Thumbs.db
+*.log

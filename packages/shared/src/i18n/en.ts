@@ -1,0 +1,210 @@
+// English UI strings. Same keys as vi.ts; a missing or extra key fails type-check.
+import type { Messages } from './types.js';
+
+export const en: Messages = {
+  common: {
+    appName: 'TPS-Connection',
+    save: 'Save',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    back: 'Back',
+    retry: 'Try again',
+    loading: 'Loading…',
+  },
+  language: {
+    vi: 'Tiếng Việt',
+    en: 'English',
+  },
+  errors: {
+    validation_failed: 'Some details are not valid. Check the highlighted fields.',
+    unauthenticated: 'Your session has expired. Please sign in again.',
+    forbidden: 'You do not have permission to do this.',
+    not_found: 'We could not find what you were looking for. It may have been deleted.',
+    conflict: 'This was just changed somewhere else. Reload the page and try again.',
+    invalid_state_transition:
+      'This can no longer be done because the status has changed. Reload the page to see the new status.',
+    rate_limited: 'You are going too fast. Wait a moment and try again.',
+    internal_error:
+      'Something went wrong on our side while handling your request. Try again in a few minutes.',
+    service_unavailable:
+      'The system is under maintenance or overloaded. Try again in a few minutes.',
+  },
+  validation: {
+    required: 'Please fill in this field.',
+    invalid_email: 'Enter a valid email address, for example name@gmail.com.',
+    password_too_short: 'Your password needs at least 8 characters.',
+    password_too_long: 'Your password can be at most 128 characters.',
+    password_needs_letter_and_digit: 'Your password needs both letters and numbers.',
+  },
+
+  userStatus: {
+    active: 'Active',
+    restricted: 'Restricted',
+    locked: 'Locked',
+  },
+  role: {
+    tutor: 'Tutor',
+    parent: 'Parent',
+    student: 'Student',
+    manager: 'Manager',
+    admin: 'Admin',
+  },
+  tutorProfileStatus: {
+    incomplete: 'Incomplete',
+    pending_verification: 'Pending verification',
+    verified: 'Verified',
+  },
+  verificationRequestKind: {
+    identity: 'Identity verification',
+    credential: 'Credential verification',
+  },
+  verificationRequestStatus: {
+    pending: 'Pending review',
+    approved: 'Approved',
+    rejected: 'Rejected',
+    cancelled: 'Cancelled',
+  },
+  credentialKind: {
+    degree: 'Degree',
+    certificate: 'Certificate',
+    student_card: 'Student card',
+  },
+  credentialVerificationStatus: {
+    self_declared: 'Self-declared',
+    pending: 'Pending verification',
+    verified: 'Verified',
+    rejected: 'Rejected',
+  },
+  tutorPostStatus: {
+    draft: 'Draft',
+    open: 'Open',
+    paused: 'Paused',
+    full: 'Full',
+    closed: 'Closed',
+  },
+  requestPostStatus: {
+    draft: 'Draft',
+    open: 'Open',
+    hidden: 'Hidden',
+    closed: 'Closed',
+  },
+  requestPostClosedReason: {
+    found_tutor: 'Found a tutor',
+    no_longer_needed: 'No longer needed',
+    other: 'Other reason',
+  },
+  teachingMode: {
+    online: 'Online',
+    in_person: 'In person',
+    hybrid: 'Hybrid',
+  },
+  connectionDirection: {
+    client_to_tutor: 'Request from parent',
+    tutor_to_client: 'Application from tutor',
+  },
+  connectionRequestStatus: {
+    pending: 'Awaiting reply',
+    negotiating: 'Negotiating',
+    confirmed: 'Collaboration confirmed',
+    rejected: 'Rejected',
+    cancelled: 'Cancelled',
+  },
+  connectionCancelReason: {
+    withdrawn: 'Withdrawn by sender',
+    ended_by_party: 'Cancelled by one party',
+    source_closed: 'Post was closed',
+    expired_pending: 'No reply within 7 days',
+    expired_negotiating: 'Negotiation passed 30 days',
+  },
+  tutoringClassStatus: {
+    active: 'Active',
+    paused: 'Paused',
+    ended: 'Ended',
+  },
+  enrollmentStatus: {
+    active: 'Active',
+    paused: 'Paused',
+    left: 'Left the class',
+  },
+  feeRateStatus: {
+    proposed: 'Proposed',
+    active: 'In effect',
+    rejected: 'Rejected',
+    superseded: 'Superseded',
+    withdrawn: 'Withdrawn',
+  },
+  lessonStatus: {
+    scheduled: 'Scheduled',
+    held: 'Held',
+    cancelled: 'Cancelled',
+    tutor_absent: 'Tutor absent',
+  },
+  attendanceStatus: {
+    present: 'Present',
+    absent_notified: 'Absent (notified)',
+    absent_no_show: 'No-show',
+    not_applicable: 'Not applicable',
+  },
+  attendanceConfirmationStatus: {
+    pending: 'Awaiting confirmation',
+    confirmed: 'Confirmed',
+    auto_confirmed: 'Auto-confirmed',
+    disputed: 'Disputed',
+    resolved: 'Resolved',
+  },
+  attendanceDisputeStatus: {
+    open: 'Under discussion',
+    settled_by_parties: 'Settled by both parties',
+    escalated: 'Escalated to Manager',
+    resolved_by_manager: 'Decided by Manager',
+    withdrawn: 'Withdrawn',
+  },
+  feeStatementStatus: {
+    draft: 'Draft',
+    issued: 'Unpaid',
+    partially_paid: 'Partially paid',
+    paid: 'Paid',
+    void: 'Void',
+  },
+  paymentStatus: {
+    recorded: 'Awaiting confirmation',
+    acknowledged: 'Confirmed',
+    voided: 'Voided',
+  },
+  paymentMethod: {
+    cash: 'Cash',
+    bank_transfer: 'Bank transfer',
+    e_wallet: 'E-wallet',
+    online_gateway: 'Payment gateway',
+    other: 'Other',
+  },
+  violationReportStatus: {
+    open: 'New',
+    linked: 'In progress',
+    closed: 'Closed',
+  },
+  moderationCaseType: {
+    violation: 'Violation',
+    session_dispute: 'Lesson dispute',
+    appeal: 'Appeal',
+  },
+  moderationCaseStatus: {
+    open: 'Open',
+    in_review: 'In review',
+    resolved: 'Resolved',
+    dismissed: 'No violation',
+  },
+  moderationDecision: {
+    no_action: 'No action',
+    warning: 'Warning',
+    content_hidden: 'Content hidden',
+    account_restricted: 'Account restricted',
+    account_locked: 'Account locked',
+    record_corrected: 'Record corrected',
+  },
+  sanctionType: {
+    warning: 'Warning',
+    restriction: 'Restriction',
+    lock: 'Lock',
+  },
+};
