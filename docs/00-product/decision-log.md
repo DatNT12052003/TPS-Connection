@@ -73,3 +73,22 @@ Quy ước: thêm quyết định mới vào cuối, không sửa nội dung quy
 | D27 | Sinh trước buổi học từ lịch lặp bao xa?               | 8 tuần. Đây là tham số cấu hình, đổi được mà không cần sửa dữ liệu.                                                                                                                                                    |
 | D28 | Lớp có đổi gia sư được không?                         | Không. Muốn đổi gia sư thì kết thúc lớp cũ; phụ huynh kết nối với gia sư mới và hệ thống tạo lớp mới. Gia sư mới không thấy dữ liệu do gia sư cũ ghi.                                                                 |
 | D29 | Trình quản lý package cho monorepo                    | **npm** (workspaces) + Turborepo thay cho pnpm, vì đội quen npm. Bù cho việc npm không chặn import thư viện chưa khai báo bằng rule ESLint `import/no-extraneous-dependencies`. Chốt ngày 2026-11-12. |
+
+## 5. Quy tắc bổ sung khi duyệt sơ đồ trạng thái ngày 2026-11-12 (D30–D41)
+
+Chi tiết từng luồng chuyển trạng thái nằm ở [thuật ngữ và sơ đồ trạng thái](../thuat_ngu_va_trang_thai.md).
+
+| Mã  | Chủ đề                              | Quyết định |
+| --- | ----------------------------------- | ---------- |
+| D30 | Nhắc trước khi yêu cầu kết nối hết hạn | Nhắc bên nhận 24 giờ trước khi yêu cầu chờ phản hồi hết hạn; nhắc cả hai bên 3 ngày trước khi yêu cầu đang trao đổi hết hạn. |
+| D31 | Bài tìm gia sư bị ẩn, đóng hoặc đã tìm được gia sư | Ẩn hoặc đóng bài thì các ứng tuyển còn chờ phản hồi tự hủy. Khi xác nhận hợp tác từ bài đó, hệ thống tự đóng bài với lý do "đã tìm được gia sư". |
+| D32 | Hội thoại sau khi hủy lúc đang trao đổi | Chỉ còn xem được, không gửi thêm tin. |
+| D33 | Bài tuyển học sinh đã đóng | Là trạng thái cuối; muốn đăng lại thì nhân bản thành nháp mới. |
+| D34 | Điều kiện nộp xác minh danh tính | Bắt buộc có họ tên, môn – khối dạy được, hình thức dạy, học phí tham khảo. Họ tên thật bị khóa sau khi xác minh; muốn đổi phải xác minh lại. |
+| D35 | Ai được tạm nghỉ, học lại, kết thúc lớp | **Chỉ gia sư.** Tạm nghỉ hủy các buổi tương lai; học lại sinh lại buổi. Phụ huynh muốn dừng thì trao đổi với gia sư; phụ huynh vẫn hủy được từng buổi học. |
+| D36 | Nhắc điểm danh | Nhắc gia sư nếu sau giờ kết thúc buổi 24 giờ vẫn chưa điểm danh. |
+| D37 | Sửa điểm danh khi phụ huynh chưa xác nhận | Được sửa; hạn 48 giờ để phụ huynh xác nhận tính lại từ đầu. |
+| D38 | Chuyển khiếu nại lên Manager sớm | Một trong hai bên được yêu cầu Manager xử lý trước khi hết 3 ngày tự thống nhất. |
+| D39 | Khiếu nại lại quyết định kiểm duyệt | Trong 7 ngày kể từ quyết định, mỗi vụ một lần, do Admin xử lý. Người báo cáo được biết báo cáo đã xử lý xong nhưng không biết chi tiết chế tài. |
+| D40 | Phát hành bảng học phí tháng | Phát hành ngay ngày 1, không qua bước nháp. Điều chỉnh (giảm giá, phụ thu) đưa vào bảng tháng sau. |
+| D41 | Khi nào thanh toán được tính là đã trả | Chỉ khi bên còn lại xác nhận khoản thanh toán đó. |

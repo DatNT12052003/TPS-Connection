@@ -93,7 +93,7 @@ Nền tảng có hai vai trò vận hành với ranh giới quyền tách biệt
 - Quản lý tài khoản, vai trò và quyền sử dụng của người dùng.
 - Quản lý danh mục môn học, khối lớp và khu vực hoạt động.
 - Quản lý cấu hình nền tảng.
-- Xử lý khiếu nại lại đối với quyết định của người kiểm duyệt.
+- Xử lý khiếu nại lại đối với quyết định của người kiểm duyệt. Khiếu nại lại được gửi trong 7 ngày kể từ quyết định, mỗi vụ một lần _(D39)_.
 - Đổi phụ huynh quản lý của học sinh theo yêu cầu _(C9)_.
 - Theo dõi tình hình hoạt động của người dùng và nền tảng.
 
@@ -261,7 +261,7 @@ Gia sư có thể:
 - Quản lý nhiều môn học cho một học sinh.
 - Tổ chức lớp một kèm một. Lớp có nhiều học sinh được chuẩn bị sẵn về nghiệp vụ nhưng mở ở giai đoạn sau _(D7)_.
 - Đề xuất thay đổi học phí; thay đổi chỉ có hiệu lực khi phụ huynh đồng ý và chỉ áp dụng cho các buổi học từ thời điểm đó về sau _(D17)_.
-- Tạm dừng hoặc kết thúc lớp.
+- Tạm dừng, cho học lại hoặc kết thúc lớp. Chỉ gia sư thực hiện các thao tác này; phụ huynh muốn dừng thì trao đổi với gia sư và vẫn có thể hủy từng buổi học _(D35)_.
 - Tra cứu lịch sử học tập sau khi lớp đã kết thúc.
 
 Một học sinh có thể học nhiều môn và có thể có nhiều gia sư khác nhau. Việc một gia sư phụ trách một hay nhiều học sinh được xác định theo lớp học đã thống nhất.
@@ -343,7 +343,7 @@ Nền tảng hỗ trợ:
 - Tổng hợp số buổi học đã diễn ra và số buổi được tính tiền, theo các quy định ở mục 7.
 - Tổng hợp học phí theo tháng, lập riêng cho từng học sinh trong từng lớp; phụ huynh thanh toán một lần cho mỗi tháng, hạn là ngày 5 tháng kế tiếp _(C6, D23, D24)_.
 - Ghi nhận các khoản phụ huynh cần thanh toán.
-- Theo dõi trạng thái đã thanh toán hoặc chưa thanh toán.
+- Theo dõi trạng thái đã thanh toán hoặc chưa thanh toán. Một bên ghi nhận khoản thanh toán; khoản đó chỉ được tính là đã trả khi bên còn lại xác nhận _(D41)_.
 - Lưu lịch sử thanh toán.
 
 Ở phiên bản đầu, các bên thanh toán ngoài nền tảng; nền tảng chỉ ghi nhận và đối chiếu học phí, không thu hay giữ tiền hộ _(D6)_. Thanh toán trực tuyến có thể được mở rộng sau.

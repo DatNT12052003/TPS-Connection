@@ -629,7 +629,7 @@ CREATE TABLE connection_requests (
   message          text,
   status           text NOT NULL DEFAULT 'pending'
                      CHECK (status IN ('pending','negotiating','confirmed','rejected','cancelled')),
-  cancel_reason    text CHECK (cancel_reason IN ('withdrawn','ended_by_party',
+  cancel_reason    text CHECK (cancel_reason IN ('withdrawn','ended_by_party','source_closed',
                                                  'expired_pending','expired_negotiating')),
   rejection_note   text,
   accepted_at      timestamptz,                  -- sự kiện chấp nhận (D15)
@@ -1006,7 +1006,7 @@ CREATE TABLE fee_statements (                         -- bảng học phí thán
   billable_sessions integer NOT NULL DEFAULT 0 CHECK (billable_sessions >= 0),
   total_amount_vnd bigint  NOT NULL DEFAULT 0 CHECK (total_amount_vnd >= 0),
   paid_amount_vnd  bigint  NOT NULL DEFAULT 0 CHECK (paid_amount_vnd >= 0),
-  status           text NOT NULL DEFAULT 'draft'
+  status           text NOT NULL DEFAULT 'issued'      -- 'draft' dành cho sau, bản đầu phát hành ngay
                      CHECK (status IN ('draft','issued','partially_paid','paid','void')),
   issued_at        timestamptz,
   due_date         date,                           -- ngày 5 của tháng kế tiếp (D24)
@@ -1052,7 +1052,8 @@ CREATE INDEX payments_statement_idx ON payments (statement_id);
 ```
 
 - Đầu tháng, job tạo `fee_statements` cho tháng trước của mỗi ghi danh và thêm `fee_statement_items` cho các buổi đủ điều kiện mà **chưa có** trong bảng nào (`attendance_id` unique). Nhờ vậy buổi khiếu nại kết thúc muộn tự rơi vào tháng sau, không bao giờ tính hai lần.
-- `total_amount_vnd` và `paid_amount_vnd` là phi chuẩn hóa để hiển thị nhanh; service cập nhật trong cùng transaction với các dòng con.
+- `total_amount_vnd` và `paid_amount_vnd` là phi chuẩn hóa để hiển thị nhanh; service cập nhật trong cùng transaction với các dòng con. `paid_amount_vnd` chỉ cộng các thanh toán `acknowledged` (bên kia đã xác nhận).
+- Vòng đời chi tiết của mọi trạng thái: xem [thuật ngữ và sơ đồ trạng thái](thuat_ngu_va_trang_thai.md).
 - Thanh toán trực tuyến sau này: thêm bảng giao dịch với cổng thanh toán, liên kết qua `gateway_transaction_id`; không đổi cấu trúc hiện có.
 
 ---
