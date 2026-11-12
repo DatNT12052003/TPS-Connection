@@ -93,7 +93,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 **Công việc:**
 
 - Monorepo npm workspaces + Turborepo _(D29)_: `apps/api`, `apps/web`, `packages/shared`, `packages/config` (tsconfig, ESLint, Prettier dùng chung).
-- Docker Compose cho môi trường local: PostgreSQL (bật `unaccent`, `pg_trgm`), Redis, MinIO, Mailpit.
+- Docker Compose cho môi trường local: PostgreSQL (bật `unaccent`, `pg_trgm`), Redis, SeaweedFS (lưu tệp, D53), Mailpit.
 - **API:** Express + TypeScript, cấu trúc module theo nghiệp vụ (router → controller → service → repository), TypeORM với migration (tắt `synchronize`), validate biến môi trường bằng Zod, logging `pino`, định dạng lỗi thống nhất với mã lỗi để client tự dịch, OpenAPI sinh từ Zod, endpoint health check.
 - **Web:** React + Vite + Tailwind + shadcn/ui; React Router framework mode có SSR cho trang công khai _(D12)_; TanStack Query; i18next với hai ngôn ngữ; layout theo vai trò; route `/admin`.
 - **Shared:** enum trạng thái, Zod schema, mã lỗi, file ngôn ngữ `vi`/`en`.
@@ -250,7 +250,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Review bảo mật** (skill `security-review`): xác thực, phân quyền theo quan hệ, upload tệp, rate limit, header bảo mật, CORS, lộ dữ liệu qua API, log không chứa dữ liệu của trẻ.
 - **Kiểm thử end-to-end** bằng Playwright cho các luồng §14.1, §14.2, §14.3.
 - **Hiệu năng:** kiểm tra truy vấn tìm kiếm và danh sách bằng dữ liệu mẫu lớn; bổ sung index thiếu.
-- **Hạ tầng** (§7.1 tài liệu công nghệ): server đặt tại Việt Nam, Caddy + HTTPS, tên miền, tường lửa, backup PostgreSQL và MinIO hằng ngày có mã hóa, thử khôi phục, Sentry.
+- **Hạ tầng** (§7.1 tài liệu công nghệ): server đặt tại Việt Nam, Caddy + HTTPS, tên miền, tường lửa, backup PostgreSQL và SeaweedFS hằng ngày có mã hóa, thử khôi phục, Sentry.
 - **Pháp lý và nội dung:** điều khoản sử dụng, chính sách quyền riêng tư (đã qua luật sư), hướng dẫn sử dụng cơ bản hai ngôn ngữ.
 
 **Hoàn thành khi:** không còn lỗi bảo mật mức cao; backup đã thử khôi phục thành công; toàn bộ test E2E xanh trên staging.

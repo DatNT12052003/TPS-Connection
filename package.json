@@ -19,7 +19,12 @@
     "type-check": "turbo run type-check",
     "test": "turbo run test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down",
+    "infra:reset": "docker compose down --volumes",
+    "infra:logs": "docker compose logs -f",
+    "infra:ps": "docker compose ps"
   },
   "prettier": "@tps/config/prettier",
   "devDependencies": {
