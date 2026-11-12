@@ -75,7 +75,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 5. Thiết kế cơ sở dữ liệu tổng thể: **bản nháp xong ngày 2026-11-12** ([thiết kế cơ sở dữ liệu](thiet_ke_co_so_du_lieu.md)), đã review và chốt các giả định (D21–D28).
 6. Chọn nguồn danh mục đơn vị hành chính: **đề xuất xong ngày 2026-11-12** ([danh mục hành chính](danh_muc_hanh_chinh.md)), đã duyệt (D42–D44).
 7. Chốt chỉ số thành công cho pilot _(C13, đề xuất)_: sau 12 tuần có 30 gia sư đã xác minh, 100 phụ huynh đăng ký, 20 lớp được tạo từ kết nối, ít nhất 60% lớp còn học sau 4 tuần.
-8. Gửi luật sư rà soát: đồng ý xử lý dữ liệu cá nhân của trẻ, ngưỡng tuổi tài khoản học sinh, lưu giữ giấy tờ tùy thân (mốc 30 ngày), mốc xóa dữ liệu 6 tháng, lưu trữ dữ liệu tại Việt Nam.
+8. Gửi luật sư rà soát: **danh sách câu hỏi đã soạn ngày 2026-11-12** ([câu hỏi pháp lý](00-product/cau_hoi_phap_ly.md), 25 câu); chờ chủ dự án điền thông tin đơn vị vận hành và gửi luật sư.
 9. Phác thảo wireframe các màn hình chính của web (công khai, phụ huynh, gia sư, học sinh, Manager, Admin).
 10. Đăng ký tên miền cho TPS-Connection _(D1)_.
 
