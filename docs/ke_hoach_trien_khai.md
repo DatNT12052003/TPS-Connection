@@ -6,7 +6,7 @@ Tài liệu này chia việc phát triển TPS-Connection thành các giai đo�
 
 - [Mô tả nghiệp vụ](mo_ta_nghiep_vu.md): phạm vi bản đầu ở §15.1, mở rộng ở §15.2, quy tắc ở §16.
 - [Công nghệ sử dụng](cong_nghe_su_dung.md): stack và hạ tầng.
-- [Decision log](00-product/decision-log.md): các quyết định D1–D45 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
+- [Decision log](00-product/decision-log.md): các quyết định D1–D47 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
 
 > Trạng thái: **đề xuất**. Chưa ước lượng thời gian theo tuần vì chưa có quy mô đội ngũ, số giờ làm việc và ngân sách (C13). Thứ tự giai đoạn là thứ tự phụ thuộc; khi có nguồn lực, một số giai đoạn có thể chạy song song như ghi chú ở mục 4.
 
@@ -16,8 +16,9 @@ Tài liệu này chia việc phát triển TPS-Connection thành các giai đo�
 
 | Giai đoạn | Tên                                         | Bản phát hành |
 | --------- | ------------------------------------------- | ------------- |
-| 0         | Chuẩn bị và chốt quyết định                 | –             |
+| 0         | Chuẩn bị và chốt quyết định (**hoàn thành**) | –            |
 | 1         | Nền móng kỹ thuật                           | MVP           |
+| 1b        | Thiết kế giao diện (song song với G1)       | MVP           |
 | 2         | Tài khoản, phân quyền và hồ sơ              | MVP           |
 | 3         | Xác minh gia sư và trang quản trị cơ bản    | MVP           |
 | 4         | Bài đăng và tìm kiếm (marketplace)          | MVP           |
@@ -64,24 +65,26 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 ### Giai đoạn 0. Chuẩn bị và chốt quyết định
 
+> **Hoàn thành ngày 2026-11-12.** Các việc bên ngoài (pháp lý, tên miền, khu vực pilot) đã chuyển sang [Việc của chủ dự án](#5-việc-của-chủ-dự-án) _(D47)_.
+
 **Mục tiêu:** có đủ quyết định và tài liệu để thiết kế mà không phải đoán.
 
 **Công việc:**
 
-1. ~~Chép các quyết định sang decision log~~: **xong ngày 2026-11-12** ([decision log](00-product/decision-log.md), D1–D45, C1–C13).
+1. ~~Chép các quyết định sang decision log~~: **xong ngày 2026-11-12** ([decision log](00-product/decision-log.md), D1–D47, C1–C13).
 2. ~~Đồng bộ mô tả nghiệp vụ, tài liệu công nghệ và `CLAUDE.md` theo decision log~~: **xong ngày 2026-11-12**.
 3. ~~Lập bảng thuật ngữ Việt–Anh dùng cho code~~: **bản nháp xong ngày 2026-11-12** ([thuật ngữ và sơ đồ trạng thái](thuat_ngu_va_trang_thai.md), Phần A), đã duyệt.
 4. ~~Vẽ sơ đồ trạng thái~~: **bản nháp xong ngày 2026-11-12** (cùng tài liệu, Phần B: kết nối, bài đăng, hồ sơ gia sư, lớp, buổi học, xác nhận buổi, khiếu nại, kiểm duyệt, học phí), đã duyệt; quy tắc bổ sung chốt thành D30–D41.
 5. Thiết kế cơ sở dữ liệu tổng thể: **bản nháp xong ngày 2026-11-12** ([thiết kế cơ sở dữ liệu](thiet_ke_co_so_du_lieu.md)), đã review và chốt các giả định (D21–D28).
 6. Chọn nguồn danh mục đơn vị hành chính: **đề xuất xong ngày 2026-11-12** ([danh mục hành chính](danh_muc_hanh_chinh.md)), đã duyệt (D42–D44).
-7. Chốt chỉ số thành công cho pilot: **đã chốt ngày 2026-11-12** (D45: 10 gia sư đã xác minh, 30 phụ huynh, 5 lớp, ≥ 50% lớp còn học sau 4 tuần; không đặt ngưỡng dừng). Còn mở: chọn khu vực pilot.
-8. Gửi luật sư rà soát: **danh sách câu hỏi đã soạn ngày 2026-11-12** ([câu hỏi pháp lý](00-product/cau_hoi_phap_ly.md), 25 câu); chờ chủ dự án điền thông tin đơn vị vận hành và gửi luật sư.
-9. Phác thảo wireframe các màn hình chính của web (công khai, phụ huynh, gia sư, học sinh, Manager, Admin).
-10. Đăng ký tên miền cho TPS-Connection _(D1)_.
+7. Chốt chỉ số thành công cho pilot: **đã chốt ngày 2026-11-12** (D45: 10 gia sư đã xác minh, 30 phụ huynh, 5 lớp, ≥ 50% lớp còn học sau 4 tuần; không đặt ngưỡng dừng). Khu vực pilot: chuyển sang việc của chủ dự án.
+8. Soạn câu hỏi rà soát pháp lý: **xong ngày 2026-11-12** ([câu hỏi pháp lý](00-product/cau_hoi_phap_ly.md), 25 câu). Việc gửi luật sư: chuyển sang việc của chủ dự án.
+9. Wireframe các màn hình chính: **đã duyệt ngày 2026-11-12** _(D46)_, 9 màn hình ([canvas wireframe](https://claude.ai/artifact/P1UHBGsARFepZiutNESYR2)). Duyệt về nội dung và luồng; hình thức và các màn hình chưa vẽ (đăng ký/đăng nhập, bài tìm gia sư, tin nhắn đầy đủ, học sinh, Admin) làm ở G1b.
+10. Đăng ký tên miền: chuyển sang việc của chủ dự án.
 
-**Đầu ra:** decision log, glossary, sơ đồ trạng thái, tài liệu thiết kế CSDL, wireframe, danh sách câu hỏi pháp lý đã gửi.
+**Đầu ra:** decision log, glossary, sơ đồ trạng thái, tài liệu thiết kế CSDL, nguồn danh mục hành chính, chỉ số pilot, danh sách câu hỏi pháp lý, wireframe.
 
-**Hoàn thành khi:** chủ dự án duyệt thiết kế CSDL và sơ đồ trạng thái.
+**Hoàn thành khi:** chủ dự án duyệt thiết kế CSDL và sơ đồ trạng thái. ✅ Đạt; các việc còn lại đã xong hoặc chuyển sang việc của chủ dự án.
 
 ### Giai đoạn 1. Nền móng kỹ thuật
 
@@ -102,6 +105,24 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 **Đầu ra:** `npm run dev` chạy API, web và các dịch vụ phụ; CI xanh; một trang mẫu gọi được API.
 
 **Hoàn thành khi:** lập trình viên mới clone repo và chạy được toàn bộ hệ thống chỉ với hướng dẫn trong README.
+
+### Giai đoạn 1b. Thiết kế giao diện
+
+**Mục tiêu:** có giao diện hoàn chỉnh, thống nhất cho Web trước khi bắt đầu code giao diện ở G2. Làm song song với G1 _(D46)_.
+
+**Đầu vào cần chủ dự án cung cấp:** logo và màu thương hiệu (nếu có); cảm giác muốn người dùng có (tin cậy, thân thiện hay năng động) hoặc sản phẩm tham khảo; có cần chế độ tối ngay từ MVP không.
+
+**Công việc:**
+
+1. **Hệ thống thiết kế:** màu (chính, phụ, màu trạng thái như chờ, đã xác nhận, quá hạn), font và thang cỡ chữ (hỗ trợ tiếng Việt), khoảng cách, bo góc, đổ bóng, icon; các thành phần: nút, ô nhập, chọn, thẻ, bảng, nhãn trạng thái, thông báo, hộp thoại, thanh điều hướng. Đạt chuẩn tương phản (WCAG AA), vùng bấm tối thiểu 44 px.
+2. **Logo:** logo dạng chữ dùng tạm; logo chính thức nên do designer chuyên nghiệp làm.
+3. **Giao diện hoàn chỉnh 9 màn hình đã có wireframe**, mỗi màn hình có bản máy tính và bản điện thoại.
+4. **Các màn hình chưa vẽ:** đăng ký, đăng nhập, xác thực email, quên mật khẩu; tạo hồ sơ con và mời học sinh; bài tìm gia sư (đăng và xem); trang tin nhắn; giao diện học sinh; trang Admin (tài khoản, danh mục); các trạng thái rỗng, đang tải, lỗi.
+5. **Chuyển giao cho code:** bộ token (màu, font, khoảng cách) để đưa vào cấu hình Tailwind và theme shadcn/ui.
+
+**Đầu ra:** hệ thống thiết kế, giao diện các màn hình MVP (máy tính và điện thoại), bộ token.
+
+**Hoàn thành khi:** chủ dự án duyệt hệ thống thiết kế và giao diện các màn hình dùng ở G2; bộ token đã đưa vào cấu hình web.
 
 ### Giai đoạn 2. Tài khoản, phân quyền và hồ sơ
 
@@ -292,13 +313,14 @@ Thứ tự sẽ quyết định dựa trên kết quả pilot. Các hạng mục
 ## 4. Phụ thuộc và khả năng làm song song
 
 ```
-G0 ─► G1 ─► G2 ─┬─► G3 ─► G4 ─► G5 ─► G6 ─► G7 ─► G8 ─► G9
-                │                                    ▲
-                └── danh mục, hồ sơ dùng chung ──────┘
-                                         G9 ─► G10 (Mobile)
-                                         G9 ─► G11 (Học tập)
+G0 ─┬─► G1 ──┬─► G2 ─┬─► G3 ─► G4 ─► G5 ─► G6 ─► G7 ─► G8 ─► G9
+    └─► G1b ─┘       │                                    ▲
+                     └── danh mục, hồ sơ dùng chung ──────┘
+                                              G9 ─► G10 (Mobile)
+                                              G9 ─► G11 (Học tập)
 ```
 
+- G1 và G1b chạy song song; G2 cần cả hai (khung kỹ thuật và giao diện đã duyệt). Các màn hình của giai đoạn sau có thể được thiết kế tiếp trong lúc code giai đoạn trước, miễn là xong trước khi giai đoạn đó bắt đầu.
 - G3 (xác minh) phải xong trước G4 vì chỉ gia sư đã xác minh được đăng bài và hiển thị công khai.
 - G5 phải xong trước G6 vì lớp học được tạo từ điều kiện hợp tác đã xác nhận.
 - G7 phụ thuộc dữ liệu buổi học và xác nhận buổi của G6.
@@ -307,7 +329,18 @@ G0 ─► G1 ─► G2 ─┬─► G3 ─► G4 ─► G5 ─► G6 ─► G7 �
 
 ---
 
-## 5. Việc cần làm tiếp
+## 5. Việc của chủ dự án
 
-1. Chủ dự án duyệt kế hoạch này và cho biết quy mô đội ngũ, số giờ mỗi tuần, ngân sách hạ tầng để ước lượng thời gian từng giai đoạn.
-2. Hoàn tất giai đoạn 0, bắt đầu bằng thiết kế cơ sở dữ liệu và bảng thuật ngữ.
+Các việc bên ngoài, không chặn việc viết code nhưng có hạn chót _(D47)_:
+
+| Việc | Hạn | Ghi chú |
+| ---- | --- | ------- |
+| Điền thông tin đơn vị vận hành và gửi [câu hỏi pháp lý](00-product/cau_hoi_phap_ly.md) cho luật sư | Trước G8; nên gửi sớm vì luật sư cần thời gian | Kết quả có thể làm thay đổi các mốc 30 ngày (C4), 6 tháng (C2), ngưỡng tuổi tài khoản học sinh (D4) |
+| Đăng ký tên miền cho TPS-Connection _(D1)_ | Trước G8 | Cần cho HTTPS và bundle ID của app Mobile |
+| Chọn khu vực pilot _(D11, D45)_ | Trước G9 | Nên chọn nơi có sẵn nguồn gia sư hoặc kênh tiếp cận phụ huynh |
+| Cung cấp đầu vào cho thiết kế giao diện (G1b) | Khi bắt đầu G1b | Logo, màu, cảm giác thương hiệu, chế độ tối |
+| Cho biết quy mô đội ngũ, số giờ mỗi tuần, ngân sách hạ tầng | Khi có thể | Để ước lượng thời gian từng giai đoạn (C13) |
+
+## 6. Việc cần làm tiếp
+
+1. Bắt đầu G1 (nền móng kỹ thuật) và G1b (thiết kế giao diện) song song.

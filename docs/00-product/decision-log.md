@@ -108,3 +108,10 @@ Chi tiết ở [danh mục hành chính](../danh_muc_hanh_chinh.md).
 | Mã  | Chủ đề | Quyết định |
 | --- | ------ | ---------- |
 | D45 | Chỉ số thành công của pilot 12 tuần | Thay cho đề xuất ở C13. Mục tiêu: **10** gia sư đã xác minh danh tính, **30** phụ huynh đăng ký, **5** lớp được tạo từ kết nối, **≥ 50%** lớp còn học sau 4 tuần (có buổi học đã diễn ra từ tuần thứ 4). Theo dõi thêm, không đặt mục tiêu: tỷ lệ chuyển đổi gửi yêu cầu → chấp nhận → xác nhận hợp tác, thời gian duyệt xác minh, tỷ lệ buổi học được phụ huynh xác nhận so với tự chốt, số khiếu nại và báo cáo vi phạm. **Không đặt ngưỡng dừng**: chỉ số dùng để tham khảo, quyết định bước tiếp theo sau khi xem kết quả. Khu vực pilot: chưa chọn. |
+
+## 8. Đóng giai đoạn 0 ngày 2026-11-12 (D46–D47)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D46 | Wireframe và thiết kế giao diện | Duyệt wireframe 9 màn hình MVP về **nội dung và luồng**; hình thức (màu, font, icon, chi tiết bố cục, bản điện thoại) và các màn hình chưa vẽ do giai đoạn thiết kế giao diện mới (G1b) quyết định. Làm thiết kế giao diện chuẩn ngay từ đầu, song song với G1, xong trước G2. |
+| D47 | Việc bên ngoài của G0 | Pháp lý (gửi luật sư), đăng ký tên miền và chọn khu vực pilot chuyển thành việc của chủ dự án: pháp lý và tên miền trước G8, khu vực pilot trước G9. G0 được coi là hoàn thành. |
