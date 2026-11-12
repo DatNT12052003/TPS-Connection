@@ -16,6 +16,7 @@ export const en: Messages = {
     en: 'English',
   },
   errors: {
+    bad_request: 'The request was not in the expected format. Reload the page and try again.',
     validation_failed: 'Some details are not valid. Check the highlighted fields.',
     unauthenticated: 'Your session has expired. Please sign in again.',
     forbidden: 'You do not have permission to do this.',

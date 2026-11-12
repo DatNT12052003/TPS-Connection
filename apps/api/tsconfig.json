@@ -1,0 +1,12 @@
+{
+  "extends": "@tps/config/tsconfig/node.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    // Decorator của TypeORM (kiểu cũ). KHÔNG bật emitDecoratorMetadata: tsx (dev) không sinh metadata,
+    // nên mọi @Column phải ghi rõ `type`, để dev, test và build chạy giống nhau.
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false
+  },
+  "include": ["src", "test"]
+}

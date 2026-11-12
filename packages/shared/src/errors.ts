@@ -3,6 +3,7 @@
 import { z } from 'zod';
 
 export const ErrorCode = z.enum([
+  'bad_request',
   'validation_failed',
   'unauthenticated',
   'forbidden',
@@ -17,6 +18,7 @@ export type ErrorCode = z.infer<typeof ErrorCode>;
 
 /** HTTP status tương ứng với từng mã lỗi. */
 export const ERROR_HTTP_STATUS = {
+  bad_request: 400,
   validation_failed: 422,
   unauthenticated: 401,
   forbidden: 403,

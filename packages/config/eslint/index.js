@@ -59,6 +59,16 @@ export function createConfig({ tsconfigRootDir, extra = [], ignores = [] }) {
       files: ['**/*.{js,mjs,cjs}'],
       extends: [tseslint.configs.disableTypeChecked],
     },
+    // Test: body của Supertest/fetch có kiểu any, bản giả thường là hàm async không await.
+    {
+      files: ['**/*.test.{ts,tsx}', '**/test/**/*.{ts,tsx}'],
+      rules: {
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+        '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unsafe-argument': 'off',
+        '@typescript-eslint/require-await': 'off',
+      },
+    },
     ...extra,
     // Để Prettier lo định dạng; tắt các rule ESLint xung đột.
     prettier,

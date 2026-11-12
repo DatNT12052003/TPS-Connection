@@ -17,6 +17,7 @@ export const vi = {
     en: 'English',
   },
   errors: {
+    bad_request: 'Yêu cầu gửi lên không đúng định dạng. Hãy tải lại trang rồi thử lại.',
     validation_failed: 'Một số thông tin chưa hợp lệ. Hãy kiểm tra các ô được đánh dấu.',
     unauthenticated: 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.',
     forbidden: 'Bạn không có quyền thực hiện thao tác này.',
