@@ -13,8 +13,9 @@ import tseslint from 'typescript-eslint';
  * @param {string} options.tsconfigRootDir Thư mục chứa tsconfig.json của package (thường là import.meta.dirname).
  * @param {import('typescript-eslint').ConfigArray} [options.extra] Cấu hình bổ sung riêng của package.
  * @param {string[]} [options.ignores] Đường dẫn bỏ qua thêm.
+ * @param {boolean} [options.browser] Thêm biến toàn cục của trình duyệt (window, document…) cho app web.
  */
-export function createConfig({ tsconfigRootDir, extra = [], ignores = [] }) {
+export function createConfig({ tsconfigRootDir, extra = [], ignores = [], browser = false }) {
   return tseslint.config(
     { ignores: ['dist/**', 'build/**', 'coverage/**', '.turbo/**', ...ignores] },
     js.configs.recommended,
@@ -23,7 +24,7 @@ export function createConfig({ tsconfigRootDir, extra = [], ignores = [] }) {
       languageOptions: {
         ecmaVersion: 2023,
         sourceType: 'module',
-        globals: { ...globals.node },
+        globals: { ...globals.node, ...(browser && globals.browser) },
         parserOptions: { projectService: true, tsconfigRootDir },
       },
       plugins: { import: importPlugin },

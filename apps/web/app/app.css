@@ -1,0 +1,5 @@
+/* Tailwind v4 + preset TPS (token màu sáng/tối, chữ, khoảng cách, bo góc, đổ bóng, biến shadcn/ui).
+   Không thêm biến màu ở đây: mọi màu lấy từ @tps/config (xem packages/config/README.md).
+   Khi `npx shadcn add` chèn khối :root { --background: … } / .dark { … } vào tệp này thì xóa khối đó đi. */
+@import 'tailwindcss';
+@import '@tps/config/tailwind.css';

@@ -4,7 +4,9 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": ["VITE_API_URL"],
+      "outputs": ["dist/**", "build/**"]
     },
     "type-check": {
       "dependsOn": ["^build"]

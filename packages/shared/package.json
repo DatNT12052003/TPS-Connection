@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@tps/config": "^0.0.0",
-    "vitest": "^3.2.7"
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "zod": "^4.6.7"
