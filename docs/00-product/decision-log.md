@@ -115,3 +115,9 @@ Chi tiết ở [danh mục hành chính](../danh_muc_hanh_chinh.md).
 | --- | ------ | ---------- |
 | D46 | Wireframe và thiết kế giao diện | Duyệt wireframe 9 màn hình MVP về **nội dung và luồng**; hình thức (màu, font, icon, chi tiết bố cục, bản điện thoại) và các màn hình chưa vẽ do giai đoạn thiết kế giao diện mới (G1b) quyết định. Làm thiết kế giao diện chuẩn ngay từ đầu, song song với G1, xong trước G2. |
 | D47 | Việc bên ngoài của G0 | Pháp lý (gửi luật sư), đăng ký tên miền và chọn khu vực pilot chuyển thành việc của chủ dự án: pháp lý và tên miền trước G8, khu vực pilot trước G9. G0 được coi là hoàn thành. |
+
+## 9. Thiết kế giao diện ngày 2026-11-12 (D48)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D48 | Hướng thương hiệu | **Hướng A**: màu chính xanh dương `#1D4ED8` (chế độ tối `#8AAEFF`), màu nhấn cam `#F97316` (tối `#FDBA74`), font Be Vietnam Pro, bo góc vừa (thẻ 14 px, nút 10 px). Có chế độ sáng và tối ngay từ MVP. Logo dạng chữ dùng tạm (hai chấm nối bằng đường cong); logo chính thức do designer làm sau. Tham khảo: [canvas hướng thương hiệu](https://claude.ai/artifact/J8wj5FypcPZRJA7gwwy8mg). |
