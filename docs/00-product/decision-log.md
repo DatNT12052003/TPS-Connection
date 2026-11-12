@@ -92,3 +92,13 @@ Chi tiết từng luồng chuyển trạng thái nằm ở [thuật ngữ và s�
 | D39 | Khiếu nại lại quyết định kiểm duyệt | Trong 7 ngày kể từ quyết định, mỗi vụ một lần, do Admin xử lý. Người báo cáo được biết báo cáo đã xử lý xong nhưng không biết chi tiết chế tài. |
 | D40 | Phát hành bảng học phí tháng | Phát hành ngay ngày 1, không qua bước nháp. Điều chỉnh (giảm giá, phụ thu) đưa vào bảng tháng sau. |
 | D41 | Khi nào thanh toán được tính là đã trả | Chỉ khi bên còn lại xác nhận khoản thanh toán đó. |
+
+## 6. Danh mục đơn vị hành chính ngày 2026-11-12 (D42–D44)
+
+Chi tiết ở [danh mục hành chính](../danh_muc_hanh_chinh.md).
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D42 | Nguồn dữ liệu danh mục hành chính | Nạp từ bộ dữ liệu mở `vietnamese-provinces-database` (MIT), cố định một bản phát hành (hiện là v5.2.0). Đối chiếu với Excel xuất từ danhmuchanhchinh.nso.gov.vn (Cục Thống kê) trước mỗi lần nạp; có sai lệch thì dừng và kiểm tra văn bản gốc. |
+| D43 | Tần suất cập nhật danh mục | Kiểm tra hằng tháng và ngay khi có nghị quyết sắp xếp mới. Script nạp chạy chế độ so sánh trước, Admin duyệt rồi mới ghi. |
+| D44 | Lưu danh mục | Mã là khóa ổn định; đổi tên, đổi loại cập nhật tại chỗ; sáp nhập, chia tách thì đơn vị cũ `is_active = false`, không xóa. Bảng có loại đơn vị, tên đầy đủ, tên tiếng Anh, mã bưu chính. |

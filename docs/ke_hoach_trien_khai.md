@@ -6,7 +6,7 @@ Tài liệu này chia việc phát triển TPS-Connection thành các giai đo�
 
 - [Mô tả nghiệp vụ](mo_ta_nghiep_vu.md): phạm vi bản đầu ở §15.1, mở rộng ở §15.2, quy tắc ở §16.
 - [Công nghệ sử dụng](cong_nghe_su_dung.md): stack và hạ tầng.
-- [Decision log](00-product/decision-log.md): các quyết định D1–D41 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
+- [Decision log](00-product/decision-log.md): các quyết định D1–D44 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
 
 > Trạng thái: **đề xuất**. Chưa ước lượng thời gian theo tuần vì chưa có quy mô đội ngũ, số giờ làm việc và ngân sách (C13). Thứ tự giai đoạn là thứ tự phụ thuộc; khi có nguồn lực, một số giai đoạn có thể chạy song song như ghi chú ở mục 4.
 
@@ -68,12 +68,12 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Công việc:**
 
-1. ~~Chép các quyết định sang decision log~~: **xong ngày 2026-11-12** ([decision log](00-product/decision-log.md), D1–D41, C1–C13).
+1. ~~Chép các quyết định sang decision log~~: **xong ngày 2026-11-12** ([decision log](00-product/decision-log.md), D1–D44, C1–C13).
 2. ~~Đồng bộ mô tả nghiệp vụ, tài liệu công nghệ và `CLAUDE.md` theo decision log~~: **xong ngày 2026-11-12**.
 3. ~~Lập bảng thuật ngữ Việt–Anh dùng cho code~~: **bản nháp xong ngày 2026-11-12** ([thuật ngữ và sơ đồ trạng thái](thuat_ngu_va_trang_thai.md), Phần A), đã duyệt.
 4. ~~Vẽ sơ đồ trạng thái~~: **bản nháp xong ngày 2026-11-12** (cùng tài liệu, Phần B: kết nối, bài đăng, hồ sơ gia sư, lớp, buổi học, xác nhận buổi, khiếu nại, kiểm duyệt, học phí), đã duyệt; quy tắc bổ sung chốt thành D30–D41.
 5. Thiết kế cơ sở dữ liệu tổng thể: **bản nháp xong ngày 2026-11-12** ([thiết kế cơ sở dữ liệu](thiet_ke_co_so_du_lieu.md)), đã review và chốt các giả định (D21–D28).
-6. Chọn nguồn danh mục đơn vị hành chính còn hiệu lực sau đợt sắp xếp tỉnh, xã năm 2025.
+6. Chọn nguồn danh mục đơn vị hành chính: **đề xuất xong ngày 2026-11-12** ([danh mục hành chính](danh_muc_hanh_chinh.md)), đã duyệt (D42–D44).
 7. Chốt chỉ số thành công cho pilot _(C13, đề xuất)_: sau 12 tuần có 30 gia sư đã xác minh, 100 phụ huynh đăng ký, 20 lớp được tạo từ kết nối, ít nhất 60% lớp còn học sau 4 tuần.
 8. Gửi luật sư rà soát: đồng ý xử lý dữ liệu cá nhân của trẻ, ngưỡng tuổi tài khoản học sinh, lưu giữ giấy tờ tùy thân (mốc 30 ngày), mốc xóa dữ liệu 6 tháng, lưu trữ dữ liệu tại Việt Nam.
 9. Phác thảo wireframe các màn hình chính của web (công khai, phụ huynh, gia sư, học sinh, Manager, Admin).

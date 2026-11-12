@@ -166,18 +166,25 @@ CREATE TABLE grade_levels (
 );
 
 CREATE TABLE administrative_areas (
-  id          integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  code        text    NOT NULL UNIQUE,              -- mã đơn vị hành chính chính thức
-  level       text    NOT NULL CHECK (level IN ('province','commune')),
-  parent_id   integer REFERENCES administrative_areas(id),
-  name        text    NOT NULL,                     -- địa danh không dịch
-  name_ascii  text    NOT NULL,                     -- không dấu, để tìm kiếm
-  latitude    numeric(9,6),                         -- để dành cho lọc bán kính (D11)
-  longitude   numeric(9,6),
-  is_active   boolean NOT NULL DEFAULT true,
-  valid_from  date,                                 -- hỗ trợ thay đổi địa giới (sắp xếp 2025)
-  valid_to    date,
-  CHECK ((level = 'province') = (parent_id IS NULL))
+  id           integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  code         text    NOT NULL UNIQUE,             -- mã chính thức (QĐ 19/2025/QĐ-TTg); không đổi khi đổi tên/loại
+  level        text    NOT NULL CHECK (level IN ('province','commune')),
+  unit_type    text    NOT NULL CHECK (unit_type IN ('province','municipality',          -- cấp tỉnh
+                                                     'commune','ward','special_zone')),    -- cấp xã
+  parent_id    integer REFERENCES administrative_areas(id),
+  name         text    NOT NULL,                    -- "Ba Đình"
+  full_name    text    NOT NULL,                    -- "Phường Ba Đình"
+  name_en      text,                                -- từ nguồn dữ liệu (C11)
+  name_ascii   text    NOT NULL,                    -- không dấu, để tìm kiếm
+  postal_code  text,
+  latitude     numeric(9,6),                        -- để dành cho lọc bán kính (D11)
+  longitude    numeric(9,6),
+  is_active    boolean NOT NULL DEFAULT true,
+  valid_from   date,                                -- ngày văn bản thành lập có hiệu lực
+  valid_to     date,                                -- khi bị sáp nhập / chia tách
+  CHECK ((level = 'province') = (parent_id IS NULL)),
+  CHECK ((level = 'province') = (unit_type IN ('province','municipality'))),
+  CHECK (level = 'province' AND code ~ '^[0-9]{2}$' OR level = 'commune' AND code ~ '^[0-9]{5}$')
   -- + timestamps
 );
 CREATE INDEX administrative_areas_parent_idx ON administrative_areas (parent_id) WHERE is_active;
@@ -185,7 +192,7 @@ CREATE INDEX administrative_areas_parent_idx ON administrative_areas (parent_id)
 
 **Ghi chú:**
 
-- Danh mục hành chính hai cấp tỉnh – xã theo sắp xếp năm 2025. Đơn vị cũ không xóa mà đặt `is_active = false` và `valid_to`, để dữ liệu cũ vẫn tham chiếu được.
+- Danh mục hành chính hai cấp tỉnh – xã theo sắp xếp năm 2025. Đổi tên hoặc đổi loại (tỉnh → thành phố, xã → phường) giữ nguyên mã nên **cập nhật tại chỗ**. Sáp nhập, chia tách sinh mã mới: đơn vị cũ không xóa mà đặt `is_active = false` và `valid_to`, để dữ liệu cũ vẫn tham chiếu được. Nguồn dữ liệu và quy trình cập nhật: [danh mục hành chính](danh_muc_hanh_chinh.md).
 - Danh mục chỉ Admin sửa; không xóa bản ghi đã được tham chiếu, chỉ ẩn bằng `is_active`.
 
 ---
