@@ -1,0 +1,158 @@
+/*
+ * Preset Tailwind CSS v4 cho TPS-Connection.
+ * Ứng dụng nạp sau Tailwind:
+ *   @import "tailwindcss";
+ *   @import "@tps/config/tailwind.css";
+ * Giá trị nằm ở tokens.css (sinh từ tokens.json); tệp này chỉ đặt tên lớp Tailwind cho các biến đó.
+ */
+@import "./tokens.css";
+
+/* dark: áp dụng khi <html data-theme="dark">, hoặc khi hệ điều hành ở chế độ tối và người dùng chưa chọn "light". */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
+@theme inline {
+  /* Màu theo tên shadcn/ui: bg-background, text-foreground, bg-primary, text-muted-foreground, border-input, ring-ring… */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Màu riêng của TPS, không có tên tương ứng trong shadcn/ui. */
+  --color-primary-hover: var(--tps-primary-hover);
+  --color-primary-subtle: var(--tps-primary-subtle);
+  --color-primary-subtle-foreground: var(--tps-primary-subtle-fg);
+  --color-surface: var(--tps-surface);
+  --color-surface-raised: var(--tps-surface-raised);
+  --color-surface-sunken: var(--tps-surface-sunken);
+  --color-border-strong: var(--tps-border-strong);
+  /* Cam của TPS đặt tên brand-accent để không đụng "accent" của shadcn. Chỉ để trang trí, không làm màu chữ trên nền sáng. */
+  --color-brand-accent: var(--tps-accent);
+  --color-brand-accent-subtle: var(--tps-accent-subtle);
+  --color-brand-accent-subtle-foreground: var(--tps-accent-subtle-fg);
+  /* Trạng thái: text-success trên bg-success-subtle… Luôn đi kèm chữ, không chỉ dựa vào màu. */
+  --color-success: var(--tps-success);
+  --color-success-subtle: var(--tps-success-subtle);
+  --color-warning: var(--tps-warning);
+  --color-warning-subtle: var(--tps-warning-subtle);
+  --color-danger: var(--tps-danger);
+  --color-danger-subtle: var(--tps-danger-subtle);
+  --color-danger-solid: var(--tps-danger-solid);
+  --color-danger-solid-foreground: var(--tps-danger-solid-fg);
+
+  --font-sans: var(--tps-font-sans);
+
+  /* Kiểu chữ: text-display, text-h1 … text-overline (cỡ, line-height, độ đậm, giãn chữ đi cùng nhau). */
+  --text-display: var(--tps-text-display-size);
+  --text-display--line-height: var(--tps-text-display-line-height);
+  --text-display--font-weight: var(--tps-text-display-weight);
+  --text-display--letter-spacing: var(--tps-text-display-letter-spacing);
+  --text-h1: var(--tps-text-h1-size);
+  --text-h1--line-height: var(--tps-text-h1-line-height);
+  --text-h1--font-weight: var(--tps-text-h1-weight);
+  --text-h1--letter-spacing: var(--tps-text-h1-letter-spacing);
+  --text-h2: var(--tps-text-h2-size);
+  --text-h2--line-height: var(--tps-text-h2-line-height);
+  --text-h2--font-weight: var(--tps-text-h2-weight);
+  --text-h2--letter-spacing: var(--tps-text-h2-letter-spacing);
+  --text-h3: var(--tps-text-h3-size);
+  --text-h3--line-height: var(--tps-text-h3-line-height);
+  --text-h3--font-weight: var(--tps-text-h3-weight);
+  --text-h3--letter-spacing: var(--tps-text-h3-letter-spacing);
+  --text-body-lg: var(--tps-text-body-lg-size);
+  --text-body-lg--line-height: var(--tps-text-body-lg-line-height);
+  --text-body-lg--font-weight: var(--tps-text-body-lg-weight);
+  --text-body-lg--letter-spacing: var(--tps-text-body-lg-letter-spacing);
+  --text-body: var(--tps-text-body-size);
+  --text-body--line-height: var(--tps-text-body-line-height);
+  --text-body--font-weight: var(--tps-text-body-weight);
+  --text-body--letter-spacing: var(--tps-text-body-letter-spacing);
+  --text-body-strong: var(--tps-text-body-strong-size);
+  --text-body-strong--line-height: var(--tps-text-body-strong-line-height);
+  --text-body-strong--font-weight: var(--tps-text-body-strong-weight);
+  --text-body-strong--letter-spacing: var(--tps-text-body-strong-letter-spacing);
+  --text-small: var(--tps-text-small-size);
+  --text-small--line-height: var(--tps-text-small-line-height);
+  --text-small--font-weight: var(--tps-text-small-weight);
+  --text-small--letter-spacing: var(--tps-text-small-letter-spacing);
+  --text-label: var(--tps-text-label-size);
+  --text-label--line-height: var(--tps-text-label-line-height);
+  --text-label--font-weight: var(--tps-text-label-weight);
+  --text-label--letter-spacing: var(--tps-text-label-letter-spacing);
+  --text-overline: var(--tps-text-overline-size);
+  --text-overline--line-height: var(--tps-text-overline-line-height);
+  --text-overline--font-weight: var(--tps-text-overline-weight);
+  --text-overline--letter-spacing: var(--tps-text-overline-letter-spacing);
+
+  /* Khoảng cách: lưới 4 px trùng với thang mặc định của Tailwind (p-1 = space-1 = 4px … p-16 = space-16 = 64px). */
+  --spacing: 0.25rem;
+  /* Vùng bấm: h-control-md (44px, tối thiểu), h-control-lg (52px). */
+  --spacing-control-md: var(--tps-control-md);
+  --spacing-control-lg: var(--tps-control-lg);
+  /* Chiều rộng nội dung tối đa: max-w-page. */
+  --container-page: var(--tps-container-max);
+
+  /* Bo góc: rounded-sm 6, rounded-md 10 (nút, ô nhập), rounded-lg 14 (thẻ), rounded-xl 20 (hộp thoại), rounded-full. */
+  --radius-sm: var(--tps-radius-sm);
+  --radius-md: var(--tps-radius-md);
+  --radius-lg: var(--tps-radius-lg);
+  --radius-xl: var(--tps-radius-xl);
+
+  /* Đổ bóng đổi theo chế độ sáng/tối. */
+  --shadow-sm: var(--tps-shadow-sm);
+  --shadow-md: var(--tps-shadow-md);
+  --shadow-lg: var(--tps-shadow-lg);
+}
+
+/* Điểm ngắt: phải là giá trị tĩnh (không dùng var() trong media query). Trùng bp-sm/md/lg/xl của tokens.json. */
+@theme {
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--tps-font-sans);
+    font-size: var(--tps-text-body-size);
+    line-height: var(--tps-text-body-line-height);
+  }
+
+  /* Vòng focus bàn phím: 2px, cách phần tử 2px. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
