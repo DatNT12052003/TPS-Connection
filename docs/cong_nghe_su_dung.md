@@ -22,7 +22,7 @@ TPS-Connection/
 | Thành phần                        | Công nghệ chính                                      |
 | --------------------------------- | ---------------------------------------------------- |
 | Ngôn ngữ                          | TypeScript (strict) cho toàn bộ dự án                |
-| Monorepo                          | pnpm workspaces + Turborepo                          |
+| Monorepo                          | npm workspaces + Turborepo (D29)                     |
 | API                               | Node.js (LTS) + Express + TypeORM                    |
 | Cơ sở dữ liệu                     | PostgreSQL                                           |
 | Cache / hàng đợi / realtime scale | Redis                                                |
@@ -164,7 +164,7 @@ Chia module theo nghiệp vụ: `auth`, `users`, `tutors`, `students`, `posts`, 
 
 | Nhóm                       | Công cụ                                                                                                     |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Quản lý package / monorepo | `pnpm`, `turbo`                                                                                             |
+| Quản lý package / monorepo | `npm` (workspaces), `turbo`                                                                                           |
 | Chất lượng code            | `eslint` (typescript-eslint), `prettier`, `husky`, `lint-staged`                                            |
 | Môi trường local           | Docker Compose: PostgreSQL, Redis, MinIO, Mailpit (bắt email test)                                          |
 | CI                         | GitHub Actions: lint, type-check, test, build                                                               |
@@ -255,3 +255,9 @@ Internet ── tên miền (HTTPS) ── Caddy (reverse proxy, tự cấp SSL 
    - Khi triển khai, web không còn là file tĩnh thuần mà cần một tiến trình Node chạy SSR phía sau Caddy.
 6. Tên sản phẩm.
    => **Đã chốt (D1): TPS-Connection**, dùng cho tên hiển thị, tên miền và bundle ID của app Mobile.
+7. Trình quản lý package: npm hay pnpm.
+   => **Đã chốt (D29): npm** (workspaces) + Turborepo, vì đội quen npm.
+   - Khai báo các app trong trường `workspaces` của `package.json` gốc; package nội bộ tham chiếu bằng tên và phiên bản (ví dụ `"@tps/shared": "*"`).
+   - Chạy lệnh cho từng app bằng `npm run <script> -w apps/api` hoặc qua Turborepo (`npx turbo run build --filter=api`).
+   - Commit `package-lock.json`; CI dùng `npm ci`.
+   - Lưu ý: npm cho phép import thư viện chưa khai báo trong `package.json` của app (do cài phẳng). Bật rule ESLint `import/no-extraneous-dependencies` để bắt lỗi này.

@@ -4,7 +4,7 @@ Tài liệu này thiết kế schema PostgreSQL cho toàn bộ hệ thống: b�
 
 **Căn cứ:** [mô tả nghiệp vụ](mo_ta_nghiep_vu.md), [decision log](00-product/decision-log.md) (mã quyết định ghi trong ngoặc, ví dụ _(D15)_), [công nghệ sử dụng](cong_nghe_su_dung.md), [kế hoạch triển khai](ke_hoach_trien_khai.md).
 
-> Trạng thái: **bản thiết kế để review** (giai đoạn G0). DDL trong tài liệu là đặc tả, chưa phải migration chạy được: các cột `created_at`, `updated_at` được viết tắt là `-- + timestamps` (xem mục 1.3). Migration thật sẽ viết bằng TypeORM theo từng giai đoạn ở mục 14.
+> Trạng thái: **đã review, các giả định đã được chốt ngày 2026-11-12** (giai đoạn G0). DDL trong tài liệu là đặc tả, chưa phải migration chạy được: các cột `created_at`, `updated_at` được viết tắt là `-- + timestamps` (xem mục 1.3). Migration thật sẽ viết bằng TypeORM theo từng giai đoạn ở mục 14.
 
 ---
 
@@ -1009,7 +1009,7 @@ CREATE TABLE fee_statements (                         -- bảng học phí thán
   status           text NOT NULL DEFAULT 'draft'
                      CHECK (status IN ('draft','issued','partially_paid','paid','void')),
   issued_at        timestamptz,
-  due_date         date,
+  due_date         date,                           -- ngày 5 của tháng kế tiếp (D24)
   UNIQUE (enrollment_id, period_month)
   -- + timestamps
 );
@@ -1266,7 +1266,10 @@ CREATE TABLE reviews (
   id                   uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tutor_id             uuid NOT NULL REFERENCES tutor_profiles(user_id),
   reviewer_user_id     uuid NOT NULL REFERENCES users(id),
+  reviewer_role        text NOT NULL CHECK (reviewer_role IN ('client','student')),   -- D22
   basis_enrollment_id  uuid NOT NULL REFERENCES class_enrollments(id),  -- quan hệ học tập làm căn cứ
+  display_mode         text NOT NULL CHECK (display_mode IN ('named','anonymous_student')),
+  reviewer_grade_level_id integer REFERENCES grade_levels(id),  -- ảnh chụp cấp lớp để hiện "Học sinh lớp 8"
   rating_teaching      smallint NOT NULL CHECK (rating_teaching BETWEEN 1 AND 5),
   rating_communication smallint NOT NULL CHECK (rating_communication BETWEEN 1 AND 5),
   rating_punctuality   smallint NOT NULL CHECK (rating_punctuality BETWEEN 1 AND 5),
@@ -1276,7 +1279,8 @@ CREATE TABLE reviews (
                          + rating_punctuality + rating_cooperation + rating_progress) / 5.0) STORED,
   comment              text,
   status               text NOT NULL DEFAULT 'published' CHECK (status IN ('published','hidden')),
-  UNIQUE (tutor_id, reviewer_user_id)                 -- một quan hệ một đánh giá, sửa được (C10)
+  UNIQUE (tutor_id, reviewer_user_id),                -- mỗi người đánh giá một gia sư một lần, sửa được (D22)
+  CHECK (display_mode = 'named' OR reviewer_role = 'student')
   -- + timestamps
 );
 CREATE INDEX reviews_tutor_idx ON reviews (tutor_id, created_at DESC) WHERE status = 'published';
@@ -1291,7 +1295,9 @@ CREATE TABLE review_replies (
 ALTER TABLE violation_reports ADD FOREIGN KEY (review_id) REFERENCES reviews(id);
 ```
 
-- **Điều kiện đánh giá** _(C10)_ kiểm tra ở service: người đánh giá là client của `basis_enrollment_id`, ghi danh đó thuộc lớp của `tutor_id`, và `joined_on <= current_date - interval '1 month'`. "Một quan hệ" được hiểu là một cặp phụ huynh – gia sư, nên phụ huynh có hai con học cùng một gia sư vẫn chỉ viết một đánh giá.
+- **Điều kiện đánh giá** _(C10, D22)_ kiểm tra ở service: ghi danh `basis_enrollment_id` thuộc lớp của `tutor_id` và `joined_on <= current_date - interval '1 month'`; người đánh giá là client của ghi danh đó (`reviewer_role = 'client'`) hoặc chính học sinh qua `learners.account_user_id` (`reviewer_role = 'student'`).
+- **Mỗi người một đánh giá cho một gia sư** (unique `tutor_id, reviewer_user_id`): phụ huynh có hai con học cùng gia sư viết một đánh giá; phụ huynh và con mỗi người viết một đánh giá riêng.
+- **Hiển thị** _(D22)_: khi lưu, service đặt `display_mode = 'anonymous_student'` nếu người đánh giá là học sinh dưới 18 tuổi (tính theo `learners.date_of_birth` lúc viết hoặc sửa), và chụp `reviewer_grade_level_id`. API công khai chỉ trả "Học sinh" + cấp lớp, không trả `reviewer_user_id` hay tên. Đánh giá ẩn danh vẫn tính vào `rating_avg`.
 - Trạng thái `overdue` của bài tập do job đặt khi quá `due_at` mà chưa nộp.
 - `rating_avg`, `rating_count` trên `tutor_profiles` được cập nhật lại mỗi khi đánh giá thay đổi.
 
@@ -1380,13 +1386,17 @@ Có thể bổ sung **Row-Level Security** của PostgreSQL làm lớp bảo v�
 
 ---
 
-## 16. Giả định cần chủ dự án xác nhận
+## 16. Giả định
 
-1. **Một yêu cầu kết nối = một học sinh + một môn.** Phụ huynh muốn gia sư dạy hai môn cho một con thì gửi hai yêu cầu, tạo hai lớp.
-2. **Một bài tìm gia sư = một môn**, gắn với một hồ sơ con.
-3. **"Một quan hệ một đánh giá" = một cặp phụ huynh – gia sư** (C10), dù phụ huynh có nhiều con học gia sư đó.
-4. **Học phí lập theo từng ghi danh mỗi tháng.** Phụ huynh có hai con học cùng gia sư sẽ có hai bảng học phí.
-5. **Hạn thanh toán** (`fee_statements.due_date`): đề xuất ngày 5 của tháng sau. Nghiệp vụ chưa quy định.
-6. **2 ngày làm việc** để duyệt xác minh (C4): tính bỏ thứ Bảy, Chủ nhật; chưa trừ ngày lễ.
-7. **Sinh trước buổi học 8 tuần** từ lịch lặp.
-8. **Gia sư không đổi trên lớp.** Nếu cần đổi gia sư thì kết thúc lớp cũ và tạo lớp mới.
+**Đã xác nhận ngày 2026-11-12:**
+
+- Một yêu cầu kết nối = một học sinh + một môn _(D21)_.
+- Cả phụ huynh và học sinh được đánh giá gia sư, mỗi người một lần; học sinh dưới 18 tuổi hiển thị ẩn danh _(D22)_.
+- Bảng học phí lập theo từng ghi danh mỗi tháng _(D23)_.
+- Hạn thanh toán là ngày 5 tháng kế tiếp _(D24)_.
+- Một bài tìm gia sư = một môn, gắn với một hồ sơ con _(D25)_.
+- 2 ngày làm việc để duyệt xác minh: bỏ thứ Bảy, Chủ nhật; chưa trừ ngày lễ _(D26)_.
+- Sinh trước buổi học 8 tuần từ lịch lặp; là tham số cấu hình _(D27)_.
+- Lớp không đổi gia sư; đổi gia sư thì kết thúc lớp cũ và tạo lớp mới _(D28)_.
+
+Không còn giả định nào chờ xác nhận.

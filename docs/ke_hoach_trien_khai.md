@@ -6,7 +6,7 @@ Tài liệu này chia việc phát triển TPS-Connection thành các giai đo�
 
 - [Mô tả nghiệp vụ](mo_ta_nghiep_vu.md): phạm vi bản đầu ở §15.1, mở rộng ở §15.2, quy tắc ở §16.
 - [Công nghệ sử dụng](cong_nghe_su_dung.md): stack và hạ tầng.
-- [Decision log](00-product/decision-log.md): các quyết định D1–D20 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
+- [Decision log](00-product/decision-log.md): các quyết định D1–D29 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
 
 > Trạng thái: **đề xuất**. Chưa ước lượng thời gian theo tuần vì chưa có quy mô đội ngũ, số giờ làm việc và ngân sách (C13). Thứ tự giai đoạn là thứ tự phụ thuộc; khi có nguồn lực, một số giai đoạn có thể chạy song song như ghi chú ở mục 4.
 
@@ -68,11 +68,11 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Công việc:**
 
-1. ~~Chép các quyết định sang decision log~~: **xong ngày 2026-11-12** ([decision log](00-product/decision-log.md), D1–D20, C1–C13).
+1. ~~Chép các quyết định sang decision log~~: **xong ngày 2026-11-12** ([decision log](00-product/decision-log.md), D1–D29, C1–C13).
 2. ~~Đồng bộ mô tả nghiệp vụ, tài liệu công nghệ và `CLAUDE.md` theo decision log~~: **xong ngày 2026-11-12**.
 3. Lập bảng thuật ngữ (glossary) Việt–Anh dùng cho code, ví dụ `TutoringClass` thay cho `Class`, `ViolationReport` khác với `LearningReport`, `Assessment` (điểm) khác với `Review` (đánh giá gia sư).
 4. Vẽ sơ đồ trạng thái cho: yêu cầu kết nối (theo D15), bài đăng, hồ sơ gia sư, lớp học, buổi học, xác nhận buổi học, khiếu nại buổi học, báo cáo vi phạm.
-5. Thiết kế cơ sở dữ liệu tổng thể: **bản nháp xong ngày 2026-11-12** ([thiết kế cơ sở dữ liệu](thiet_ke_co_so_du_lieu.md)), chờ chủ dự án review và xác nhận các giả định ở mục 16 của tài liệu đó.
+5. Thiết kế cơ sở dữ liệu tổng thể: **bản nháp xong ngày 2026-11-12** ([thiết kế cơ sở dữ liệu](thiet_ke_co_so_du_lieu.md)), đã review và chốt các giả định (D21–D28).
 6. Chọn nguồn danh mục đơn vị hành chính còn hiệu lực sau đợt sắp xếp tỉnh, xã năm 2025.
 7. Chốt chỉ số thành công cho pilot _(C13, đề xuất)_: sau 12 tuần có 30 gia sư đã xác minh, 100 phụ huynh đăng ký, 20 lớp được tạo từ kết nối, ít nhất 60% lớp còn học sau 4 tuần.
 8. Gửi luật sư rà soát: đồng ý xử lý dữ liệu cá nhân của trẻ, ngưỡng tuổi tài khoản học sinh, lưu giữ giấy tờ tùy thân (mốc 30 ngày), mốc xóa dữ liệu 6 tháng, lưu trữ dữ liệu tại Việt Nam.
@@ -89,7 +89,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Công việc:**
 
-- Monorepo pnpm + Turborepo: `apps/api`, `apps/web`, `packages/shared`, `packages/config` (tsconfig, ESLint, Prettier dùng chung).
+- Monorepo npm workspaces + Turborepo _(D29)_: `apps/api`, `apps/web`, `packages/shared`, `packages/config` (tsconfig, ESLint, Prettier dùng chung).
 - Docker Compose cho môi trường local: PostgreSQL (bật `unaccent`, `pg_trgm`), Redis, MinIO, Mailpit.
 - **API:** Express + TypeScript, cấu trúc module theo nghiệp vụ (router → controller → service → repository), TypeORM với migration (tắt `synchronize`), validate biến môi trường bằng Zod, logging `pino`, định dạng lỗi thống nhất với mã lỗi để client tự dịch, OpenAPI sinh từ Zod, endpoint health check.
 - **Web:** React + Vite + Tailwind + shadcn/ui; React Router framework mode có SSR cho trang công khai _(D12)_; TanStack Query; i18next với hai ngôn ngữ; layout theo vai trò; route `/admin`.
@@ -99,7 +99,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - Test: Jest + Supertest + Testcontainers cho API; Vitest + Testing Library + msw cho web.
 - Cập nhật `CLAUDE.md` với các lệnh install, dev, build, lint, chạy một test.
 
-**Đầu ra:** `pnpm dev` chạy API, web và các dịch vụ phụ; CI xanh; một trang mẫu gọi được API.
+**Đầu ra:** `npm run dev` chạy API, web và các dịch vụ phụ; CI xanh; một trang mẫu gọi được API.
 
 **Hoàn thành khi:** lập trình viên mới clone repo và chạy được toàn bộ hệ thống chỉ với hướng dẫn trong README.
 
@@ -267,7 +267,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 Theo _(D10)_, phần này làm ngay sau MVP. Có thể làm song song với giai đoạn 10 nếu đủ người.
 
 - **Bài tập** (§8): gia sư giao cho một hoặc nhiều học sinh, đính kèm tệp, liên kết, hạn nộp. Học sinh nộp bằng văn bản hoặc tệp (mở quyền thao tác cho tài khoản học sinh). Trạng thái chưa nộp / đã nộp / quá hạn / đã chấm / yêu cầu làm lại. Nhắc bài sắp đến hạn.
-- **Đánh giá gia sư** (§11) _(C10)_: phụ huynh có quan hệ dạy học đã xác nhận từ 1 tháng trở lên; mỗi quan hệ một đánh giá, có thể cập nhật; năm tiêu chí; gia sư phản hồi; người dùng báo cáo đánh giá; học sinh vị thành niên không đánh giá công khai. Bổ sung lọc và sắp xếp theo đánh giá trong tìm kiếm.
+- **Đánh giá gia sư** (§11) _(C10, D22)_: phụ huynh và học sinh có quan hệ dạy học đã xác nhận từ 1 tháng trở lên; mỗi người đánh giá một gia sư một lần, có thể cập nhật; năm tiêu chí; đánh giá của học sinh dưới 18 tuổi công khai nhưng ẩn danh ("Học sinh lớp 8"); gia sư phản hồi; người dùng báo cáo đánh giá. Bổ sung lọc và sắp xếp theo đánh giá trong tìm kiếm.
 - **Báo cáo tiến độ** (§9): số buổi và tỷ lệ tham gia, bài tập hoàn thành, biểu đồ điểm theo thời gian, chủ đề đã học, điểm mạnh và nội dung cần cải thiện, mức hoàn thành mục tiêu. Gia sư gửi báo cáo sau buổi, hằng tuần, hằng tháng hoặc khi kết thúc. Điểm luôn hiển thị kèm nhận xét; không có bảng xếp hạng giữa các trẻ.
 
 ### Giai đoạn 12. Mở rộng sau (bản 4 trở đi)

@@ -6,6 +6,7 @@ Nhật ký các quyết định sản phẩm đã chốt. Khi có mâu thuẫn, 
 
 - D1–D12 và C1–C13: báo cáo phân tích Giai đoạn 1 (Claude Doc, https://claude.ai/artifact/4STSytBWU2wL9rvCKT4zod). Chủ dự án đồng ý trước ngày 2026-11-12; chép sang đây ngày 2026-11-12.
 - D13–D20: chủ dự án chốt ngày 2026-11-12, khi rà soát các điểm lệch giữa tài liệu.
+- D21–D29: chủ dự án chốt ngày 2026-11-12, khi review [thiết kế cơ sở dữ liệu](../thiet_ke_co_so_du_lieu.md).
 
 Quy ước: thêm quyết định mới vào cuối, không sửa nội dung quyết định cũ. Nếu đổi ý, thêm quyết định mới ghi rõ thay thế quyết định nào.
 
@@ -58,3 +59,17 @@ Quy ước: thêm quyết định mới vào cuối, không sửa nội dung quy
 | D18 | Học phí theo giờ hay theo buổi?                       | Hồ sơ gia sư ghi học phí theo giờ hoặc theo buổi để tham khảo. Lớp học luôn chốt giá theo buổi, kèm thời lượng mỗi buổi.                                                                                              |
 | D19 | Khi phụ huynh xóa tài khoản, gia sư còn thấy gì?      | Lịch sử buổi học, điểm và học phí được giữ nhưng ẩn danh. Gia sư thấy "Học sinh đã xóa tài khoản" kèm số buổi và số tiền.                                                                                              |
 | D20 | Bộ lọc "trạng thái xác minh" khi tìm gia sư           | Đổi thành bộ lọc "có bằng cấp đã xác minh" (huy hiệu ở D5), vì mọi gia sư hiển thị công khai đều đã xác minh danh tính.                                                                                              |
+
+## 4. Quyết định ngày 2026-11-12: review thiết kế cơ sở dữ liệu và công cụ (D21–D29)
+
+| Mã  | Câu hỏi                                               | Quyết định                                                                                                                                                                                                              |
+| --- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D21 | Phạm vi một yêu cầu kết nối                           | Một yêu cầu kết nối dành cho một người học và một môn học. Học hai môn với cùng gia sư thì gửi hai yêu cầu và có hai lớp.                                                                                             |
+| D22 | Ai được đánh giá gia sư?                              | **Cả phụ huynh và học sinh** (có tài khoản) đều được đánh giá, khi có quan hệ dạy học đã xác nhận từ 1 tháng trở lên. Mỗi người đánh giá một gia sư một lần, sửa được. Đánh giá của học sinh dưới 18 tuổi hiển thị công khai và tính vào điểm trung bình nhưng **ẩn danh** ("Học sinh lớp 8"); học sinh từ 18 tuổi hiển thị tên như phụ huynh. Thay cho phần "chỉ phụ huynh" và "học sinh vị thành niên không đánh giá công khai" ở C10. |
+| D23 | Bảng học phí tháng lập theo đơn vị nào?               | Lập riêng cho từng học sinh trong từng lớp. Phụ huynh có hai con học cùng một gia sư sẽ có hai bảng học phí.                                                                                                          |
+| D24 | Hạn thanh toán học phí tháng                          | Ngày 5 của tháng kế tiếp.                                                                                                                                                                                               |
+| D25 | Một bài tìm gia sư gồm mấy môn?                       | Một môn, gắn với một hồ sơ con. Cần nhiều môn thì đăng nhiều bài.                                                                                                                                                      |
+| D26 | Cách tính "2 ngày làm việc" duyệt xác minh (C4)       | Không tính thứ Bảy, Chủ nhật; chưa trừ ngày lễ. Hồ sơ nộp thứ Sáu thì hạn là hết thứ Ba tuần sau.                                                                                                                      |
+| D27 | Sinh trước buổi học từ lịch lặp bao xa?               | 8 tuần. Đây là tham số cấu hình, đổi được mà không cần sửa dữ liệu.                                                                                                                                                    |
+| D28 | Lớp có đổi gia sư được không?                         | Không. Muốn đổi gia sư thì kết thúc lớp cũ; phụ huynh kết nối với gia sư mới và hệ thống tạo lớp mới. Gia sư mới không thấy dữ liệu do gia sư cũ ghi.                                                                 |
+| D29 | Trình quản lý package cho monorepo                    | **npm** (workspaces) + Turborepo thay cho pnpm, vì đội quen npm. Bù cho việc npm không chặn import thư viện chưa khai báo bằng rule ESLint `import/no-extraneous-dependencies`. Chốt ngày 2026-11-12. |

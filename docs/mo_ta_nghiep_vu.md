@@ -72,6 +72,7 @@ Học sinh là người trực tiếp tham gia học tập. Học sinh có tài 
 Các hoạt động mở ở giai đoạn sau:
 
 - Thực hiện và nộp bài tập bằng nội dung hoặc tệp đính kèm.
+- Đánh giá gia sư sau khi học từ 1 tháng trở lên; học sinh dưới 18 tuổi được hiển thị ẩn danh _(D22)_.
 - Gửi câu hỏi hoặc trao đổi với gia sư. Với học sinh dưới 18 tuổi, phụ huynh phải bật chức năng này và cùng tham gia hội thoại _(C7)_.
 
 ### 2.4. Người kiểm duyệt và quản trị viên
@@ -128,7 +129,7 @@ Hồ sơ gia sư là căn cứ để phụ huynh đánh giá mức độ phù h�
 
 - Gia sư bắt buộc xác minh danh tính trước khi được hiển thị công khai và đăng bài. Mọi gia sư nộp căn cước công dân; gia sư là sinh viên nộp thêm thẻ sinh viên.
 - Bằng cấp và chứng chỉ có thể nộp để xác minh thêm và nhận huy hiệu; không bắt buộc.
-- Người kiểm duyệt xét duyệt trong 2 ngày làm việc. Khi từ chối phải nêu lý do; gia sư được sửa và nộp lại.
+- Người kiểm duyệt xét duyệt trong 2 ngày làm việc, không tính thứ Bảy và Chủ nhật _(D26)_. Khi từ chối phải nêu lý do; gia sư được sửa và nộp lại.
 - Sau khi duyệt, nền tảng giữ kết quả xác minh và xóa ảnh giấy tờ sau 30 ngày. Mốc này cần luật sư rà soát.
 
 Nền tảng cần thể hiện rõ thông tin nào do gia sư tự khai và thông tin nào đã được xác minh. Hồ sơ gia sư có trạng thái chưa hoàn thiện, chờ xác minh hoặc đã xác minh; đồng thời gia sư cập nhật tình trạng đang nhận học sinh hoặc tạm ngừng nhận học sinh.
@@ -153,7 +154,7 @@ Bài tuyển học sinh là công khai: người chưa đăng nhập cũng xem �
 
 ### 4.2. Phụ huynh đăng nhu cầu tìm gia sư
 
-Phụ huynh có thể chủ động đăng nhu cầu tìm gia sư thay vì chỉ tìm trong danh sách hồ sơ có sẵn. Một bài đăng nhu cầu có thể bao gồm:
+Phụ huynh có thể chủ động đăng nhu cầu tìm gia sư thay vì chỉ tìm trong danh sách hồ sơ có sẵn. Mỗi bài đăng dành cho một hồ sơ con và một môn học; cần nhiều môn thì đăng nhiều bài _(D25)_. Một bài đăng nhu cầu có thể bao gồm:
 
 - Môn học và cấp lớp của người học.
 - Mục tiêu học tập như củng cố kiến thức, luyện thi hoặc học nâng cao.
@@ -218,6 +219,8 @@ Một yêu cầu kết nối có các trạng thái _(D15, C3)_:
 - **Đã từ chối:** Bên nhận không đồng ý.
 - **Đã hủy:** Bên gửi hủy khi đang chờ phản hồi, một bên hủy khi đang trao đổi, hoặc yêu cầu tự hết hạn.
 
+Mỗi yêu cầu kết nối dành cho một người học và một môn học; học nhiều môn với cùng gia sư thì gửi nhiều yêu cầu _(D21)_.
+
 Thứ tự chuyển: Chờ phản hồi → Đang trao đổi → Đã xác nhận hợp tác. Từ Chờ phản hồi có thể sang Đã từ chối hoặc Đã hủy; từ Đang trao đổi có thể sang Đã hủy.
 
 Quy định thời hạn _(C3)_:
@@ -262,6 +265,8 @@ Gia sư có thể:
 - Tra cứu lịch sử học tập sau khi lớp đã kết thúc.
 
 Một học sinh có thể học nhiều môn và có thể có nhiều gia sư khác nhau. Việc một gia sư phụ trách một hay nhiều học sinh được xác định theo lớp học đã thống nhất.
+
+Mỗi lớp gắn cố định với một gia sư. Muốn đổi gia sư thì kết thúc lớp cũ; phụ huynh kết nối với gia sư mới và hệ thống tạo lớp mới. Gia sư mới không xem được dữ liệu học tập do gia sư cũ ghi nhận _(D28)_.
 
 ## 7. Nghiệp vụ lịch học và điểm danh
 
@@ -336,7 +341,7 @@ Nền tảng hỗ trợ:
 - Ghi nhận mức học phí theo buổi đã thống nhất.
 - Mỗi buổi học lưu mức học phí áp dụng tại thời điểm đó, để thay đổi học phí sau này không làm sai số liệu cũ _(D17)_.
 - Tổng hợp số buổi học đã diễn ra và số buổi được tính tiền, theo các quy định ở mục 7.
-- Tổng hợp học phí theo tháng; phụ huynh thanh toán một lần vào cuối tháng _(C6)_.
+- Tổng hợp học phí theo tháng, lập riêng cho từng học sinh trong từng lớp; phụ huynh thanh toán một lần cho mỗi tháng, hạn là ngày 5 tháng kế tiếp _(C6, D23, D24)_.
 - Ghi nhận các khoản phụ huynh cần thanh toán.
 - Theo dõi trạng thái đã thanh toán hoặc chưa thanh toán.
 - Lưu lịch sử thanh toán.
@@ -349,7 +354,7 @@ Hiện tại, các chức năng dành cho người dùng được định hướ
 
 > Nghiệp vụ đánh giá được triển khai ngay sau phiên bản đầu _(D10)_.
 
-Phụ huynh có quan hệ dạy học đã xác nhận với gia sư từ 1 tháng trở lên được đánh giá gia sư đó _(C10)_. Tiêu chí đánh giá gồm:
+Phụ huynh và học sinh (có tài khoản) có quan hệ dạy học đã xác nhận với gia sư từ 1 tháng trở lên được đánh giá gia sư đó _(C10, D22)_. Tiêu chí đánh giá gồm:
 
 - Chất lượng giảng dạy.
 - Khả năng truyền đạt.
@@ -357,7 +362,7 @@ Phụ huynh có quan hệ dạy học đã xác nhận với gia sư từ 1 thá
 - Khả năng trao đổi, phối hợp với phụ huynh.
 - Mức độ tiến bộ của học sinh.
 
-Đánh giá cần gắn với trải nghiệm học tập hợp lệ, không cho phép đánh giá tùy ý từ người chưa từng có quan hệ học tập với gia sư. Mỗi quan hệ dạy học có một đánh giá, có thể cập nhật. Học sinh vị thành niên không đánh giá công khai. Gia sư có thể phản hồi đánh giá. Người dùng có thể báo cáo nội dung đánh giá không phù hợp; nền tảng tiếp nhận và xử lý nhằm hạn chế đánh giá giả hoặc hành vi trao đổi đánh giá.
+Đánh giá cần gắn với trải nghiệm học tập hợp lệ, không cho phép đánh giá tùy ý từ người chưa từng có quan hệ học tập với gia sư. Mỗi người chỉ đánh giá một gia sư một lần và có thể cập nhật đánh giá của mình. Đánh giá của học sinh dưới 18 tuổi được hiển thị công khai và tính vào điểm trung bình nhưng ẩn danh, chỉ ghi cấp lớp (ví dụ "Học sinh lớp 8"); đánh giá của học sinh từ 18 tuổi hiển thị tên như phụ huynh _(D22)_. Gia sư có thể phản hồi đánh giá. Người dùng có thể báo cáo nội dung đánh giá không phù hợp; nền tảng tiếp nhận và xử lý nhằm hạn chế đánh giá giả hoặc hành vi trao đổi đánh giá.
 
 Thông tin đánh giá là một căn cứ để phụ huynh tham khảo khi lựa chọn gia sư, nhưng cần được xem xét cùng hồ sơ, kinh nghiệm và nhu cầu cụ thể của người học.
 
@@ -507,7 +512,7 @@ Các nội dung sau được đề xuất là hướng phát triển, không ph�
 8. Phụ huynh chỉ được xem thông tin học tập của học sinh thuộc quyền quản lý.
 9. Học sinh chỉ xem và thao tác trên nội dung học tập của bản thân trong phạm vi được phép.
 10. Gia sư chỉ quản lý thông tin học tập của học sinh có quan hệ giảng dạy phù hợp.
-11. Chỉ phụ huynh có quan hệ học tập đã xác nhận từ 1 tháng trở lên mới được đánh giá gia sư; mỗi quan hệ một đánh giá.
+11. Chỉ phụ huynh và học sinh có quan hệ học tập đã xác nhận từ 1 tháng trở lên mới được đánh giá gia sư; mỗi người đánh giá một gia sư một lần; đánh giá của học sinh dưới 18 tuổi hiển thị ẩn danh.
 12. Lịch sử buổi học, điểm danh và xác nhận buổi học là căn cứ để theo dõi quá trình học và đối chiếu học phí.
 13. Khi lớp kết thúc, lịch sử học tập vẫn được lưu để phục vụ tra cứu. Khi tài khoản bị xóa, lịch sử học tập được giữ ở dạng ẩn danh.
 14. Ở giai đoạn hiện tại, nền tảng định hướng miễn phí; các phương án doanh thu được để mở cho giai đoạn sau.
