@@ -28,6 +28,8 @@ export const vi = {
     rate_limited: 'Bạn thao tác quá nhanh. Hãy chờ một lát rồi thử lại.',
     invalid_credentials: 'Email hoặc mật khẩu chưa đúng. Kiểm tra lại, hoặc đặt lại mật khẩu.',
     account_locked: 'Tài khoản đang bị khóa. Liên hệ hỗ trợ nếu bạn cho rằng đây là nhầm lẫn.',
+    account_restricted:
+      'Tài khoản đang bị hạn chế nên chưa thể đăng bài, gửi yêu cầu hoặc nhắn tin mới. Xem thông báo để biết lý do và thời hạn.',
     email_not_verified: 'Email chưa được xác thực. Nhập mã chúng tôi đã gửi tới email của bạn.',
     email_taken:
       'Email này đã được dùng cho một tài khoản khác. Hãy đăng nhập hoặc đặt lại mật khẩu.',
@@ -51,6 +53,7 @@ export const vi = {
     invalid_phone: 'Số điện thoại chưa đúng, ví dụ: 0912 345 678.',
     invalid_code_format: 'Mã gồm 6 chữ số.',
     must_accept_terms: 'Bạn cần đồng ý với điều khoản để tạo tài khoản.',
+    wrong_password: 'Mật khẩu hiện tại chưa đúng.',
   },
 
   // ---- Email gửi người dùng (API dựng nội dung theo ngôn ngữ của người nhận) ----

@@ -1,4 +1,5 @@
 import {
+  ChangePasswordRequest,
   EmailRequest,
   LoginRequest,
   PasswordResetConfirmRequest,
@@ -20,7 +21,7 @@ export const AUTH_IP_LIMITS = {
 } as const;
 
 /**
- * /api/v1/auth. `authenticate` là middleware xác thực (bắt buộc đăng nhập) dùng cho /me.
+ * /api/v1/auth. `authenticate` là middleware xác thực (bắt buộc đăng nhập) cho các route đánh dấu (*).
  *
  *   POST /register                    201  đăng ký, gửi mã xác thực
  *   POST /email-verification/resend   202  gửi lại mã
@@ -30,7 +31,10 @@ export const AUTH_IP_LIMITS = {
  *   POST /logout                      204  đăng xuất
  *   POST /password-reset/request      202  gửi mã đặt lại mật khẩu
  *   POST /password-reset/confirm      204  đặt mật khẩu mới, đăng xuất mọi thiết bị
- *   GET  /me                          200  người dùng hiện tại
+ *   GET  /me                          200  người dùng hiện tại (*)
+ *   POST /password/change             204  đổi mật khẩu, đăng xuất thiết bị khác (*)
+ *   GET  /sessions                    200  thiết bị đang đăng nhập (*)
+ *   POST /sessions/revoke-others      204  đăng xuất thiết bị khác (*)
  */
 export function authRouter(
   controller: AuthController,
@@ -75,6 +79,15 @@ export function authRouter(
     controller.resetPassword,
   );
   router.get('/me', authenticate, controller.me);
+  router.post(
+    '/password/change',
+    authenticate,
+    limit('code'),
+    validate({ body: ChangePasswordRequest }),
+    controller.changePassword,
+  );
+  router.get('/sessions', authenticate, controller.listSessions);
+  router.post('/sessions/revoke-others', authenticate, controller.revokeOtherSessions);
 
   return router;
 }

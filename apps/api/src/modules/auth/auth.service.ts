@@ -2,7 +2,9 @@
 // đăng xuất, đặt lại mật khẩu (đổi xong thì đăng xuất mọi thiết bị, D50). Không phụ thuộc Express.
 import { randomUUID } from 'node:crypto';
 import {
+  type ActiveSession,
   AUTH_TOKEN_TTL,
+  type ChangePasswordRequest,
   type AuthUser,
   type CodeSentResponse,
   LEGAL_DOCUMENT_VERSION,
@@ -349,6 +351,65 @@ export function createAuthService(deps: AuthServiceDeps) {
       });
       await rateLimiter.reset(`login-failures:${input.email}`);
       logger.info({ userId: user.id }, 'Password reset; all sessions revoked');
+    },
+
+    /**
+     * Đổi mật khẩu khi đã đăng nhập: phải nhập đúng mật khẩu hiện tại; xong thì đăng xuất các thiết bị
+     * khác, giữ thiết bị đang dùng (D50). Sai mật khẩu hiện tại 5 lần trong 15 phút thì tạm chặn, để
+     * người cầm phiên bị lộ không dò được mật khẩu.
+     */
+    async changePassword(
+      userId: string,
+      currentFamilyId: string,
+      input: ChangePasswordRequest,
+    ): Promise<void> {
+      const failureKey = `password-change-failures:${userId}`;
+      const failures = await rateLimiter.peek(failureKey);
+      if (failures.count >= LOGIN_FAILURE_LIMIT.limit) {
+        throw rateLimited(failures.retryAfterSeconds, 'Too many wrong current passwords');
+      }
+      const user = await usersRepo().findByIdWithPassword(userId);
+      if (!user) throw new AppError('unauthenticated', 'Account no longer exists');
+      if (!(await hasher.verify(user.passwordHash, input.currentPassword))) {
+        await rateLimiter.hit(
+          failureKey,
+          LOGIN_FAILURE_LIMIT.limit,
+          LOGIN_FAILURE_LIMIT.windowSeconds,
+        );
+        // Lỗi gắn vào ô "mật khẩu hiện tại" (422), không dùng 401 để client không tưởng đã hết phiên.
+        throw new AppError('validation_failed', 'Current password is wrong', [
+          { path: 'currentPassword', code: 'wrong_password', message: 'Current password is wrong' },
+        ]);
+      }
+      await rateLimiter.reset(failureKey);
+
+      const passwordHash = await hasher.hash(input.newPassword);
+      await dataSource.transaction(async (manager) => {
+        await createUsersRepository(manager).setPassword(userId, passwordHash);
+        await createAuthSessionsRepository(manager).revokeAllForUserExcept(
+          userId,
+          currentFamilyId,
+          'password_changed',
+        );
+      });
+      logger.info({ userId }, 'Password changed; other sessions revoked');
+    },
+
+    /** Thiết bị đang đăng nhập (mỗi chuỗi phiên một dòng), phiên hiện tại đánh dấu `current`. */
+    async listSessions(userId: string, currentFamilyId: string): Promise<ActiveSession[]> {
+      const rows = await sessionsRepo().listActive(userId, now());
+      return rows.map((s) => ({
+        id: s.familyId,
+        userAgent: s.userAgent,
+        ipAddress: s.ipAddress,
+        lastActiveAt: s.createdAt.toISOString(),
+        current: s.familyId === currentFamilyId,
+      }));
+    },
+
+    /** "Đăng xuất thiết bị khác": thu hồi mọi chuỗi phiên trừ phiên hiện tại. */
+    async revokeOtherSessions(userId: string, currentFamilyId: string): Promise<void> {
+      await sessionsRepo().revokeAllForUserExcept(userId, currentFamilyId, 'logout');
     },
 
     /** Người dùng hiện tại (cho middleware xác thực và GET /auth/me). Null nếu đã xóa. */

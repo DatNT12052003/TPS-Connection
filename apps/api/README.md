@@ -121,13 +121,15 @@ Tạo một lần trong `main.ts`, module nghiệp vụ nhận qua tham số (đ
 
 Module `src/modules/auth`, quyết định D54 (mã OTP) và D57 (phiên đăng nhập). Các endpoint dưới `/api/v1/auth` (chi tiết ở `/openapi.json`):
 
-| Endpoint                                      | Việc                                                     |
-| --------------------------------------------- | -------------------------------------------------------- |
-| `POST /register`                              | Đăng ký phụ huynh/gia sư, gửi mã; chưa đăng nhập         |
-| `POST /email-verification/resend`, `/confirm` | Gửi lại mã / nhập mã: xác thực email và đăng nhập        |
-| `POST /login`, `/refresh`, `/logout`          | Đăng nhập, làm mới phiên (xoay refresh token), đăng xuất |
-| `POST /password-reset/request`, `/confirm`    | Quên mật khẩu bằng mã; đổi xong đăng xuất mọi thiết bị   |
-| `GET /me`                                     | Người dùng hiện tại                                      |
+| Endpoint                                        | Việc                                                              |
+| ----------------------------------------------- | ----------------------------------------------------------------- |
+| `POST /register`                                | Đăng ký phụ huynh/gia sư, gửi mã; chưa đăng nhập                  |
+| `POST /email-verification/resend`, `/confirm`   | Gửi lại mã / nhập mã: xác thực email và đăng nhập                 |
+| `POST /login`, `/refresh`, `/logout`            | Đăng nhập, làm mới phiên (xoay refresh token), đăng xuất          |
+| `POST /password-reset/request`, `/confirm`      | Quên mật khẩu bằng mã; đổi xong đăng xuất mọi thiết bị            |
+| `GET /me`                                       | Người dùng hiện tại                                               |
+| `POST /password/change`                         | Đổi mật khẩu; đăng xuất các thiết bị khác, giữ thiết bị đang dùng |
+| `GET /sessions`, `POST /sessions/revoke-others` | Thiết bị đang đăng nhập; đăng xuất thiết bị khác                  |
 
 - Token nằm trong cookie httpOnly `tps_at` (access, 15 phút) và `tps_rt` (refresh). App mobile gửi `Authorization: Bearer <access>`.
 - Middleware `authenticate` (`src/http/authenticate.ts`) kiểm tra token rồi đọc lại tài khoản ở mỗi request (khóa tài khoản có hiệu lực ngay), gắn `req.auth`.
@@ -135,6 +137,19 @@ Module `src/modules/auth`, quyết định D54 (mã OTP) và D57 (phiên đăng 
 - Mã OTP và bộ đếm rate limit ở Redis; mật khẩu băm argon2id; refresh token chỉ lưu hash SHA-256.
 - Không lộ email nào đã đăng ký: gửi lại mã và quên mật khẩu luôn trả cùng một kết quả; đăng nhập sai email hay sai mật khẩu cùng là `invalid_credentials`.
 - Không bao giờ log mật khẩu, mã OTP, token.
+
+**Phân quyền** (`src/http/authorize.ts`, đặt sau `authenticate`): `requireRole('tutor', 'parent')` (có ít nhất một vai trò), `requireStaff()` (Manager hoặc Admin), `requireActiveAccount()` (chặn tài khoản bị hạn chế với hành động đăng bài, gửi yêu cầu, nhắn tin mới; B.9.3). Không có `req.auth` thì 401 (mặc định từ chối). Trong controller lấy người dùng bằng `requireAuth(req)`. Quyền theo quan hệ (phụ huynh – con, gia sư – lớp) kiểm tra ở service của từng module.
+
+**Tạo Admin/Manager** (nhân viên không tự đăng ký):
+
+```sh
+npm run users:staff -w @tps/api -- grant  --email admin@vidu.vn --role admin --name "Nguyễn Văn A"
+npm run users:staff -w @tps/api -- revoke --email admin@vidu.vn --role admin
+```
+
+Tài khoản mới chưa có mật khẩu: người được cấp chọn "Quên mật khẩu" để nhận mã qua email và tự đặt mật khẩu (không có mật khẩu nào đi qua terminal). Lệnh không cho thu hồi Admin cuối cùng.
+
+Thử tay các endpoint: [http/auth.http](http/auth.http) (extension REST Client của VS Code), hoặc import [http/tps-auth.postman_collection.json](http/tps-auth.postman_collection.json) vào Postman Desktop (cùng 21 bước, có test status code; bước nhập mã OTP tự lấy mã từ email mới nhất trong Mailpit).
 
 Khi dev: mã OTP xem ở Mailpit (http://127.0.0.1:8025). Gọi thử bằng curl trên Windows: gửi body từ tệp UTF-8 (`--data-binary @body.json`); tham số dòng lệnh của Git Bash làm mất dấu tiếng Việt.
 

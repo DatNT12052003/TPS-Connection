@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { RedisContainer, type StartedRedisContainer } from '@testcontainers/redis';
-import { AuthSessionResponse, AuthUser, CodeSentResponse } from '@tps/shared';
+import { ActiveSession, AuthSessionResponse, AuthUser, CodeSentResponse } from '@tps/shared';
 import type { Express } from 'express';
 import type { Redis } from 'ioredis';
 import request from 'supertest';
@@ -17,6 +17,7 @@ import { createAuthService } from '../../src/modules/auth/auth.service.js';
 import { createRedisOtpStore } from '../../src/modules/auth/otp-store.js';
 import { createArgon2Hasher } from '../../src/modules/auth/password-hasher.js';
 import { createTokenService } from '../../src/modules/auth/tokens.js';
+import { grantStaffRole, revokeStaffRole } from '../../src/modules/users/staff-roles.js';
 import { silentLogger, TEST_JWT_SECRET, TEST_ORIGIN, testEnv } from '../helpers.js';
 
 jest.setTimeout(180_000);
@@ -496,5 +497,150 @@ describe('rate limits per IP', () => {
     });
     expect(res.status).toBe(429);
     expect(Number(res.headers['retry-after'])).toBeGreaterThan(3500);
+  });
+});
+
+// ---- G2 phần 3: đổi mật khẩu, thiết bị đang đăng nhập, vai trò vận hành ----
+
+/** Đăng nhập; trả cookie header dùng cho các request sau. */
+async function loginAs(email: string, password = PASSWORD) {
+  const res = await post('/login', { email, password });
+  expect(res.status).toBe(200);
+  const cookies = cookiesOf(res);
+  const access = cookieValue(cookies.tps_at)!;
+  const refresh = cookieValue(cookies.tps_rt)!;
+  return { access, refresh, cookie: `tps_at=${access}; tps_rt=${refresh}` };
+}
+
+const authed = (method: 'get' | 'post', path: string, cookie: string) =>
+  request(app)[method](`/api/v1/auth${path}`).set('Origin', TEST_ORIGIN).set('Cookie', cookie);
+
+const refreshWith = (token: string) =>
+  request(app)
+    .post('/api/v1/auth/refresh')
+    .set('Origin', TEST_ORIGIN)
+    .set('Cookie', `tps_rt=${token}`);
+
+describe('change password', () => {
+  it('requires sign-in', async () => {
+    const res = await post('/password/change', {
+      currentPassword: PASSWORD,
+      newPassword: 'moi12345',
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it('flags a wrong current password on its field, and blocks after 5 tries', async () => {
+    const { email } = await signedInUser();
+    const { cookie } = await loginAs(email);
+    const wrong = { currentPassword: 'saimatkhau1', newPassword: 'matkhaumoi456' };
+    const res = await authed('post', '/password/change', cookie).send(wrong);
+    expect(res.status).toBe(422);
+    expect(res.body.error.details).toEqual([
+      expect.objectContaining({ path: 'currentPassword', code: 'wrong_password' }),
+    ]);
+    for (let i = 0; i < 4; i += 1) await authed('post', '/password/change', cookie).send(wrong);
+    const blocked = await authed('post', '/password/change', cookie).send({
+      currentPassword: PASSWORD,
+      newPassword: 'matkhaumoi456',
+    });
+    expect(blocked.status).toBe(429);
+  });
+
+  it('keeps this device signed in and signs out the others (D50)', async () => {
+    const { email } = await signedInUser();
+    const thisDevice = await loginAs(email);
+    const otherDevice = await loginAs(email);
+
+    const res = await authed('post', '/password/change', thisDevice.cookie).send({
+      currentPassword: PASSWORD,
+      newPassword: 'matkhaumoi456',
+    });
+    expect(res.status).toBe(204);
+    expect((await refreshWith(thisDevice.refresh)).status).toBe(200);
+    expect((await refreshWith(otherDevice.refresh)).status).toBe(401);
+    expect((await post('/login', { email, password: PASSWORD })).status).toBe(401);
+    expect((await post('/login', { email, password: 'matkhaumoi456' })).status).toBe(200);
+  });
+});
+
+describe('active sessions', () => {
+  it('lists each signed-in device, marks this one, and signs out the others', async () => {
+    const { email } = await signedInUser(); // thiết bị 1 (xác thực email)
+    const laptop = await loginAs(email); // thiết bị 2
+    const phone = await loginAs(email); // thiết bị 3
+
+    const list = await authed('get', '/sessions', laptop.cookie);
+    expect(list.status).toBe(200);
+    const items = (list.body.items as unknown[]).map((item) => ActiveSession.parse(item));
+    expect(items).toHaveLength(3);
+    expect(items.filter((s) => s.current)).toHaveLength(1);
+
+    expect((await authed('post', '/sessions/revoke-others', laptop.cookie)).status).toBe(204);
+    const after = await authed('get', '/sessions', laptop.cookie);
+    expect(after.body.items).toHaveLength(1);
+    expect(after.body.items[0].current).toBe(true);
+    expect((await refreshWith(phone.refresh)).status).toBe(401);
+    expect((await refreshWith(laptop.refresh)).status).toBe(200);
+  });
+
+  it("only shows the caller's own sessions", async () => {
+    const a = await signedInUser();
+    const b = await signedInUser();
+    expect((await authed('get', '/sessions', `tps_at=${a.access}`)).body.items).toHaveLength(1);
+    expect((await authed('get', '/sessions', `tps_at=${b.access}`)).body.items).toHaveLength(1);
+    expect((await request(app).get('/api/v1/auth/sessions')).status).toBe(401);
+  });
+});
+
+describe('staff roles (users:staff command)', () => {
+  it('creates an admin without a password, who sets one with "forgot password"', async () => {
+    const email = uniqueEmail();
+    const result = await grantStaffRole(db, { email, fullName: 'Quản Trị Viên', role: 'admin' });
+    expect(result).toMatchObject({ created: true, alreadyGranted: false });
+
+    // Chưa có mật khẩu: không đăng nhập được bằng bất kỳ mật khẩu nào.
+    expect((await post('/login', { email, password: PASSWORD })).body.error.code).toBe(
+      'invalid_credentials',
+    );
+    await post('/password-reset/request', { email });
+    await post('/password-reset/confirm', {
+      email,
+      code: lastCode(email),
+      newPassword: 'quantri123',
+    });
+    const { cookie } = await loginAs(email, 'quantri123');
+    const me = await authed('get', '/me', cookie);
+    expect(me.body).toMatchObject({ roles: ['admin'], emailVerified: true });
+  });
+
+  it('adds a staff role to an existing account and is idempotent', async () => {
+    const { email } = await signedInUser('parent');
+    expect((await grantStaffRole(db, { email, role: 'manager' })).alreadyGranted).toBe(false);
+    expect((await grantStaffRole(db, { email, role: 'manager' })).alreadyGranted).toBe(true);
+    const { cookie } = await loginAs(email);
+    expect((await authed('get', '/me', cookie)).body.roles).toEqual(['manager', 'parent']);
+  });
+
+  it('needs a name for a new account', async () => {
+    await expect(grantStaffRole(db, { email: uniqueEmail(), role: 'admin' })).rejects.toThrow(
+      /needs a name/,
+    );
+  });
+
+  it('never removes the last admin', async () => {
+    await db.query(
+      `UPDATE user_roles SET revoked_at = now() WHERE role_code = 'admin' AND revoked_at IS NULL`,
+    );
+    const first = uniqueEmail();
+    const second = uniqueEmail();
+    await grantStaffRole(db, { email: first, fullName: 'A', role: 'admin' });
+    await grantStaffRole(db, { email: second, fullName: 'B', role: 'admin' });
+
+    expect(await revokeStaffRole(db, { email: first, role: 'admin' })).toEqual({ revoked: true });
+    await expect(revokeStaffRole(db, { email: second, role: 'admin' })).rejects.toThrow(
+      /last admin/,
+    );
+    expect(await revokeStaffRole(db, { email: first, role: 'admin' })).toEqual({ revoked: false });
   });
 });

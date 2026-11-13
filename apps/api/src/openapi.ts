@@ -1,8 +1,10 @@
 // Tài liệu OpenAPI sinh từ chính các Zod schema trong @tps/shared. Thêm endpoint: khai báo path ở đây.
 import {
+  ActiveSession,
   ApiErrorBody,
   AuthSessionResponse,
   AuthUser,
+  ChangePasswordRequest,
   CodeSentResponse,
   EmailRequest,
   HealthReport,
@@ -11,6 +13,7 @@ import {
   RegisterRequest,
   VerifyEmailRequest,
 } from '@tps/shared';
+import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
 
 const json = <T>(schema: T) => ({ content: { 'application/json': { schema } } });
@@ -144,6 +147,39 @@ export function createOpenApiDocument() {
             401: error('unauthenticated'),
             403: error('account_locked'),
           },
+        },
+      },
+      '/api/v1/auth/password/change': {
+        post: {
+          tags: ['auth'],
+          summary: 'Đổi mật khẩu; đăng xuất các thiết bị khác, giữ thiết bị đang dùng (D50)',
+          security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+          requestBody: json(ChangePasswordRequest),
+          responses: {
+            204: { description: 'Đã đổi mật khẩu' },
+            401: error('unauthenticated'),
+            422: error('validation_failed; mật khẩu hiện tại sai: details[].code = wrong_password'),
+            429: error('rate_limited: sai mật khẩu hiện tại 5 lần trong 15 phút'),
+          },
+        },
+      },
+      '/api/v1/auth/sessions': {
+        get: {
+          tags: ['auth'],
+          summary: 'Thiết bị đang đăng nhập (mỗi chuỗi phiên một dòng)',
+          security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+          responses: {
+            200: { description: 'OK', ...json(z.object({ items: z.array(ActiveSession) })) },
+            401: error('unauthenticated'),
+          },
+        },
+      },
+      '/api/v1/auth/sessions/revoke-others': {
+        post: {
+          tags: ['auth'],
+          summary: 'Đăng xuất mọi thiết bị khác',
+          security: [{ cookieAuth: [] }, { bearerAuth: [] }],
+          responses: { 204: { description: 'Đã đăng xuất' }, 401: error('unauthenticated') },
         },
       },
     },

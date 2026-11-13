@@ -30,6 +30,16 @@ export function createUsersRepository(manager: EntityManager) {
       return query.getOne();
     },
 
+    /** Tài khoản chưa xóa theo id, kèm `password_hash` (để kiểm tra mật khẩu hiện tại). */
+    findByIdWithPassword(id: string): Promise<User | null> {
+      return users
+        .createQueryBuilder('u')
+        .addSelect('u.passwordHash')
+        .where('u.id = :id', { id })
+        .andWhere('u.deletedAt IS NULL')
+        .getOne();
+    },
+
     findById(id: string): Promise<User | null> {
       return users.findOneBy({ id, deletedAt: IsNull() });
     },
@@ -51,7 +61,7 @@ export function createUsersRepository(manager: EntityManager) {
 
     create(data: {
       email: string;
-      passwordHash: string;
+      passwordHash: string | null;
       fullName: string;
       displayName: string;
       phone: string | null;

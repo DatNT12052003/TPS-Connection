@@ -28,6 +28,8 @@ export const en: Messages = {
     invalid_credentials:
       'The email or password is not correct. Check them, or reset your password.',
     account_locked: 'This account is locked. Contact support if you think this is a mistake.',
+    account_restricted:
+      'Your account is restricted, so you cannot post, send requests or start new messages for now. See your notifications for the reason and how long it lasts.',
     email_not_verified: 'Your email is not verified yet. Enter the code we sent to your email.',
     email_taken: 'This email is already used by another account. Sign in or reset your password.',
     invalid_code: 'The code is not correct. Check the code in the email.',
@@ -52,6 +54,7 @@ export const en: Messages = {
     invalid_phone: 'Enter a valid phone number, for example 0912 345 678.',
     invalid_code_format: 'The code has 6 digits.',
     must_accept_terms: 'You need to accept the terms to create an account.',
+    wrong_password: 'Your current password is not correct.',
   },
 
   emailCommon: {

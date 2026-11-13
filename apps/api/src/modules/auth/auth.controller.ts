@@ -1,5 +1,7 @@
 import type {
+  ActiveSession,
   AuthSessionResponse,
+  ChangePasswordRequest,
   EmailRequest,
   LoginRequest,
   PasswordResetConfirmRequest,
@@ -7,6 +9,7 @@ import type {
   VerifyEmailRequest,
 } from '@tps/shared';
 import type { RequestHandler, Response } from 'express';
+import { requireAuth } from '../../http/authorize.js';
 import { AppError } from '../../lib/app-error.js';
 import {
   clearSessionCookies,
@@ -83,11 +86,34 @@ export function createAuthController(service: AuthService, cookies: CookieSettin
   };
 
   const me: RequestHandler = (req, res) => {
-    if (!req.auth) throw new AppError('unauthenticated', 'Not signed in');
-    res.json(req.auth.user);
+    res.json(requireAuth(req).user);
+  };
+
+  const changePassword: RequestHandler<unknown, unknown, ChangePasswordRequest> = async (
+    req,
+    res,
+  ) => {
+    const { user, sessionFamilyId } = requireAuth(req);
+    await service.changePassword(user.id, sessionFamilyId, req.body);
+    res.status(204).end();
+  };
+
+  const listSessions: RequestHandler = async (req, res) => {
+    const { user, sessionFamilyId } = requireAuth(req);
+    const sessions: ActiveSession[] = await service.listSessions(user.id, sessionFamilyId);
+    res.json({ items: sessions });
+  };
+
+  const revokeOtherSessions: RequestHandler = async (req, res) => {
+    const { user, sessionFamilyId } = requireAuth(req);
+    await service.revokeOtherSessions(user.id, sessionFamilyId);
+    res.status(204).end();
   };
 
   return {
+    changePassword,
+    listSessions,
+    revokeOtherSessions,
     register,
     resendVerification,
     verifyEmail,

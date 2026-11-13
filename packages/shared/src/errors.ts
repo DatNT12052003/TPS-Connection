@@ -14,6 +14,7 @@ export const ErrorCode = z.enum([
   // Tài khoản và xác thực (G2)
   'invalid_credentials',
   'account_locked',
+  'account_restricted',
   'email_not_verified',
   'email_taken',
   'invalid_code',
@@ -36,6 +37,7 @@ export const ERROR_HTTP_STATUS = {
   rate_limited: 429,
   invalid_credentials: 401,
   account_locked: 403,
+  account_restricted: 403,
   email_not_verified: 403,
   email_taken: 409,
   invalid_code: 400,

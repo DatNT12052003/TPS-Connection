@@ -77,6 +77,28 @@ export const PasswordResetConfirmRequest = z.object({
 });
 export type PasswordResetConfirmRequest = z.infer<typeof PasswordResetConfirmRequest>;
 
+export const ChangePasswordRequest = z.object({
+  currentPassword: z
+    .string()
+    .min(1, { error: 'required' })
+    .max(128, { error: 'password_too_long' }),
+  newPassword: Password,
+});
+export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequest>;
+
+/** Một thiết bị/trình duyệt đang đăng nhập (một chuỗi phiên), cho màn Cài đặt > Bảo mật. */
+export const ActiveSession = z.object({
+  /** family id của chuỗi phiên. */
+  id: Id,
+  userAgent: z.string().nullable(),
+  ipAddress: z.string().nullable(),
+  /** Lần cuối phiên được dùng để làm mới token. */
+  lastActiveAt: z.iso.datetime(),
+  /** Phiên của chính request này ("máy này"). */
+  current: z.boolean(),
+});
+export type ActiveSession = z.infer<typeof ActiveSession>;
+
 /** Người dùng đang đăng nhập (chỉ trả cho chính người đó). */
 export const AuthUser = z.object({
   id: Id,

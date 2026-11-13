@@ -1,0 +1,752 @@
+{
+  "info": {
+    "name": "TPS API - Xác thực (G2)",
+    "description": "Thử tay API xác thực theo thứ tự 01 → 21 (giống apps/api/http/auth.http).\n\nCần chạy trước: npm run infra:up và npm run dev -w @tps/api. Dùng Postman Desktop.\nĐăng nhập bằng cookie httpOnly tps_at / tps_rt: Postman tự lưu và gửi lại (nút Cookies để xem/xóa).\nMã OTP: bước 04 và 13 tự lấy mã từ email mới nhất trong Mailpit (biến mailpitUrl). Muốn nhập tay thì xóa script ở tab Scripts > Pre-request của bước đó.\nThử lại từ đầu: đổi biến email sang địa chỉ khác và xóa cookie của 127.0.0.1.\nMỗi request có test kiểm tra status code (tab Test Results).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01. Đăng ký phụ huynh",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 201', () => pm.response.to.have.status(201));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"role\": \"parent\",\n  \"fullName\": \"Nguyễn Thị Thử\",\n  \"email\": \"{{email}}\",\n  \"phone\": \"0912 345 678\",\n  \"password\": \"{{password}}\",\n  \"acceptTerms\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        },
+        "description": "Mong đợi: 201. Chưa đăng nhập. Email chứa mã 6 số tới Mailpit http://127.0.0.1:8025."
+      }
+    },
+    {
+      "name": "02. Đăng nhập khi chưa xác thực email",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+              "pm.test('error.code = email_not_verified', () => pm.expect(pm.response.json().error.code).to.eql('email_not_verified'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "description": "Mong đợi: 403. Mã lỗi email_not_verified."
+      }
+    },
+    {
+      "name": "03. Nhập SAI mã",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+              "pm.test('error.code = invalid_code', () => pm.expect(pm.response.json().error.code).to.eql('invalid_code'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"999999\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/email-verification/confirm",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "email-verification", "confirm"]
+        },
+        "description": "Mong đợi: 400. invalid_code, meta.attemptsLeft = 4."
+      }
+    },
+    {
+      "name": "04. Nhập ĐÚNG mã",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Lấy mã 6 số từ email mới nhất gửi tới {{email}} trong Mailpit, gán vào biến code.",
+              "const mailpit = pm.collectionVariables.get('mailpitUrl');",
+              "const query = encodeURIComponent('to:\"' + pm.collectionVariables.get('email') + '\"');",
+              "pm.sendRequest(mailpit + '/api/v1/search?limit=1&query=' + query, (err, res) => {",
+              "  const list = err ? [] : res.json().messages || [];",
+              "  if (!list.length) { console.warn('Mailpit: chưa có email nào cho địa chỉ này'); return; }",
+              "  pm.sendRequest(mailpit + '/api/v1/message/' + list[0].ID, (err2, res2) => {",
+              "    const match = err2 ? null : (res2.json().Text || '').match(/\\b\\d{6}\\b/);",
+              "    if (match) { pm.collectionVariables.set('code', match[0]); console.log('Mailpit: đã lấy mã'); }",
+              "    else console.warn('Mailpit: không thấy mã 6 số trong email');",
+              "  });",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"{{code}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/email-verification/confirm",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "email-verification", "confirm"]
+        },
+        "description": "Mong đợi: 200. Mã tự lấy từ email mới nhất trong Mailpit (script Pre-request). Thành công thì Postman lưu cookie tps_at, tps_rt."
+      }
+    },
+    {
+      "name": "05. Người dùng hiện tại",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "me"]
+        },
+        "description": "Mong đợi: 200. Dùng cookie vừa nhận."
+      }
+    },
+    {
+      "name": "06. Làm mới phiên",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "refresh"]
+        },
+        "description": "Mong đợi: 200. Cookie tps_rt được thay bằng giá trị mới."
+      }
+    },
+    {
+      "name": "07. Đăng xuất",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 204', () => pm.response.to.have.status(204));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "logout"]
+        },
+        "description": "Mong đợi: 204. Xóa cookie."
+      }
+    },
+    {
+      "name": "08. Sau khi đăng xuất",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+              "pm.test('error.code = unauthenticated', () => pm.expect(pm.response.json().error.code).to.eql('unauthenticated'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "me"]
+        },
+        "description": "Mong đợi: 401. unauthenticated."
+      }
+    },
+    {
+      "name": "09. Đăng nhập lại, ghi nhớ đăng nhập",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"rememberMe\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "description": "Mong đợi: 200. Cookie tps_rt có hạn 30 ngày (xem nút Cookies)."
+      }
+    },
+    {
+      "name": "10. Đăng ký lại email đã xác thực",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+              "pm.test('error.code = email_taken', () => pm.expect(pm.response.json().error.code).to.eql('email_taken'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"role\": \"tutor\",\n  \"fullName\": \"Ai đó\",\n  \"email\": \"{{email}}\",\n  \"password\": \"matkhaukhac9\",\n  \"acceptTerms\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        },
+        "description": "Mong đợi: 409. email_taken."
+      }
+    },
+    {
+      "name": "11. Dữ liệu sai",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+              "pm.test('error.code = validation_failed', () => pm.expect(pm.response.json().error.code).to.eql('validation_failed'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"role\": \"admin\",\n  \"fullName\": \"\",\n  \"email\": \"khong-phai-email\",\n  \"password\": \"abc\",\n  \"acceptTerms\": false\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "register"]
+        },
+        "description": "Mong đợi: 422. validation_failed, details theo từng trường."
+      }
+    },
+    {
+      "name": "12. Quên mật khẩu",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 202', () => pm.response.to.have.status(202));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/password-reset/request",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "password-reset", "request"]
+        },
+        "description": "Mong đợi: 202. Trả giống hệt nhau dù email có tồn tại hay không. Mã mới tới Mailpit (bước 13 tự lấy)."
+      }
+    },
+    {
+      "name": "13. Đặt mật khẩu mới bằng mã",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Lấy mã 6 số từ email mới nhất gửi tới {{email}} trong Mailpit, gán vào biến code.",
+              "const mailpit = pm.collectionVariables.get('mailpitUrl');",
+              "const query = encodeURIComponent('to:\"' + pm.collectionVariables.get('email') + '\"');",
+              "pm.sendRequest(mailpit + '/api/v1/search?limit=1&query=' + query, (err, res) => {",
+              "  const list = err ? [] : res.json().messages || [];",
+              "  if (!list.length) { console.warn('Mailpit: chưa có email nào cho địa chỉ này'); return; }",
+              "  pm.sendRequest(mailpit + '/api/v1/message/' + list[0].ID, (err2, res2) => {",
+              "    const match = err2 ? null : (res2.json().Text || '').match(/\\b\\d{6}\\b/);",
+              "    if (match) { pm.collectionVariables.set('code', match[0]); console.log('Mailpit: đã lấy mã'); }",
+              "    else console.warn('Mailpit: không thấy mã 6 số trong email');",
+              "  });",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 204', () => pm.response.to.have.status(204));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"code\": \"{{code}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/password-reset/confirm",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "password-reset", "confirm"]
+        },
+        "description": "Mong đợi: 204. Mã tự lấy từ email mới nhất trong Mailpit. Mọi phiên bị đăng xuất."
+      }
+    },
+    {
+      "name": "14. Phiên cũ đã bị thu hồi",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 401', () => pm.response.to.have.status(401));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "refresh"]
+        },
+        "description": "Mong đợi: 401. Refresh token cũ không dùng được nữa."
+      }
+    },
+    {
+      "name": "15. Đăng nhập bằng mật khẩu cũ",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+              "pm.test('error.code = invalid_credentials', () => pm.expect(pm.response.json().error.code).to.eql('invalid_credentials'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "description": "Mong đợi: 401. invalid_credentials. Gửi 5 lần thì lần sau bị 429, kể cả mật khẩu đúng."
+      }
+    },
+    {
+      "name": "16. Đăng nhập bằng mật khẩu mới",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{newPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "description": "Mong đợi: 200."
+      }
+    },
+    {
+      "name": "17. Gọi từ trang web lạ (chống CSRF)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+              "pm.test('error.code = forbidden', () => pm.expect(pm.response.json().error.code).to.eql('forbidden'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "https://evil.example"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "logout"]
+        },
+        "description": "Mong đợi: 403. Header Origin lạ bị chặn."
+      }
+    },
+    {
+      "name": "18. Thiết bị đang đăng nhập",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/sessions",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "sessions"]
+        },
+        "description": "Mong đợi: 200. Phiên của máy này có \"current\": true."
+      }
+    },
+    {
+      "name": "19. Đổi mật khẩu, sai mật khẩu hiện tại",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+              "pm.test('error.code = validation_failed', () => pm.expect(pm.response.json().error.code).to.eql('validation_failed'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"currentPassword\": \"saimatkhau1\",\n  \"newPassword\": \"{{changedPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/password/change",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "password", "change"]
+        },
+        "description": "Mong đợi: 422. Lỗi gắn vào ô currentPassword (code wrong_password)."
+      }
+    },
+    {
+      "name": "20. Đổi mật khẩu đúng",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 204', () => pm.response.to.have.status(204));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"currentPassword\": \"{{newPassword}}\",\n  \"newPassword\": \"{{changedPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/password/change",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "password", "change"]
+        },
+        "description": "Mong đợi: 204. Các thiết bị khác bị đăng xuất, máy này vẫn đăng nhập."
+      }
+    },
+    {
+      "name": "21. Đăng xuất mọi thiết bị khác",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('HTTP 204', () => pm.response.to.have.status(204));"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/sessions/revoke-others",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "sessions", "revoke-others"]
+        },
+        "description": "Mong đợi: 204."
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000/api/v1"
+    },
+    {
+      "key": "email",
+      "value": "phuhuynh.thu1@example.com"
+    },
+    {
+      "key": "password",
+      "value": "matkhau123"
+    },
+    {
+      "key": "newPassword",
+      "value": "matkhaumoi456"
+    },
+    {
+      "key": "changedPassword",
+      "value": "matkhau789"
+    },
+    {
+      "key": "code",
+      "value": ""
+    },
+    {
+      "key": "mailpitUrl",
+      "value": "http://127.0.0.1:8025"
+    }
+  ]
+}

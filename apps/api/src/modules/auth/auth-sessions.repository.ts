@@ -42,6 +42,37 @@ export function createAuthSessionsRepository(manager: EntityManager) {
       );
     },
 
+    /**
+     * Các chuỗi phiên còn dùng được của một người: mỗi chuỗi lấy token mới nhất (chưa đổi, chưa thu hồi,
+     * chưa hết hạn). `createdAt` của token đó là lần cuối phiên được làm mới.
+     */
+    listActive(userId: string, now: Date): Promise<AuthSession[]> {
+      return sessions
+        .createQueryBuilder('s')
+        .where('s.userId = :userId', { userId })
+        .andWhere('s.revokedAt IS NULL')
+        .andWhere('s.rotatedAt IS NULL')
+        .andWhere('s.expiresAt > :now', { now })
+        .orderBy('s.createdAt', 'DESC')
+        .getMany();
+    },
+
+    /** Thu hồi mọi chuỗi phiên của một người, trừ chuỗi `keepFamilyId` (thiết bị đang dùng). */
+    async revokeAllForUserExcept(
+      userId: string,
+      keepFamilyId: string,
+      reason: AuthSessionRevokeReason,
+    ): Promise<void> {
+      await sessions
+        .createQueryBuilder()
+        .update()
+        .set({ revokedAt: () => 'now()', revokeReason: reason })
+        .where('user_id = :userId', { userId })
+        .andWhere('family_id <> :keepFamilyId', { keepFamilyId })
+        .andWhere('revoked_at IS NULL')
+        .execute();
+    },
+
     /** Thu hồi mọi phiên của một người (đổi mật khẩu, bị khóa). */
     async revokeAllForUser(userId: string, reason: AuthSessionRevokeReason): Promise<void> {
       await sessions.update(
