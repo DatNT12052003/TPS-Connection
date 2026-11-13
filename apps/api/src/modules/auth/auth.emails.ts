@@ -2,17 +2,9 @@
 // Chuỗi nằm ở @tps/shared (i18n) để vi và en luôn đủ khóa.
 import { type Locale, messages, OTP_RULES } from '@tps/shared';
 import type { EmailMessage } from '../../lib/email/email-sender.js';
+import { escapeHtml, interpolate } from '../../lib/email/template.js';
 
 export type OtpEmailKind = 'verify_email' | 'reset_password';
-
-const interpolate = (template: string, values: Record<string, string | number>) =>
-  template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => String(values[key] ?? ''));
-
-const escapeHtml = (text: string) =>
-  text.replace(
-    /[&<>"']/g,
-    (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] ?? ch,
-  );
 
 export function buildOtpEmail(options: {
   kind: OtpEmailKind;

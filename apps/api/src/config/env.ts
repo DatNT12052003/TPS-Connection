@@ -27,6 +27,8 @@ export const EnvSchema = z
     REDIS_URL: z.url({ protocol: /^rediss?$/, error: 'phải là URL redis://…' }),
 
     CORS_ORIGINS: commaList.pipe(z.array(z.url())).default(['http://localhost:5173']),
+    /** Địa chỉ web, dùng để dựng liên kết trong email (ví dụ liên kết mời học sinh). */
+    WEB_URL: z.url().default('http://localhost:5173'),
     /**
      * Express `trust proxy`: để `req.ip` là IP thật của người dùng khi API đứng sau reverse proxy
      * (rate limit theo IP cần điều này). Mặc định chỉ tin proxy trên cùng máy.

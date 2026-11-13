@@ -13,6 +13,9 @@ import { createTokenService } from './modules/auth/tokens.js';
 import { createRedis } from './lib/redis.js';
 import { createStorage } from './lib/storage.js';
 import { createHealthService } from './modules/health/health.service.js';
+import { createLearnersService } from './modules/learners/learners.service.js';
+import { createStudentInvitationsService } from './modules/learners/student-invitations.service.js';
+import { createParentsService } from './modules/parents/parents.service.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -86,9 +89,10 @@ async function main() {
   // Xác thực (G2).
   const rateLimiter = createRedisRateLimiter(redis);
   const tokens = createTokenService({ secret: env.JWT_SECRET });
+  const hasher = createArgon2Hasher();
   const auth = createAuthService({
     dataSource,
-    hasher: createArgon2Hasher(),
+    hasher,
     tokens,
     otp: createRedisOtpStore({ redis, secret: env.OTP_SECRET }),
     rateLimiter,
@@ -96,7 +100,29 @@ async function main() {
     logger,
   });
 
-  const app = createApp({ env, logger, health, auth, tokens, rateLimiter });
+  // Hồ sơ phụ huynh, hồ sơ con, lời mời học sinh (G2).
+  const parents = createParentsService({ dataSource, logger });
+  const learners = createLearnersService({ dataSource, logger });
+  const studentInvitations = createStudentInvitationsService({
+    dataSource,
+    hasher,
+    rateLimiter,
+    sendEmail: (message) => jobs.enqueueEmail(message),
+    webUrl: env.WEB_URL,
+    logger,
+  });
+
+  const app = createApp({
+    env,
+    logger,
+    health,
+    auth,
+    tokens,
+    rateLimiter,
+    parents,
+    learners,
+    studentInvitations,
+  });
   const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API chạy tại http://${env.HOST}:${env.PORT} (môi trường ${env.NODE_ENV})`);
   });

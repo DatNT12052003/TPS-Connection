@@ -37,6 +37,10 @@ export const vi = {
     code_expired: 'Mã đã hết hạn hoặc không còn hiệu lực. Bấm Gửi lại mã để nhận mã mới.',
     code_attempts_exceeded:
       'Bạn đã nhập sai quá 5 lần nên mã đã bị hủy. Gửi lại mã để nhận mã mới.',
+    invitation_invalid:
+      'Liên kết mời không còn dùng được: đã được dùng, đã bị hủy hoặc không đúng. Hãy nhờ phụ huynh gửi lời mời mới.',
+    invitation_expired:
+      'Liên kết mời đã quá 7 ngày nên hết hạn. Hãy nhờ phụ huynh gửi lời mời mới.',
     internal_error: 'Hệ thống gặp sự cố khi xử lý yêu cầu. Hãy thử lại sau ít phút.',
     service_unavailable: 'Hệ thống đang bảo trì hoặc quá tải. Hãy thử lại sau ít phút.',
   },
@@ -54,6 +58,13 @@ export const vi = {
     invalid_code_format: 'Mã gồm 6 chữ số.',
     must_accept_terms: 'Bạn cần đồng ý với điều khoản để tạo tài khoản.',
     wrong_password: 'Mật khẩu hiện tại chưa đúng.',
+    invalid_date: 'Ngày chưa hợp lệ. Hãy chọn một ngày trong quá khứ.',
+    province_required: 'Hãy chọn tỉnh/thành phố trước khi chọn xã/phường.',
+    commune_not_in_province: 'Xã/phường này không thuộc tỉnh/thành phố đã chọn.',
+    unknown_option: 'Lựa chọn này không còn trong danh sách. Hãy chọn lại.',
+    must_accept_child_data: 'Bạn cần đồng ý cho TPS-Connection xử lý dữ liệu của con để tạo hồ sơ.',
+    nothing_to_update: 'Chưa có thông tin nào thay đổi.',
+    invalid_token: 'Liên kết mời không đúng. Hãy mở lại liên kết trong email.',
   },
 
   // ---- Email gửi người dùng (API dựng nội dung theo ngôn ngữ của người nhận) ----
@@ -75,6 +86,17 @@ export const vi = {
     intro:
       'Chúng tôi nhận được yêu cầu đặt lại mật khẩu của bạn. Nhập mã dưới đây vào trang đặt lại mật khẩu để chọn mật khẩu mới.',
     ignore: 'Nếu bạn không yêu cầu, hãy bỏ qua email này; mật khẩu của bạn không thay đổi.',
+  },
+  emailStudentInvitation: {
+    subject: '{{inviter}} mời bạn tham gia TPS-Connection',
+    greeting: 'Chào bạn,',
+    intro:
+      '{{inviter}} đã tạo hồ sơ học tập cho bạn trên TPS-Connection và mời bạn tạo tài khoản học sinh để xem lịch học, buổi học và tiến độ của mình.',
+    action: 'Tạo tài khoản học sinh',
+    linkHint: 'Nếu nút không bấm được, hãy chép liên kết này vào trình duyệt:',
+    expiry: 'Liên kết chỉ dùng được một lần và hết hạn sau {{days}} ngày.',
+    ignore:
+      'Nếu bạn không biết người gửi, hãy bỏ qua email này; sẽ không có tài khoản nào được tạo.',
   },
 
   // ---- Khung giao diện (web, sau này mobile) ----
@@ -212,6 +234,23 @@ export const vi = {
     privacy_policy: 'Chính sách bảo vệ dữ liệu cá nhân',
     child_data_processing: 'Đồng ý xử lý dữ liệu của con',
     marketing_email: 'Nhận email giới thiệu, khuyến mãi',
+  },
+  guardianRelationship: {
+    father: 'Bố',
+    mother: 'Mẹ',
+    guardian: 'Người giám hộ',
+    other: 'Khác',
+  },
+  guardianEndReason: {
+    transferred: 'Đã chuyển cho phụ huynh khác',
+    learner_self_managed: 'Học sinh tự quản lý',
+    account_deleted: 'Tài khoản đã xóa',
+  },
+  studentInvitationStatus: {
+    pending: 'Đang chờ',
+    accepted: 'Đã nhận',
+    revoked: 'Đã hủy',
+    expired: 'Đã hết hạn',
   },
   gradeStage: {
     preschool: 'Mầm non',

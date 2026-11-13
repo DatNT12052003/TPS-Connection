@@ -1,7 +1,19 @@
 // Tài liệu OpenAPI sinh từ chính các Zod schema trong @tps/shared. Thêm endpoint: khai báo path ở đây.
 import {
+  AcceptStudentInvitationRequest,
   ActiveSession,
   ApiErrorBody,
+  CreateLearnerRequest,
+  CreateStudentInvitationRequest,
+  Learner,
+  LearnerIdParams,
+  LearnerList,
+  ParentProfile,
+  PendingStudentInvitation,
+  StudentInvitationLookupRequest,
+  StudentInvitationPreview,
+  UpdateLearnerRequest,
+  UpdateParentProfileRequest,
   AuthSessionResponse,
   AuthUser,
   ChangePasswordRequest,
@@ -29,6 +41,24 @@ const sessionSetCookie = {
   description:
     'Đăng nhập thành công. Access token và refresh token nằm trong cookie httpOnly tps_at, tps_rt (D57).',
   ...json(AuthSessionResponse),
+};
+
+const security: Record<string, string[]>[] = [{ cookieAuth: [] }, { bearerAuth: [] }];
+
+/** Chưa đăng nhập, hoặc không có vai trò cần thiết. */
+const roleErrors = {
+  401: error('unauthenticated'),
+  403: error('forbidden: thiếu vai trò'),
+};
+
+/** Không có quyền theo quan hệ trả 404 như hồ sơ không tồn tại (không lộ hồ sơ có tồn tại hay không). */
+const notVisible = error(
+  'not_found: không tồn tại hoặc không phải phụ huynh quản lý / chính học sinh',
+);
+
+const invitationErrors = {
+  404: error('invitation_invalid: không tồn tại, đã dùng, đã hủy'),
+  410: error('invitation_expired: quá 7 ngày'),
 };
 
 export function createOpenApiDocument() {
@@ -180,6 +210,137 @@ export function createOpenApiDocument() {
           summary: 'Đăng xuất mọi thiết bị khác',
           security: [{ cookieAuth: [] }, { bearerAuth: [] }],
           responses: { 204: { description: 'Đã đăng xuất' }, 401: error('unauthenticated') },
+        },
+      },
+
+      // ---- Hồ sơ phụ huynh, hồ sơ con, lời mời học sinh (G2 phần 4) ----
+      '/api/v1/me/parent-profile': {
+        get: {
+          tags: ['parents'],
+          summary: 'Hồ sơ của chính phụ huynh (trống nếu chưa lưu)',
+          security,
+          responses: { 200: { description: 'OK', ...json(ParentProfile) }, ...roleErrors },
+        },
+        put: {
+          tags: ['parents'],
+          summary: 'Tạo hoặc thay toàn bộ hồ sơ phụ huynh',
+          security,
+          requestBody: json(UpdateParentProfileRequest),
+          responses: {
+            200: { description: 'OK', ...json(ParentProfile) },
+            ...roleErrors,
+            422: error('validation_failed; xã không thuộc tỉnh: commune_not_in_province'),
+          },
+        },
+      },
+      '/api/v1/learners': {
+        get: {
+          tags: ['learners'],
+          summary: 'Phụ huynh: các con đang quản lý. Học sinh: hồ sơ của chính mình',
+          security,
+          responses: { 200: { description: 'OK', ...json(LearnerList) }, ...roleErrors },
+        },
+        post: {
+          tags: ['learners'],
+          summary: 'Phụ huynh tạo hồ sơ con, kèm đồng ý xử lý dữ liệu của con',
+          security,
+          requestBody: json(CreateLearnerRequest),
+          responses: {
+            201: { description: 'Đã tạo', ...json(Learner) },
+            ...roleErrors,
+            422: error('validation_failed (chưa đồng ý, khối lớp hoặc tỉnh/xã không hợp lệ)'),
+          },
+        },
+      },
+      '/api/v1/learners/{learnerId}': {
+        get: {
+          tags: ['learners'],
+          summary: 'Một hồ sơ con: chỉ phụ huynh quản lý hoặc chính học sinh',
+          security,
+          requestParams: { path: LearnerIdParams },
+          responses: {
+            200: { description: 'OK', ...json(Learner) },
+            ...roleErrors,
+            404: notVisible,
+          },
+        },
+        patch: {
+          tags: ['learners'],
+          summary: 'Phụ huynh quản lý sửa hồ sơ (null xóa giá trị)',
+          security,
+          requestParams: { path: LearnerIdParams },
+          requestBody: json(UpdateLearnerRequest),
+          responses: {
+            200: { description: 'OK', ...json(Learner) },
+            ...roleErrors,
+            404: notVisible,
+            422: error('validation_failed'),
+          },
+        },
+        delete: {
+          tags: ['learners'],
+          summary: 'Phụ huynh quản lý xóa mềm hồ sơ (rút đồng ý, hủy lời mời)',
+          security,
+          requestParams: { path: LearnerIdParams },
+          responses: {
+            204: { description: 'Đã xóa' },
+            ...roleErrors,
+            404: notVisible,
+            409: error('conflict: hồ sơ đã có tài khoản học sinh'),
+          },
+        },
+      },
+      '/api/v1/learners/{learnerId}/invitation': {
+        post: {
+          tags: ['learners'],
+          summary: 'Mời con tạo tài khoản học sinh: liên kết dùng một lần, 7 ngày (D50)',
+          description: 'Lời mời đang mở trước đó bị hủy; chỉ liên kết mới nhất dùng được.',
+          security,
+          requestParams: { path: LearnerIdParams },
+          requestBody: json(CreateStudentInvitationRequest),
+          responses: {
+            201: { description: 'Đã gửi email mời', ...json(PendingStudentInvitation) },
+            ...roleErrors,
+            404: notVisible,
+            409: error('conflict: hồ sơ đã có tài khoản học sinh'),
+            ...commonErrors,
+          },
+        },
+        delete: {
+          tags: ['learners'],
+          summary: 'Hủy lời mời đang mở',
+          security,
+          requestParams: { path: LearnerIdParams },
+          responses: {
+            204: { description: 'Đã hủy' },
+            ...roleErrors,
+            404: error('not_found: không có quyền, hoặc không có lời mời đang mở'),
+          },
+        },
+      },
+      '/api/v1/student-invitations/lookup': {
+        post: {
+          tags: ['learners'],
+          summary: 'Trang nhận lời mời: thông tin lời mời (không cần đăng nhập)',
+          requestBody: json(StudentInvitationLookupRequest),
+          responses: {
+            200: { description: 'OK', ...json(StudentInvitationPreview) },
+            ...invitationErrors,
+            ...commonErrors,
+          },
+        },
+      },
+      '/api/v1/student-invitations/accept': {
+        post: {
+          tags: ['learners'],
+          summary: 'Nhận lời mời: tạo tài khoản học sinh, gắn vào hồ sơ, đăng nhập',
+          requestBody: json(AcceptStudentInvitationRequest),
+          responses: {
+            201: sessionSetCookie,
+            ...invitationErrors,
+            409: error('email_taken: email đã có tài khoản đã xác thực'),
+            ...commonErrors,
+          },
         },
       },
     },

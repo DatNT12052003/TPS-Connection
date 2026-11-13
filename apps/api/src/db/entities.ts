@@ -5,6 +5,10 @@ import { AdministrativeArea } from '../modules/catalog/administrative-area.entit
 import { GradeLevel } from '../modules/catalog/grade-level.entity.js';
 import { Subject } from '../modules/catalog/subject.entity.js';
 import { StoredFile } from '../modules/files/stored-file.entity.js';
+import { LearnerGuardian } from '../modules/learners/learner-guardian.entity.js';
+import { Learner } from '../modules/learners/learner.entity.js';
+import { StudentInvitation } from '../modules/learners/student-invitation.entity.js';
+import { ParentProfile } from '../modules/parents/parent-profile.entity.js';
 import { Role } from '../modules/users/role.entity.js';
 import { UserBlock } from '../modules/users/user-block.entity.js';
 import { UserConsent } from '../modules/users/user-consent.entity.js';
@@ -24,4 +28,9 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   UserBlock,
   AuthSession,
   StoredFile,
+  // Hồ sơ phụ huynh và người học
+  ParentProfile,
+  Learner,
+  LearnerGuardian,
+  StudentInvitation,
 ];

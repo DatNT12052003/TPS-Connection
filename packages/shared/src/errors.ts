@@ -20,6 +20,9 @@ export const ErrorCode = z.enum([
   'invalid_code',
   'code_expired',
   'code_attempts_exceeded',
+  // Lời mời học sinh (D50): không tồn tại, đã dùng hoặc đã hủy / đã quá 7 ngày.
+  'invitation_invalid',
+  'invitation_expired',
   'internal_error',
   'service_unavailable',
 ]);
@@ -43,6 +46,8 @@ export const ERROR_HTTP_STATUS = {
   invalid_code: 400,
   code_expired: 400,
   code_attempts_exceeded: 400,
+  invitation_invalid: 404,
+  invitation_expired: 410,
   internal_error: 500,
   service_unavailable: 503,
 } as const satisfies Record<ErrorCode, number>;

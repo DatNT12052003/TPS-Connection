@@ -412,6 +412,16 @@ export function createAuthService(deps: AuthServiceDeps) {
       await sessionsRepo().revokeAllForUserExcept(userId, currentFamilyId, 'logout');
     },
 
+    /**
+     * Đăng nhập một tài khoản vừa chứng minh sở hữu email bằng cách khác ngoài mật khẩu (học sinh nhận
+     * lời mời qua liên kết trong email, D50). Không "ghi nhớ đăng nhập".
+     */
+    async signIn(userId: string, client: ClientInfo): Promise<IssuedSession> {
+      const user = await usersRepo().findById(userId);
+      if (!user) throw new AppError('unauthenticated', 'Account no longer exists');
+      return startSession(user, false, client);
+    },
+
     /** Người dùng hiện tại (cho middleware xác thực và GET /auth/me). Null nếu đã xóa. */
     async getAuthUser(userId: string): Promise<AuthUser | null> {
       const account = await usersRepo().findWithRoles(userId);

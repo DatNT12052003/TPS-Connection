@@ -237,7 +237,8 @@ describe('administrative areas', () => {
   const areas = () => db.getRepository(AdministrativeArea);
 
   beforeEach(async () => {
-    await db.query(`TRUNCATE administrative_areas RESTART IDENTITY`);
+    // CASCADE: hồ sơ phụ huynh và người học tham chiếu tới khu vực (chỉ là dữ liệu test của file này).
+    await db.query(`TRUNCATE administrative_areas RESTART IDENTITY CASCADE`);
   });
 
   it('enforce the two-level structure', async () => {

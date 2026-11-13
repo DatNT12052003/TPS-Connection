@@ -17,6 +17,9 @@ import { createAuthService } from '../../src/modules/auth/auth.service.js';
 import { createRedisOtpStore } from '../../src/modules/auth/otp-store.js';
 import { createArgon2Hasher } from '../../src/modules/auth/password-hasher.js';
 import { createTokenService } from '../../src/modules/auth/tokens.js';
+import type { LearnersService } from '../../src/modules/learners/learners.service.js';
+import type { StudentInvitationsService } from '../../src/modules/learners/student-invitations.service.js';
+import type { ParentsService } from '../../src/modules/parents/parents.service.js';
 import { grantStaffRole, revokeStaffRole } from '../../src/modules/users/staff-roles.js';
 import { silentLogger, TEST_JWT_SECRET, TEST_ORIGIN, testEnv } from '../helpers.js';
 
@@ -65,6 +68,10 @@ beforeAll(async () => {
     auth,
     tokens,
     rateLimiter,
+    // Hồ sơ phụ huynh và con: test riêng ở learners.int.test.ts.
+    parents: {} as ParentsService,
+    learners: {} as LearnersService,
+    studentInvitations: {} as StudentInvitationsService,
   });
 });
 

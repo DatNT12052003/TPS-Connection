@@ -38,6 +38,24 @@ export const AuthSessionRevokeReason = z.enum([
 ]);
 export type AuthSessionRevokeReason = z.infer<typeof AuthSessionRevokeReason>;
 
+// ---- Hồ sơ phụ huynh và người học -------------------------------------------------------------
+
+/** `learner_guardians.relationship`: quan hệ của phụ huynh quản lý với người học. */
+export const GuardianRelationship = z.enum(['father', 'mother', 'guardian', 'other']);
+export type GuardianRelationship = z.infer<typeof GuardianRelationship>;
+
+/** `learner_guardians.ended_reason`: vì sao phụ huynh thôi quản lý (C9). */
+export const GuardianEndReason = z.enum(['transferred', 'learner_self_managed', 'account_deleted']);
+export type GuardianEndReason = z.infer<typeof GuardianEndReason>;
+
+/**
+ * Trạng thái lời mời học sinh, suy ra từ `student_invitations` (không lưu thành cột):
+ * `pending` chưa dùng và còn hạn, `accepted` đã dùng (một lần), `revoked` phụ huynh hủy hoặc gửi lời mời mới,
+ * `expired` quá 7 ngày (D50).
+ */
+export const StudentInvitationStatus = z.enum(['pending', 'accepted', 'revoked', 'expired']);
+export type StudentInvitationStatus = z.infer<typeof StudentInvitationStatus>;
+
 // ---- Danh mục ---------------------------------------------------------------------------------
 
 /** `grade_levels.stage`: cấp học, dùng để nhóm khối lớp. */
@@ -253,6 +271,9 @@ export const LABELLED_ENUMS = {
   userStatus: UserStatus,
   role: Role,
   consentType: ConsentType,
+  guardianRelationship: GuardianRelationship,
+  guardianEndReason: GuardianEndReason,
+  studentInvitationStatus: StudentInvitationStatus,
   gradeStage: GradeStage,
   tutorProfileStatus: TutorProfileStatus,
   verificationRequestKind: VerificationRequestKind,

@@ -121,6 +121,30 @@ export function createUsersRepository(manager: EntityManager) {
       );
     },
 
+    /** Phụ huynh đồng ý cho nền tảng xử lý dữ liệu của một người con (gắn `learner_id`). */
+    async recordChildDataConsent(
+      userId: string,
+      learnerId: string,
+      version: string,
+      ipAddress: string | null,
+    ): Promise<void> {
+      await consents.insert({
+        userId,
+        learnerId,
+        consentType: 'child_data_processing',
+        version,
+        ipAddress,
+      });
+    },
+
+    /** Rút lại đồng ý xử lý dữ liệu của người con (khi xóa hồ sơ). Giữ dòng làm bằng chứng. */
+    async withdrawChildDataConsent(learnerId: string): Promise<void> {
+      await consents.update(
+        { learnerId, consentType: 'child_data_processing', withdrawnAt: IsNull() },
+        { withdrawnAt: () => 'now()' },
+      );
+    },
+
     async markEmailVerified(id: string): Promise<void> {
       await users.update({ id, emailVerifiedAt: IsNull() }, { emailVerifiedAt: new Date() });
     },

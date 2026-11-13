@@ -153,6 +153,29 @@ Thử tay các endpoint: [http/auth.http](http/auth.http) (extension REST Client
 
 Khi dev: mã OTP xem ở Mailpit (http://127.0.0.1:8025). Gọi thử bằng curl trên Windows: gửi body từ tệp UTF-8 (`--data-binary @body.json`); tham số dòng lệnh của Git Bash làm mất dấu tiếng Việt.
 
+## Hồ sơ phụ huynh, hồ sơ con, lời mời học sinh (G2)
+
+Module `src/modules/parents` và `src/modules/learners`; thiết kế ở docs/thiet_ke_co_so_du_lieu.md mục 5.2 và 12, quyết định C9, D4, D16, D50.
+
+| Endpoint                                      | Ai                          | Việc                                                         |
+| --------------------------------------------- | --------------------------- | ------------------------------------------------------------ |
+| `GET`, `PUT /me/parent-profile`               | phụ huynh                   | Hồ sơ của chính mình (tỉnh, xã, địa chỉ)                     |
+| `GET /learners`                               | phụ huynh, học sinh         | Con đang quản lý / hồ sơ của chính học sinh                  |
+| `POST /learners`                              | phụ huynh                   | Tạo hồ sơ con, bắt buộc đồng ý xử lý dữ liệu của con         |
+| `GET /learners/:id`                           | phụ huynh quản lý, học sinh | Một hồ sơ                                                    |
+| `PATCH`, `DELETE /learners/:id`               | phụ huynh quản lý           | Sửa; xóa mềm (rút đồng ý, hủy lời mời)                       |
+| `POST`, `DELETE /learners/:id/invitation`     | phụ huynh quản lý           | Gửi lời mời (thay lời mời cũ); hủy lời mời đang mở           |
+| `POST /student-invitations/lookup`, `/accept` | chưa đăng nhập              | Xem lời mời; nhận lời mời: tạo tài khoản học sinh, đăng nhập |
+
+- **Quyền theo quan hệ** ở `src/modules/learners/learner-access.ts`: `isParentOf(userId, learnerId)` (qua view `learner_managers`), `isStudentSelf(userId, learnerId)`, `assertParentOf`, `assertCanView`. Mọi endpoint chạm vào một hồ sơ con đi qua các hàm này trong service. Không có quyền thì **404**, giống hồ sơ không tồn tại, để không lộ hồ sơ có tồn tại hay không. `teachesStudent` thêm ở G6 cùng bảng lớp học.
+- Mỗi hồ sơ con có đúng một phụ huynh quản lý (C9): partial unique index `learner_guardians_one_active_uq`.
+- Đồng ý xử lý dữ liệu của con: một dòng `user_consents` loại `child_data_processing` gắn `learner_id`, phiên bản `CHILD_DATA_CONSENT_VERSION` (@tps/shared), ghi cùng transaction với hồ sơ. Xóa hồ sơ thì ghi `withdrawn_at`, giữ dòng làm bằng chứng.
+- Học sinh chỉ xem (D4); không thấy ghi chú phụ huynh viết cho gia sư và lời mời.
+- Lời mời (D50): token 256 bit, chỉ lưu SHA-256; dùng một lần, hết hạn 7 ngày; mỗi hồ sơ một lời mời đang mở. Liên kết trong email là `<WEB_URL>/student-invitation#token=…` (token sau `#` không tới máy chủ web, không vào log). Nhận lời mời bằng email đã có tài khoản đã xác thực: 409 `email_taken`. Mời không kiểm tra email đã đăng ký hay chưa (không lộ email). Giới hạn 10 lời mời mỗi giờ cho một phụ huynh, cộng giới hạn theo IP.
+- Chưa làm ở bản này: xóa hồ sơ đã có tài khoản học sinh (409), đổi phụ huynh quản lý (Admin, C9), ngưỡng tuổi tài khoản học sinh (chờ luật sư, D4).
+
+Thử tay: [http/learners.http](http/learners.http).
+
 ## Ghi chú cho Windows
 
 Test tích hợp cần Docker Desktop đang chạy. Một số bản Docker Desktop không mở pipe `//./pipe/docker_engine` mà Testcontainers cần; khi đó `test/global-setup.ts` tự mở pipe tạm, chuyển tiếp sang endpoint của Docker context hiện tại, và đóng lại khi test xong.

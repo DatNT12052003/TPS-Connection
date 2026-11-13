@@ -36,6 +36,10 @@ export const en: Messages = {
     code_expired: 'The code has expired or is no longer valid. Tap Resend code to get a new one.',
     code_attempts_exceeded:
       'You entered a wrong code 5 times, so it was cancelled. Request a new code.',
+    invitation_invalid:
+      'This invitation link can no longer be used: it was already used, cancelled, or is not correct. Ask your parent to send a new invitation.',
+    invitation_expired:
+      'This invitation link is more than 7 days old and has expired. Ask your parent to send a new invitation.',
     internal_error:
       'Something went wrong on our side while handling your request. Try again in a few minutes.',
     service_unavailable:
@@ -55,6 +59,14 @@ export const en: Messages = {
     invalid_code_format: 'The code has 6 digits.',
     must_accept_terms: 'You need to accept the terms to create an account.',
     wrong_password: 'Your current password is not correct.',
+    invalid_date: 'This date is not valid. Choose a date in the past.',
+    province_required: 'Choose a province or city before choosing a commune or ward.',
+    commune_not_in_province: 'This commune or ward is not in the selected province or city.',
+    unknown_option: 'This option is no longer available. Choose again.',
+    must_accept_child_data:
+      "You need to allow TPS-Connection to process your child's data to create this profile.",
+    nothing_to_update: 'Nothing has changed yet.',
+    invalid_token: 'This invitation link is not correct. Open the link in the email again.',
   },
 
   emailCommon: {
@@ -75,6 +87,16 @@ export const en: Messages = {
     intro:
       'We received a request to reset your password. Enter this code on the reset page to choose a new one.',
     ignore: "Didn't ask for this? Ignore this email; your password stays the same.",
+  },
+  emailStudentInvitation: {
+    subject: '{{inviter}} invited you to TPS-Connection',
+    greeting: 'Hi,',
+    intro:
+      '{{inviter}} created a learning profile for you on TPS-Connection and invites you to create a student account to see your schedule, lessons and progress.',
+    action: 'Create student account',
+    linkHint: "If the button doesn't work, copy this link into your browser:",
+    expiry: 'The link works once and expires in {{days}} days.',
+    ignore: "Don't know the sender? Ignore this email; no account will be created.",
   },
 
   layout: {
@@ -210,6 +232,23 @@ export const en: Messages = {
     privacy_policy: 'Personal data protection policy',
     child_data_processing: "Consent to process my child's data",
     marketing_email: 'Product news and offers by email',
+  },
+  guardianRelationship: {
+    father: 'Father',
+    mother: 'Mother',
+    guardian: 'Guardian',
+    other: 'Other',
+  },
+  guardianEndReason: {
+    transferred: 'Transferred to another parent',
+    learner_self_managed: 'Student manages their own account',
+    account_deleted: 'Account deleted',
+  },
+  studentInvitationStatus: {
+    pending: 'Pending',
+    accepted: 'Accepted',
+    revoked: 'Cancelled',
+    expired: 'Expired',
   },
   gradeStage: {
     preschool: 'Preschool',

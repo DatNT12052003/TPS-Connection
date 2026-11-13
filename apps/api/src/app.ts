@@ -16,6 +16,13 @@ import type { TokenService } from './modules/auth/tokens.js';
 import { createHealthController } from './modules/health/health.controller.js';
 import { healthRouter } from './modules/health/health.router.js';
 import type { HealthService } from './modules/health/health.service.js';
+import { createLearnersController } from './modules/learners/learners.controller.js';
+import { learnersRouter, studentInvitationsRouter } from './modules/learners/learners.router.js';
+import type { LearnersService } from './modules/learners/learners.service.js';
+import type { StudentInvitationsService } from './modules/learners/student-invitations.service.js';
+import { createParentsController } from './modules/parents/parents.controller.js';
+import { parentProfileRouter } from './modules/parents/parents.router.js';
+import type { ParentsService } from './modules/parents/parents.service.js';
 import { createOpenApiDocument } from './openapi.js';
 
 export interface AppDeps {
@@ -25,6 +32,9 @@ export interface AppDeps {
   auth: AuthService;
   tokens: TokenService;
   rateLimiter: RateLimiter;
+  parents: ParentsService;
+  learners: LearnersService;
+  studentInvitations: StudentInvitationsService;
 }
 
 /** "true"/"false" -> boolean, số -> số hop proxy, còn lại (loopback, dải IP) giữ nguyên chuỗi. */
@@ -67,6 +77,18 @@ export function createApp(deps: AppDeps): Express {
     '/auth',
     authRouter(createAuthController(deps.auth, cookieSettings), deps.rateLimiter, authenticate()),
   );
+  api.use(
+    '/me/parent-profile',
+    parentProfileRouter(createParentsController(deps.parents), authenticate()),
+  );
+  const learnersController = createLearnersController({
+    learners: deps.learners,
+    invitations: deps.studentInvitations,
+    auth: deps.auth,
+    cookies: cookieSettings,
+  });
+  api.use('/learners', learnersRouter(learnersController, deps.rateLimiter, authenticate()));
+  api.use('/student-invitations', studentInvitationsRouter(learnersController, deps.rateLimiter));
   app.use('/api/v1', api);
 
   app.use(notFoundHandler);

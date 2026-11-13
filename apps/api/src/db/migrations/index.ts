@@ -4,10 +4,12 @@ import { InitExtensions1794960000000 } from './1794960000000-InitExtensions.js';
 import { CreateCatalogs1794970000000 } from './1794970000000-CreateCatalogs.js';
 import { CreateAccounts1794970100000 } from './1794970100000-CreateAccounts.js';
 import { AddAuthSessionRememberMe1794970200000 } from './1794970200000-AddAuthSessionRememberMe.js';
+import { CreateParentLearnerProfiles1794970300000 } from './1794970300000-CreateParentLearnerProfiles.js';
 
 export const MIGRATIONS = [
   InitExtensions1794960000000,
   CreateCatalogs1794970000000,
   CreateAccounts1794970100000,
   AddAuthSessionRememberMe1794970200000,
+  CreateParentLearnerProfiles1794970300000,
 ];
