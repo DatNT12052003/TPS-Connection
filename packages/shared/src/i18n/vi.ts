@@ -65,6 +65,20 @@ export const vi = {
     must_accept_child_data: 'Bạn cần đồng ý cho TPS-Connection xử lý dữ liệu của con để tạo hồ sơ.',
     nothing_to_update: 'Chưa có thông tin nào thay đổi.',
     invalid_token: 'Liên kết mời không đúng. Hãy mở lại liên kết trong email.',
+    invalid_time: 'Giờ chưa đúng định dạng, ví dụ: 19:30.',
+    end_before_start: 'Giờ kết thúc phải sau giờ bắt đầu.',
+    slot_overlap: 'Có hai khung giờ trong cùng một ngày bị chồng nhau. Hãy gộp hoặc sửa lại.',
+    duplicate: 'Có mục bị lặp lại. Hãy bỏ bớt mục trùng.',
+    too_many: 'Danh sách quá dài. Hãy bỏ bớt một số mục.',
+    service_areas_need_in_person:
+      'Khu vực dạy chỉ dùng cho hình thức dạy trực tiếp. Hãy chọn dạy trực tiếp hoặc kết hợp.',
+    invalid_amount: 'Số tiền chưa hợp lệ. Hãy nhập số tiền lớn hơn 0.',
+    invalid_url: 'Đường dẫn chưa đúng. Hãy dùng đường dẫn bắt đầu bằng https://.',
+    invalid_year: 'Năm chưa hợp lệ.',
+    full_name_locked:
+      'Họ tên đã được xác minh nên không sửa được. Liên hệ hỗ trợ nếu bạn cần đổi họ tên.',
+    file_not_uploaded: 'Tệp chưa tải lên xong. Hãy tải lại tệp rồi thử lại.',
+    file_purpose_not_allowed: 'Loại tệp này chưa được hỗ trợ ở đây.',
   },
 
   // ---- Email gửi người dùng (API dựng nội dung theo ngôn ngữ của người nhận) ----
@@ -260,6 +274,16 @@ export const vi = {
     university: 'Đại học',
     working_adult: 'Người đi làm',
     other: 'Khác',
+  },
+  tutorOccupation: {
+    university_student: 'Sinh viên',
+    teacher: 'Giáo viên',
+    professional: 'Người đi làm',
+    other: 'Khác',
+  },
+  rateUnit: {
+    hour: 'Theo giờ',
+    session: 'Theo buổi',
   },
   tutorProfileStatus: {
     incomplete: 'Chưa hoàn thiện',

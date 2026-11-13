@@ -3,7 +3,7 @@
 // phụ huynh quản lý và chính học sinh đó; gia sư chỉ thấy sau khi xác nhận hợp tác (D16, G5).
 import { z } from 'zod';
 import { GuardianRelationship } from '../statuses.js';
-import { Email, Id, Locale, Password } from './common.js';
+import { Email, Id, Locale, optionalText, Password } from './common.js';
 
 /** Lời mời con tạo tài khoản học sinh: liên kết dùng một lần, hết hạn sau 7 ngày (D50). */
 export const STUDENT_INVITATION_RULES = {
@@ -14,19 +14,6 @@ export const STUDENT_INVITATION_RULES = {
 
 /** Phiên bản văn bản "đồng ý xử lý dữ liệu của con", ghi vào `user_consents.version`. */
 export const CHILD_DATA_CONSENT_VERSION = '2026-11-13';
-
-/**
- * Văn bản tùy chọn: bỏ khoảng trắng đầu cuối; chuỗi rỗng hoặc `null` thành `null` (xóa giá trị khi sửa).
- * Không gửi trường thì giữ nguyên (`undefined`).
- */
-const optionalText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max, { error: 'too_long' })
-    .transform((value) => (value === '' ? null : value))
-    .nullable()
-    .optional();
 
 const CatalogId = z.int({ error: 'required' }).positive();
 const optionalCatalogId = CatalogId.nullable().optional();

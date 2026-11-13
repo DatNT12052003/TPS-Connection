@@ -23,6 +23,14 @@ import type { StudentInvitationsService } from './modules/learners/student-invit
 import { createParentsController } from './modules/parents/parents.controller.js';
 import { parentProfileRouter } from './modules/parents/parents.router.js';
 import type { ParentsService } from './modules/parents/parents.service.js';
+import { catalogRouter } from './modules/catalog/catalog.router.js';
+import type { CatalogService } from './modules/catalog/catalog.service.js';
+import { createTutorsController } from './modules/tutors/tutors.controller.js';
+import { ownTutorProfileRouter, publicTutorsRouter } from './modules/tutors/tutors.router.js';
+import type { TutorsService } from './modules/tutors/tutors.service.js';
+import { createAccountController } from './modules/users/account.controller.js';
+import { accountRouter, filesRouter } from './modules/users/account.router.js';
+import type { AccountService } from './modules/users/account.service.js';
 import { createOpenApiDocument } from './openapi.js';
 
 export interface AppDeps {
@@ -35,6 +43,9 @@ export interface AppDeps {
   parents: ParentsService;
   learners: LearnersService;
   studentInvitations: StudentInvitationsService;
+  tutors: TutorsService;
+  account: AccountService;
+  catalog: CatalogService;
 }
 
 /** "true"/"false" -> boolean, số -> số hop proxy, còn lại (loopback, dải IP) giữ nguyên chuỗi. */
@@ -89,6 +100,14 @@ export function createApp(deps: AppDeps): Express {
   });
   api.use('/learners', learnersRouter(learnersController, deps.rateLimiter, authenticate()));
   api.use('/student-invitations', studentInvitationsRouter(learnersController, deps.rateLimiter));
+  const tutorsController = createTutorsController(deps.tutors);
+  api.use('/me/tutor-profile', ownTutorProfileRouter(tutorsController, authenticate()));
+  api.use('/tutors', publicTutorsRouter(tutorsController));
+  const accountController = createAccountController(deps.account);
+  // Sau /me/parent-profile, /me/tutor-profile: router này chỉ khớp /me và /me/avatar.
+  api.use('/me', accountRouter(accountController, authenticate()));
+  api.use('/files', filesRouter(accountController, deps.rateLimiter, authenticate()));
+  api.use('/catalog', catalogRouter(deps.catalog));
   app.use('/api/v1', api);
 
   app.use(notFoundHandler);

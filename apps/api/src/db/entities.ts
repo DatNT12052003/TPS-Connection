@@ -9,6 +9,13 @@ import { LearnerGuardian } from '../modules/learners/learner-guardian.entity.js'
 import { Learner } from '../modules/learners/learner.entity.js';
 import { StudentInvitation } from '../modules/learners/student-invitation.entity.js';
 import { ParentProfile } from '../modules/parents/parent-profile.entity.js';
+import { TutorCredential } from '../modules/tutors/tutor-credential.entity.js';
+import {
+  TutorAvailabilitySlot,
+  TutorServiceArea,
+  TutorTeachingSubject,
+} from '../modules/tutors/tutor-profile-items.entity.js';
+import { TutorProfile } from '../modules/tutors/tutor-profile.entity.js';
 import { Role } from '../modules/users/role.entity.js';
 import { UserBlock } from '../modules/users/user-block.entity.js';
 import { UserConsent } from '../modules/users/user-consent.entity.js';
@@ -33,4 +40,10 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   Learner,
   LearnerGuardian,
   StudentInvitation,
+  // Hồ sơ gia sư
+  TutorProfile,
+  TutorTeachingSubject,
+  TutorServiceArea,
+  TutorAvailabilitySlot,
+  TutorCredential,
 ];

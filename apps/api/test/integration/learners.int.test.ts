@@ -30,6 +30,9 @@ import { createLearnerAccess } from '../../src/modules/learners/learner-access.j
 import { createLearnersService } from '../../src/modules/learners/learners.service.js';
 import { createStudentInvitationsService } from '../../src/modules/learners/student-invitations.service.js';
 import { createParentsService } from '../../src/modules/parents/parents.service.js';
+import type { CatalogService } from '../../src/modules/catalog/catalog.service.js';
+import type { TutorsService } from '../../src/modules/tutors/tutors.service.js';
+import type { AccountService } from '../../src/modules/users/account.service.js';
 import { silentLogger, TEST_JWT_SECRET, TEST_ORIGIN, testEnv } from '../helpers.js';
 
 jest.setTimeout(180_000);
@@ -110,6 +113,10 @@ beforeAll(async () => {
       logger: silentLogger,
       now: () => new Date(Date.now() + clockOffsetMs),
     }),
+    // Hồ sơ gia sư, tài khoản, danh mục: test riêng ở tutors.int.test.ts.
+    tutors: {} as TutorsService,
+    account: {} as AccountService,
+    catalog: {} as CatalogService,
   });
 });
 

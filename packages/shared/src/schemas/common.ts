@@ -23,6 +23,19 @@ export const Password = z
     error: 'password_needs_letter_and_digit',
   });
 
+/**
+ * Văn bản tùy chọn: bỏ khoảng trắng đầu cuối; chuỗi rỗng hoặc `null` thành `null` (xóa giá trị khi sửa).
+ * Không gửi trường thì giữ nguyên (`undefined`).
+ */
+export const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, { error: 'too_long' })
+    .transform((value) => (value === '' ? null : value))
+    .nullable()
+    .optional();
+
 /** Số tiền VND: số nguyên, không âm (DB: bigint + CHECK >= 0). */
 export const VndAmount = z.int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 

@@ -67,6 +67,20 @@ export const en: Messages = {
       "You need to allow TPS-Connection to process your child's data to create this profile.",
     nothing_to_update: 'Nothing has changed yet.',
     invalid_token: 'This invitation link is not correct. Open the link in the email again.',
+    invalid_time: 'Enter a time like 19:30.',
+    end_before_start: 'The end time must be after the start time.',
+    slot_overlap: 'Two time slots on the same day overlap. Merge or change them.',
+    duplicate: 'Some items are repeated. Remove the duplicates.',
+    too_many: 'This list is too long. Remove some items.',
+    service_areas_need_in_person:
+      'Teaching areas are only for in-person lessons. Choose in-person or hybrid.',
+    invalid_amount: 'This amount is not valid. Enter an amount greater than 0.',
+    invalid_url: 'This link is not valid. Use a link that starts with https://.',
+    invalid_year: 'This year is not valid.',
+    full_name_locked:
+      'Your full name has been verified and cannot be changed. Contact support if you need to change it.',
+    file_not_uploaded: 'The file has not finished uploading. Upload it again and retry.',
+    file_purpose_not_allowed: 'This kind of file is not supported here.',
   },
 
   emailCommon: {
@@ -258,6 +272,16 @@ export const en: Messages = {
     university: 'University',
     working_adult: 'Working adult',
     other: 'Other',
+  },
+  tutorOccupation: {
+    university_student: 'University student',
+    teacher: 'Teacher',
+    professional: 'Working professional',
+    other: 'Other',
+  },
+  rateUnit: {
+    hour: 'Per hour',
+    session: 'Per session',
   },
   tutorProfileStatus: {
     incomplete: 'Incomplete',

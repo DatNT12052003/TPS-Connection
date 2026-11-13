@@ -47,7 +47,8 @@ src/
   lib/                 logger, Redis client, AppError, storage (S3), email/ (EmailSender + SMTP)
   jobs/                hàng đợi BullMQ và worker (hiện có: email)
   db/                  DataSource, danh sách entity và migration
-  modules/<miền>/      router → controller → service → repository (G2 trở đi); hiện có health
+  modules/<miền>/      router → controller → service → repository: health, auth, users (tài khoản, thông tin
+                       cá nhân), catalog, files, parents, learners, tutors
   openapi.ts           tài liệu OpenAPI từ schema Zod của @tps/shared
 test/                  test HTTP (Supertest), test tích hợp *.int.test.ts (Testcontainers)
 ```
@@ -172,9 +173,31 @@ Module `src/modules/parents` và `src/modules/learners`; thiết kế ở docs/t
 - Đồng ý xử lý dữ liệu của con: một dòng `user_consents` loại `child_data_processing` gắn `learner_id`, phiên bản `CHILD_DATA_CONSENT_VERSION` (@tps/shared), ghi cùng transaction với hồ sơ. Xóa hồ sơ thì ghi `withdrawn_at`, giữ dòng làm bằng chứng.
 - Học sinh chỉ xem (D4); không thấy ghi chú phụ huynh viết cho gia sư và lời mời.
 - Lời mời (D50): token 256 bit, chỉ lưu SHA-256; dùng một lần, hết hạn 7 ngày; mỗi hồ sơ một lời mời đang mở. Liên kết trong email là `<WEB_URL>/student-invitation#token=…` (token sau `#` không tới máy chủ web, không vào log). Nhận lời mời bằng email đã có tài khoản đã xác thực: 409 `email_taken`. Mời không kiểm tra email đã đăng ký hay chưa (không lộ email). Giới hạn 10 lời mời mỗi giờ cho một phụ huynh, cộng giới hạn theo IP.
-- Chưa làm ở bản này: xóa hồ sơ đã có tài khoản học sinh (409), đổi phụ huynh quản lý (Admin, C9), ngưỡng tuổi tài khoản học sinh (chờ luật sư, D4).
+- Chưa làm ở bản này: xóa hồ sơ đã có tài khoản học sinh (409), đổi phụ huynh quản lý (Admin, C9), ngưỡng tuổi tài khoản học sinh (chờ luật sư, D4). Việc còn lại và câu hỏi chờ quyết định được theo dõi ở docs/ke_hoach_trien_khai.md (mục "Còn lại của G2" và "Việc chuyển từ G2" ở từng giai đoạn).
 
 Thử tay: [http/learners.http](http/learners.http).
+
+## Hồ sơ gia sư, thông tin cá nhân, ảnh đại diện, danh mục (G2)
+
+Module `src/modules/tutors`, `src/modules/users` (account), `src/modules/files`, `src/modules/catalog`; thiết kế ở docs/thiet_ke_co_so_du_lieu.md mục 5.1, quyết định D5, D16, D18, D34, C8, C12, D55.
+
+| Endpoint                                                                          | Ai           | Việc                                                                 |
+| --------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------- |
+| `GET`, `PUT /me/tutor-profile`                                                    | gia sư       | Hồ sơ của chính mình (tạo hồ sơ trống nếu chưa có); PUT thay toàn bộ |
+| `POST /me/tutor-profile/credentials`, `PATCH`, `DELETE …/:id`                     | gia sư       | Bằng cấp, chứng chỉ tự khai                                          |
+| `GET /tutors/:tutorId`                                                            | ai cũng xem  | Hồ sơ công khai                                                      |
+| `GET`, `PATCH /me`                                                                | đã đăng nhập | Thông tin cá nhân: tên hiển thị, họ tên, số điện thoại, ngôn ngữ     |
+| `POST /files/uploads`; `PUT`, `DELETE /me/avatar`                                 | đã đăng nhập | Cấp URL tải ảnh lên kho; đặt / bỏ ảnh đại diện                       |
+| `GET /catalog/subjects`, `/grade-levels`, `/provinces`, `/provinces/:id/communes` | ai cũng xem  | Danh mục cho form (Cache-Control 1 giờ)                              |
+
+- **Hồ sơ công khai** chỉ gồm gia sư `profile_status = 'verified'`, tài khoản `active`, chưa xóa (D5, C8); còn lại 404. Không có email, số điện thoại, họ tên thật (D16): chỉ tên hiển thị. Bằng cấp bị từ chối không hiện, đang chờ duyệt hiện như tự khai.
+- Sửa hồ sơ không đổi `profile_status` (B.4.1). DTO của gia sư có `missingForVerification`: trường bắt buộc còn thiếu trước khi nộp xác minh (họ tên, môn – khối, hình thức dạy, học phí; D34). Nộp xác minh và duyệt thuộc G3.
+- Bằng cấp đang chờ duyệt hoặc đã xác minh thì không sửa, không xóa được (409 `invalid_state_transition`). Sửa bằng cấp bị từ chối thì quay về tự khai.
+- Họ tên thật của gia sư đã xác minh danh tính bị khóa: `PATCH /me` đổi họ tên trả 422 `full_name_locked` (D34). Đổi số điện thoại thì số mới là tự khai (C12).
+- **Ảnh đại diện:** `POST /files/uploads` (`purpose: avatar`, tối đa 5 MB, JPG/PNG/WEBP, D55) ghi `files` trạng thái `pending_upload` và trả URL ký sẵn; trình duyệt PUT tệp lên kho; `PUT /me/avatar { fileId }` kiểm tra tệp đã lên kho đúng dung lượng và loại (`headObject`) rồi mới chuyển `ready`. Ảnh cũ được đánh dấu xóa và xóa khỏi kho. Endpoint tải lên hiện chỉ nhận `avatar`; mục đích khác mở ở giai đoạn của nó.
+- Chưa làm: "tùy chọn riêng tư" (chưa có quyết định cụ thể), slug trong URL hồ sơ công khai và danh sách/tìm kiếm gia sư (G4), nộp xác minh (G3). Theo dõi ở docs/ke_hoach_trien_khai.md (mục "Còn lại của G2" và "Việc chuyển từ G2").
+
+Thử tay: [http/tutors.http](http/tutors.http).
 
 ## Ghi chú cho Windows
 

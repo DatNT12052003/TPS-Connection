@@ -7,6 +7,9 @@ import type { HealthService } from '../src/modules/health/health.service.js';
 import type { LearnersService } from '../src/modules/learners/learners.service.js';
 import type { StudentInvitationsService } from '../src/modules/learners/student-invitations.service.js';
 import type { ParentsService } from '../src/modules/parents/parents.service.js';
+import type { CatalogService } from '../src/modules/catalog/catalog.service.js';
+import type { TutorsService } from '../src/modules/tutors/tutors.service.js';
+import type { AccountService } from '../src/modules/users/account.service.js';
 
 export const silentLogger = createLogger({ LOG_LEVEL: 'silent', NODE_ENV: 'test' });
 
@@ -40,5 +43,8 @@ export function createTestApp(health?: Partial<HealthService>, auth?: Partial<Au
     parents: {} as ParentsService,
     learners: {} as LearnersService,
     studentInvitations: {} as StudentInvitationsService,
+    tutors: {} as TutorsService,
+    account: {} as AccountService,
+    catalog: {} as CatalogService,
   });
 }

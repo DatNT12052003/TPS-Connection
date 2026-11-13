@@ -89,6 +89,14 @@ export type AdministrativeUnitType = z.infer<typeof AdministrativeUnitType>;
 
 // ---- Hồ sơ gia sư và xác minh ----------------------------------------------------------------
 
+/** `tutor_profiles.occupation`: nghề nghiệp gia sư tự khai. Sinh viên phải nộp thêm thẻ sinh viên (C4). */
+export const TutorOccupation = z.enum(['university_student', 'teacher', 'professional', 'other']);
+export type TutorOccupation = z.infer<typeof TutorOccupation>;
+
+/** `tutor_profiles.rate_unit`: học phí tham khảo theo giờ hoặc theo buổi (D18). */
+export const RateUnit = z.enum(['hour', 'session']);
+export type RateUnit = z.infer<typeof RateUnit>;
+
 /** `tutor_profiles.profile_status` (B.4.1). */
 export const TutorProfileStatus = z.enum(['incomplete', 'pending_verification', 'verified']);
 export type TutorProfileStatus = z.infer<typeof TutorProfileStatus>;
@@ -275,6 +283,8 @@ export const LABELLED_ENUMS = {
   guardianEndReason: GuardianEndReason,
   studentInvitationStatus: StudentInvitationStatus,
   gradeStage: GradeStage,
+  tutorOccupation: TutorOccupation,
+  rateUnit: RateUnit,
   tutorProfileStatus: TutorProfileStatus,
   verificationRequestKind: VerificationRequestKind,
   verificationRequestStatus: VerificationRequestStatus,

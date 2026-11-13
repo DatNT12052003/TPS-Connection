@@ -16,6 +16,10 @@ import { createHealthService } from './modules/health/health.service.js';
 import { createLearnersService } from './modules/learners/learners.service.js';
 import { createStudentInvitationsService } from './modules/learners/student-invitations.service.js';
 import { createParentsService } from './modules/parents/parents.service.js';
+import { createCatalogService } from './modules/catalog/catalog.service.js';
+import { createFilesService } from './modules/files/files.service.js';
+import { createTutorsService } from './modules/tutors/tutors.service.js';
+import { createAccountService } from './modules/users/account.service.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -112,6 +116,17 @@ async function main() {
     logger,
   });
 
+  // Hồ sơ gia sư, thông tin cá nhân, ảnh đại diện, danh mục (G2).
+  const publicFileUrl = (storageKey: string) => storage.publicUrl(storageKey);
+  const tutors = createTutorsService({ dataSource, logger, publicFileUrl });
+  const account = createAccountService({
+    dataSource,
+    files: createFilesService({ storage, logger }),
+    publicFileUrl,
+    logger,
+  });
+  const catalog = createCatalogService({ dataSource });
+
   const app = createApp({
     env,
     logger,
@@ -122,6 +137,9 @@ async function main() {
     parents,
     learners,
     studentInvitations,
+    tutors,
+    account,
+    catalog,
   });
   const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API chạy tại http://${env.HOST}:${env.PORT} (môi trường ${env.NODE_ENV})`);

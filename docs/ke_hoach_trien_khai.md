@@ -147,6 +147,21 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Hoàn thành khi:** test chứng minh phụ huynh A không đọc được hồ sơ con của phụ huynh B, và API công khai không lộ email hay số điện thoại.
 
+**Tiến độ (2026-11-13):** phần API đã xong: xác thực, vai trò và phân quyền, hồ sơ phụ huynh và con, đồng ý xử lý dữ liệu của con, lời mời học sinh, hồ sơ gia sư, thông tin cá nhân và ảnh đại diện, API đọc danh mục, `isParentOf` và `isStudentSelf` (`teachesStudent` làm ở G6 cùng bảng lớp học). Hai test của điều kiện hoàn thành đã có (`learners.int.test.ts`, `tutors.int.test.ts` trong `apps/api/test/integration`).
+
+**Còn lại của G2:**
+
+- Các màn hình web (mục Đầu ra), kể cả trang nhận lời mời `/student-invitation` (token nằm sau `#` trong liên kết email).
+  - Màn xem/sửa hồ sơ từng con chưa có trên canvas giao diện (G1b mục 4): dựng theo màn tạo hồ sơ con.
+  - Thay thanh chọn vai trò tạm thời khi dev (`apps/web/app/lib/dev-role.server.ts`, `routes/dev-role.ts`) bằng đăng nhập thật; xóa hai tệp đó.
+- **Làm trước phần web:** thống nhất định dạng lỗi validation. Hiện lỗi từ schema Zod để mã i18n ở `details[].message` (`code` là mã của Zod), còn lỗi do service ném ra để mã i18n ở `details[].code`. Chọn một cách cho mọi lỗi, sửa API và test, rồi web chỉ đọc một chỗ.
+
+**Câu hỏi chờ chủ dự án quyết** (chốt xong thì ghi vào decision log):
+
+- "Tùy chọn riêng tư" (§3.1) gồm những gì? Gợi ý: bật/tắt nhận email giới thiệu (loại đồng ý `marketing_email` đã có trong bảng `user_consents`).
+- Có cho phụ huynh xóa hồ sơ con đã có tài khoản học sinh không? Nếu có, tài khoản học sinh xử lý thế nào? API hiện trả 409.
+- Độ tuổi tối thiểu của tài khoản học sinh (D4, chờ luật sư). Lời mời học sinh hiện chưa kiểm tra tuổi.
+
 ### Giai đoạn 3. Xác minh gia sư và trang quản trị cơ bản
 
 **Mục tiêu:** gia sư được xác minh để có thể xuất hiện công khai; Manager và Admin có công cụ làm việc tối thiểu.
@@ -158,6 +173,11 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Sau khi duyệt:** giữ kết quả xác minh, job tự xóa ảnh giấy tờ sau 30 ngày (mốc chờ luật sư xác nhận).
 - **Quản trị (Admin):** danh sách và tìm kiếm tài khoản, khóa/mở khóa, gán vai trò Manager, quản lý danh mục môn, khối lớp, khu vực.
 - **Nhật ký kiểm toán (audit log):** ghi mọi thao tác của Manager và Admin, nhất là mỗi lần xem giấy tờ tùy thân.
+- **Việc chuyển từ G2:**
+  - Nộp xác minh chuyển hồ sơ `incomplete` → `pending_verification` (B.4.1). Chỉ cho nộp khi `missingForVerification` của `GET /me/tutor-profile` rỗng (D34).
+  - Mở endpoint tải tệp `POST /files/uploads` cho `verification_document` và `credential` (hiện chỉ nhận `avatar`, xem `UPLOADABLE_PURPOSES` trong `apps/api/src/modules/files/files.service.ts`).
+  - Duyệt bằng cấp thì cập nhật `tutor_credentials.verification_status` và `tutor_profiles.has_verified_degree` (D20). API đã khóa sửa, xóa bằng cấp đang chờ duyệt hoặc đã xác minh.
+  - Job dọn bản ghi `files` còn `pending_upload` quá 24 giờ và xóa tệp tương ứng trên kho (thiết kế CSDL mục 13). Ảnh đại diện đã tạo được bản ghi loại này từ G2.
 - Thông báo email và trong app khi hồ sơ được duyệt hoặc bị từ chối (dùng bảng thông báo tối giản; hoàn thiện ở giai đoạn 5).
 
 **Đầu ra:** luồng xác minh đầy đủ trên web; trang `/admin` cho Manager và Admin.
@@ -178,6 +198,10 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Gợi ý đơn giản:** xếp hạng theo các tiêu chí giải thích được (môn, cấp lớp, ngân sách, lịch rảnh, hình thức, khu vực, tình trạng nhận học sinh).
 - **Yêu thích và so sánh gia sư** _(D10, làm nếu kịp)_.
 - Index cơ sở dữ liệu theo đúng các truy vấn lọc, kiểm chứng bằng `EXPLAIN ANALYZE` với dữ liệu mẫu.
+- **Việc chuyển từ G2:**
+  - Thêm cột `tutor_profiles.search_vector` cùng index (G2 chưa tạo, xem thiết kế CSDL mục 5.1).
+  - Slug cho URL hồ sơ gia sư `/tutors/<slug>` _(D56)_. API hiện dùng id: `GET /api/v1/tutors/:tutorId`.
+  - Danh sách và tìm kiếm gia sư dùng cùng điều kiện hiển thị công khai với `GET /tutors/:tutorId`: đã xác minh, tài khoản `active`, chưa xóa. Không trả email, số điện thoại, họ tên thật (đã có test ở `tutors.int.test.ts`; thêm test tương tự cho danh sách).
 
 **Đầu ra:** trang tìm gia sư, chi tiết gia sư, chi tiết bài đăng, quản lý bài đăng của gia sư và phụ huynh.
 
@@ -219,6 +243,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Khiếu nại buổi học** _(C5)_: buổi bị khiếu nại tạm chưa tính tiền; hai bên có 3 ngày tự thống nhất, nếu không thì Manager quyết định và chỉ sửa bản ghi, không hoàn tiền.
 - **Kết quả cơ bản** (§15.1): gia sư nhập điểm và nhận xét theo buổi hoặc theo bài kiểm tra; phụ huynh và học sinh xem được.
 - **Thông báo:** buổi học sắp diễn ra, lịch thay đổi hoặc bị hủy, buổi cần xác nhận, điểm và nhận xét mới.
+- **Việc chuyển từ G2:** hàm `teachesStudent` (gia sư dạy hoặc đã dạy người học qua lớp; thiết kế CSDL mục 12 gọi là `teachesLearner`). Đặt cạnh `isParentOf`, `isStudentSelf` trong `apps/api/src/modules/learners/learner-access.ts`, kèm test chứng minh gia sư không xem được học sinh mình không dạy. Xóa hồ sơ con khi đã có lớp: không được xóa lịch sử học tập (C2), nên phải chặn hoặc chỉ ẩn.
 
 **Đầu ra:** trang lớp học, lịch, điểm danh, xác nhận buổi, khiếu nại buổi, xem kết quả của con.
 
@@ -249,7 +274,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 - **Kiểm duyệt** (§13): hàng chờ báo cáo vi phạm cho tài khoản, bài đăng, tin nhắn; Manager chỉ xem đoạn tin nhắn bị báo cáo _(C1)_; lưu kết quả xử lý; cảnh báo, hạn chế, khóa tài khoản; ẩn bài đăng vi phạm. Admin xử lý khiếu nại lại.
 - **Xóa tài khoản** _(C2, D19)_: ghi `deleted_at` và ẩn ngay; job sau 6 tháng xóa hẳn dữ liệu cá nhân, ẩn danh bản ghi lớp và đánh giá; giấy tờ xác minh theo mốc riêng. Bên còn lại vẫn thấy lịch sử buổi học, điểm, học phí dưới nhãn "Học sinh đã xóa tài khoản".
-- **Đổi phụ huynh quản lý** do Admin xử lý theo yêu cầu _(C9)_.
+- **Đổi phụ huynh quản lý** do Admin xử lý theo yêu cầu _(C9)_: kết thúc dòng `learner_guardians` cũ (`ended_reason = 'transferred'`, `changed_by`) rồi thêm dòng mới, trong một transaction.
 - **Thống kê cơ bản** cho Admin theo các chỉ số pilot ở giai đoạn 0.
 - **Review bảo mật** (skill `security-review`): xác thực, phân quyền theo quan hệ, upload tệp, rate limit, header bảo mật, CORS, lộ dữ liệu qua API, log không chứa dữ liệu của trẻ.
 - **Kiểm thử end-to-end** bằng Playwright cho các luồng §14.1, §14.2, §14.3.

@@ -1,5 +1,23 @@
 // Tài liệu OpenAPI sinh từ chính các Zod schema trong @tps/shared. Thêm endpoint: khai báo path ở đây.
 import {
+  AccountProfile,
+  CatalogArea,
+  CatalogGradeLevel,
+  CatalogSubject,
+  catalogList,
+  CreateTutorCredentialRequest,
+  CredentialIdParams,
+  OwnTutorProfile,
+  ProvinceIdParams,
+  PublicTutorProfile,
+  SetAvatarRequest,
+  TutorCredential,
+  TutorIdParams,
+  UpdateAccountRequest,
+  UpdateTutorCredentialRequest,
+  UpdateTutorProfileRequest,
+  UploadRequest,
+  UploadTicketResponse,
   AcceptStudentInvitationRequest,
   ActiveSession,
   ApiErrorBody,
@@ -340,6 +358,174 @@ export function createOpenApiDocument() {
             ...invitationErrors,
             409: error('email_taken: email đã có tài khoản đã xác thực'),
             ...commonErrors,
+          },
+        },
+      },
+
+      // ---- Thông tin cá nhân, ảnh đại diện (G2 phần 5) ----
+      '/api/v1/me': {
+        get: {
+          tags: ['account'],
+          summary: 'Thông tin cá nhân của chính người dùng',
+          security,
+          responses: {
+            200: { description: 'OK', ...json(AccountProfile) },
+            401: error('unauthenticated'),
+          },
+        },
+        patch: {
+          tags: ['account'],
+          summary: 'Sửa tên hiển thị, họ tên, số điện thoại (tự khai), ngôn ngữ',
+          security,
+          requestBody: json(UpdateAccountRequest),
+          responses: {
+            200: { description: 'OK', ...json(AccountProfile) },
+            401: error('unauthenticated'),
+            422: error('validation_failed; gia sư đã xác minh đổi họ tên: full_name_locked'),
+          },
+        },
+      },
+      '/api/v1/me/avatar': {
+        put: {
+          tags: ['account'],
+          summary: 'Đặt ảnh đại diện bằng tệp đã tải lên (POST /files/uploads)',
+          security,
+          requestBody: json(SetAvatarRequest),
+          responses: {
+            200: { description: 'OK', ...json(AccountProfile) },
+            401: error('unauthenticated'),
+            422: error(
+              'file_not_uploaded: tệp chưa lên kho, sai dung lượng/loại, hoặc không phải của bạn',
+            ),
+          },
+        },
+        delete: {
+          tags: ['account'],
+          summary: 'Bỏ ảnh đại diện',
+          security,
+          responses: { 204: { description: 'Đã bỏ' }, 401: error('unauthenticated') },
+        },
+      },
+      '/api/v1/files/uploads': {
+        post: {
+          tags: ['account'],
+          summary: 'Cấp URL để trình duyệt PUT tệp thẳng lên kho (hiện chỉ purpose = avatar)',
+          security,
+          requestBody: json(UploadRequest),
+          responses: {
+            201: { description: 'URL tải lên, hết hạn sau 5 phút', ...json(UploadTicketResponse) },
+            401: error('unauthenticated'),
+            ...commonErrors,
+          },
+        },
+      },
+
+      // ---- Hồ sơ gia sư (G2 phần 5) ----
+      '/api/v1/me/tutor-profile': {
+        get: {
+          tags: ['tutors'],
+          summary: 'Hồ sơ của chính gia sư (tạo hồ sơ trống nếu chưa có)',
+          security,
+          responses: { 200: { description: 'OK', ...json(OwnTutorProfile) }, ...roleErrors },
+        },
+        put: {
+          tags: ['tutors'],
+          summary: 'Thay toàn bộ hồ sơ gia sư (không đổi trạng thái hồ sơ)',
+          security,
+          requestBody: json(UpdateTutorProfileRequest),
+          responses: {
+            200: { description: 'OK', ...json(OwnTutorProfile) },
+            ...roleErrors,
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/me/tutor-profile/credentials': {
+        post: {
+          tags: ['tutors'],
+          summary: 'Thêm bằng cấp, chứng chỉ tự khai',
+          security,
+          requestBody: json(CreateTutorCredentialRequest),
+          responses: {
+            201: { description: 'Đã thêm', ...json(TutorCredential) },
+            ...roleErrors,
+            409: error('conflict: đã đủ 20 mục'),
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/me/tutor-profile/credentials/{credentialId}': {
+        patch: {
+          tags: ['tutors'],
+          summary: 'Sửa bằng cấp tự khai (bị từ chối thì quay về tự khai)',
+          security,
+          requestParams: { path: CredentialIdParams },
+          requestBody: json(UpdateTutorCredentialRequest),
+          responses: {
+            200: { description: 'OK', ...json(TutorCredential) },
+            ...roleErrors,
+            404: error('not_found'),
+            409: error('invalid_state_transition: đang chờ duyệt hoặc đã xác minh'),
+          },
+        },
+        delete: {
+          tags: ['tutors'],
+          summary: 'Xóa bằng cấp tự khai',
+          security,
+          requestParams: { path: CredentialIdParams },
+          responses: {
+            204: { description: 'Đã xóa' },
+            ...roleErrors,
+            404: error('not_found'),
+            409: error('invalid_state_transition: đang chờ duyệt hoặc đã xác minh'),
+          },
+        },
+      },
+      '/api/v1/tutors/{tutorId}': {
+        get: {
+          tags: ['tutors'],
+          summary:
+            'Hồ sơ gia sư công khai (khách xem được; không có email, số điện thoại, họ tên thật)',
+          requestParams: { path: TutorIdParams },
+          responses: {
+            200: { description: 'OK', ...json(PublicTutorProfile) },
+            404: error(
+              'not_found: không tồn tại, chưa xác minh danh tính, bị hạn chế/khóa hoặc đã xóa',
+            ),
+          },
+        },
+      },
+
+      // ---- Danh mục (công khai) ----
+      '/api/v1/catalog/subjects': {
+        get: {
+          tags: ['catalog'],
+          summary: 'Môn học đang dùng',
+          responses: { 200: { description: 'OK', ...json(catalogList(CatalogSubject)) } },
+        },
+      },
+      '/api/v1/catalog/grade-levels': {
+        get: {
+          tags: ['catalog'],
+          summary: 'Khối lớp, cấp học đang dùng',
+          responses: { 200: { description: 'OK', ...json(catalogList(CatalogGradeLevel)) } },
+        },
+      },
+      '/api/v1/catalog/provinces': {
+        get: {
+          tags: ['catalog'],
+          summary: 'Tỉnh, thành phố',
+          responses: { 200: { description: 'OK', ...json(catalogList(CatalogArea)) } },
+        },
+      },
+      '/api/v1/catalog/provinces/{provinceId}/communes': {
+        get: {
+          tags: ['catalog'],
+          summary: 'Xã, phường, đặc khu của một tỉnh',
+          requestParams: { path: ProvinceIdParams },
+          responses: {
+            200: { description: 'OK', ...json(catalogList(CatalogArea)) },
+            404: error('not_found: tỉnh không tồn tại'),
           },
         },
       },
