@@ -19,11 +19,15 @@
     "db:migration:generate": "node --env-file-if-exists=.env --import tsx ../../node_modules/typeorm/cli.js migration:generate -p -d src/db/cli-data-source.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1167.0",
+    "@aws-sdk/s3-request-presigner": "^3.1167.0",
     "@tps/shared": "^0.0.0",
+    "bullmq": "^6.7.5",
     "cors": "^2.8.6",
     "express": "^5.3.0",
     "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
+    "nodemailer": "^10.5.0",
     "pg": "^8.23.1",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
@@ -42,6 +46,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^24.19.2",
+    "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
     "jest": "^30.5.2",

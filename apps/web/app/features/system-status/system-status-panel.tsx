@@ -24,6 +24,7 @@ interface SystemStatusPanelProps {
 const CHECK_LABELS = {
   database: 'status.checkDatabase',
   redis: 'status.checkRedis',
+  storage: 'status.checkStorage',
 } as const;
 
 const isKnownCheck = (name: string): name is keyof typeof CHECK_LABELS => name in CHECK_LABELS;

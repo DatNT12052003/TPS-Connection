@@ -36,6 +36,9 @@ export const en: Messages = {
     password_too_short: 'Your password needs at least 8 characters.',
     password_too_long: 'Your password can be at most 128 characters.',
     password_needs_letter_and_digit: 'Your password needs both letters and numbers.',
+    file_type_not_allowed:
+      'This file type is not supported. Choose a JPG, PNG or WEBP image or a PDF file.',
+    file_too_large: 'This file is too large. Choose a smaller file or compress it and try again.',
   },
 
   layout: {
@@ -121,6 +124,7 @@ export const en: Messages = {
     devHint: 'Running locally? Check `npm run dev -w @tps/api` and `npm run infra:up`.',
     checkDatabase: 'Database',
     checkRedis: 'Cache and queues',
+    checkStorage: 'File storage',
     checkOk: 'Running',
     checkError: 'Error',
     latency: '{{ms}} ms',

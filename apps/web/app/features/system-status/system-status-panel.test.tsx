@@ -23,14 +23,16 @@ describe('SystemStatusPanel', () => {
         checks: {
           database: { status: 'ok', latencyMs: 4 },
           redis: { status: 'ok', latencyMs: 2 },
+          storage: { status: 'ok', latencyMs: 9 },
         },
       },
     });
 
     expect(screen.getByRole('status')).toHaveTextContent('Mọi dịch vụ đang hoạt động');
+    expect(screen.getByText('Kho lưu tệp')).toBeInTheDocument();
     expect(screen.getByText('Cơ sở dữ liệu')).toBeInTheDocument();
     expect(screen.getByText('Bộ nhớ đệm và hàng đợi')).toBeInTheDocument();
-    expect(screen.getAllByText('Hoạt động')).toHaveLength(2);
+    expect(screen.getAllByText('Hoạt động')).toHaveLength(3);
     expect(screen.getByText('Kiểm tra lúc 19:30:05')).toBeInTheDocument();
   });
 

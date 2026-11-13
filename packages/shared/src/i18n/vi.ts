@@ -35,6 +35,9 @@ export const vi = {
     password_too_short: 'Mật khẩu cần ít nhất 8 ký tự.',
     password_too_long: 'Mật khẩu dài tối đa 128 ký tự.',
     password_needs_letter_and_digit: 'Mật khẩu cần có cả chữ và số.',
+    file_type_not_allowed:
+      'Loại tệp này không được hỗ trợ. Hãy chọn ảnh JPG, PNG, WEBP hoặc tệp PDF.',
+    file_too_large: 'Tệp quá lớn. Hãy chọn tệp nhỏ hơn hoặc nén lại rồi thử lại.',
   },
 
   // ---- Khung giao diện (web, sau này mobile) ----
@@ -121,6 +124,7 @@ export const vi = {
     devHint: 'Đang chạy trên máy local? Kiểm tra `npm run dev -w @tps/api` và `npm run infra:up`.',
     checkDatabase: 'Cơ sở dữ liệu',
     checkRedis: 'Bộ nhớ đệm và hàng đợi',
+    checkStorage: 'Kho lưu tệp',
     checkOk: 'Hoạt động',
     checkError: 'Lỗi',
     latency: '{{ms}} ms',

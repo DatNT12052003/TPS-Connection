@@ -2,8 +2,11 @@ import 'reflect-metadata';
 import { createApp } from './app.js';
 import { EnvError, loadEnv, type Env } from './config/env.js';
 import { createDataSource } from './db/data-source.js';
+import { createJobs } from './jobs/index.js';
+import { createSmtpEmailSender } from './lib/email/smtp-email-sender.js';
 import { createLogger, type Logger } from './lib/logger.js';
 import { createRedis } from './lib/redis.js';
+import { createStorage } from './lib/storage.js';
 import { createHealthService } from './modules/health/health.service.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
@@ -50,11 +53,28 @@ async function main() {
 
   const redis = createRedis(env.REDIS_URL, logger);
 
+  // Dịch vụ dùng chung: kho lưu tệp, gửi email, hàng đợi. Module nghiệp vụ (G2 trở đi) nhận qua tham số.
+  const storage = createStorage(env);
+  if (env.S3_CONFIGURE_CORS) {
+    // Không chặn khởi động: thiếu CORS chỉ làm trình duyệt không upload được, health check sẽ báo kho lỗi.
+    storage
+      .configureCors(env.CORS_ORIGINS)
+      .catch((err: unknown) => logger.warn({ err }, 'Không đặt được CORS cho bucket lưu tệp'));
+  }
+  const emailSender = createSmtpEmailSender(env);
+  const jobs = createJobs({
+    redisUrl: env.REDIS_URL,
+    emailSender,
+    logger,
+    workersEnabled: env.WORKERS_ENABLED,
+  });
+
   const health = createHealthService({
     logger,
     checks: {
       database: () => dataSource.query('SELECT 1'),
       redis: () => redis.ping(),
+      storage: () => storage.ping(),
     },
   });
 
@@ -81,10 +101,18 @@ async function main() {
 
     // Ngừng nhận request mới, chờ request đang chạy xong, rồi đóng kết nối.
     server.close(() => {
-      void Promise.allSettled([dataSource.destroy(), redis.quit()]).then(() => {
-        logger.info('Đã dừng API');
-        exitAfterFlush(logger, 0);
-      });
+      // Worker chờ job đang chạy xong trước, rồi mới đóng các kết nối.
+      void jobs
+        .close()
+        .finally(() => {
+          emailSender.close();
+          storage.destroy();
+        })
+        .then(() => Promise.allSettled([dataSource.destroy(), redis.quit()]))
+        .then(() => {
+          logger.info('Đã dừng API');
+          exitAfterFlush(logger, 0);
+        });
     });
     server.closeIdleConnections();
   };

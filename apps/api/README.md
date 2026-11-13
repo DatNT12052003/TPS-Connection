@@ -1,6 +1,6 @@
 # @tps/api
 
-API của TPS-Connection: Express 5, TypeORM 1.x trên PostgreSQL 18, Redis (ioredis), log bằng pino, OpenAPI sinh từ Zod.
+API của TPS-Connection: Express 5, TypeORM 1.x trên PostgreSQL 18, Redis (ioredis), BullMQ, kho lưu tệp S3 (SeaweedFS), email qua SMTP (nodemailer), log bằng pino, OpenAPI sinh từ Zod.
 
 ## Chạy lần đầu
 
@@ -14,7 +14,9 @@ npm run db:migrate -w @tps/api
 npm run dev -w @tps/api                        # http://127.0.0.1:3000
 ```
 
-Kiểm tra: `http://127.0.0.1:3000/health/ready` trả `{"status":"ok", ...}`; tài liệu API ở `/openapi.json`.
+Kiểm tra: `http://127.0.0.1:3000/health/ready` trả `{"status":"ok", ...}` với ba mục `database`, `redis`, `storage`; tài liệu API ở `/openapi.json`. Email gửi ra nằm ở Mailpit: http://127.0.0.1:8025.
+
+Đã có `apps/api/.env` từ trước phần dịch vụ dùng chung (G1)? Thêm các biến `S3_*`, `SMTP_*`, `EMAIL_FROM`, `WORKERS_ENABLED` từ `.env.example`, nếu không API sẽ dừng và báo thiếu biến.
 
 ## Lệnh
 
@@ -40,7 +42,8 @@ src/
   app.ts               createApp(deps): Express app chưa listen, nhận phụ thuộc từ ngoài (test thay bằng bản giả)
   config/env.ts        biến môi trường, kiểm tra bằng Zod; sai là dừng ngay và báo tên biến
   http/                middleware dùng chung: request id + log (pino-http), validate (Zod), error handler
-  lib/                 logger, Redis client, AppError
+  lib/                 logger, Redis client, AppError, storage (S3), email/ (EmailSender + SMTP)
+  jobs/                hàng đợi BullMQ và worker (hiện có: email)
   db/                  DataSource, danh sách entity và migration
   modules/<miền>/      router → controller → service → repository (G2 trở đi); hiện có health
   openapi.ts           tài liệu OpenAPI từ schema Zod của @tps/shared
@@ -95,6 +98,22 @@ Rồi gắn router vào `api` (`/api/v1`) trong `app.ts` và khai báo endpoint 
 - **Thời gian:** kết nối PostgreSQL đặt `timezone=UTC`.
 - **Timeout:** chờ kết nối DB tối đa 5 giây, mỗi câu truy vấn tối đa 15 giây (`statement_timeout`), mỗi request HTTP tối đa 30 giây; health check 2 giây cho mỗi phụ thuộc.
 - **Log:** không log token, mật khẩu, cookie (đã che ở `lib/logger.ts`). Máy local in dễ đọc, máy chủ in JSON.
+
+## Dịch vụ dùng chung
+
+Tạo một lần trong `main.ts`, module nghiệp vụ nhận qua tham số (để test thay bằng bản giả).
+
+**Lưu tệp** (`lib/storage.ts`). Trình duyệt upload thẳng lên kho lưu trữ, API không nhận nội dung tệp:
+
+1. Client gửi `{ purpose, fileName, contentType, sizeBytes }` (schema `UploadRequest` trong `@tps/shared`).
+2. `storage.createUploadTicket(...)` kiểm tra loại và dung lượng theo `FILE_RULES` (sai → 422 với mã `file_type_not_allowed` / `file_too_large`), chọn bucket theo mục đích (giấy tờ xác minh luôn private), rồi cấp URL PUT hết hạn sau 5 phút. Chữ ký gồm `Content-Type` và `Content-Length`: gửi sai loại hoặc sai số byte thì kho trả 403.
+3. Client PUT tệp với đúng `headers` của ticket. (G2: tạo dòng `files` trạng thái `pending_upload` khi cấp ticket; client báo xong thì `headObject` kiểm tra rồi chuyển `ready`.)
+
+Đọc tệp private bằng `createDownloadUrl` (5 phút, có thể đặt tên tải về); tệp public bằng `publicUrl`. Khóa lưu trữ là `<mục đích>/<chủ sở hữu>/<uuid>.<đuôi>`, không chứa tên tệp gốc. CORS của bucket đặt theo `CORS_ORIGINS` khi API khởi động (`S3_CONFIGURE_CORS`).
+
+**Email** (`lib/email/`). Nghiệp vụ dùng interface `EmailSender`; bản cài đặt hiện tại là SMTP (Mailpit khi local, Gmail SMTP + App Password khi chạy thật, chỉ khác biến môi trường). Không gửi thẳng trong request: xếp vào hàng đợi bằng `jobs.enqueueEmail({ to, subject, text, html? })`. Nội dung email không chứa thông tin của trẻ (§12).
+
+**Hàng đợi** (`jobs/`, BullMQ trên Redis). Job thử lại 5 lần, chờ 30 giây rồi tăng gấp đôi; dữ liệu job sai dạng thì ném `UnrecoverableError` (không thử lại). Log không ghi nội dung thư, địa chỉ nhận được che (`ph***@gmail.com`). Worker chạy cùng tiến trình API (`WORKERS_ENABLED=true`); khi cần tách, chạy thêm một tiến trình với `true` và đặt `false` cho các tiến trình API. Thêm loại việc mới (tự hủy yêu cầu quá hạn, tự xác nhận buổi học, xóa ảnh giấy tờ…): một hàng đợi + một worker trong `jobs/` theo mẫu email.
 
 ## Ghi chú cho Windows
 
