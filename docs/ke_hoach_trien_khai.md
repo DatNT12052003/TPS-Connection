@@ -154,7 +154,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - Các màn hình web (mục Đầu ra), kể cả trang nhận lời mời `/student-invitation` (token nằm sau `#` trong liên kết email).
   - Màn xem/sửa hồ sơ từng con chưa có trên canvas giao diện (G1b mục 4): dựng theo màn tạo hồ sơ con.
   - Thay thanh chọn vai trò tạm thời khi dev (`apps/web/app/lib/dev-role.server.ts`, `routes/dev-role.ts`) bằng đăng nhập thật; xóa hai tệp đó.
-- **Làm trước phần web:** thống nhất định dạng lỗi validation. Hiện lỗi từ schema Zod để mã i18n ở `details[].message` (`code` là mã của Zod), còn lỗi do service ném ra để mã i18n ở `details[].code`. Chọn một cách cho mọi lỗi, sửa API và test, rồi web chỉ đọc một chỗ.
+- ~~Thống nhất định dạng lỗi validation trước phần web~~: **xong ngày 2026-11-13**. Mọi lỗi theo từng ô có `details[].code` là khóa `validation.*` trong i18n (mã lạ quy về `invalid`); web hiển thị `t('validation.<code>')`, lỗi đầu tiên của mỗi ô.
 
 **Câu hỏi chờ chủ dự án quyết** (chốt xong thì ghi vào decision log):
 

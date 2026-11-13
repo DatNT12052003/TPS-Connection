@@ -45,6 +45,7 @@ export const vi = {
     service_unavailable: 'Hệ thống đang bảo trì hoặc quá tải. Hãy thử lại sau ít phút.',
   },
   validation: {
+    invalid: 'Thông tin này chưa hợp lệ. Hãy kiểm tra lại.',
     required: 'Hãy nhập thông tin này.',
     invalid_email: 'Email chưa đúng định dạng, ví dụ: ten@gmail.com.',
     password_too_short: 'Mật khẩu cần ít nhất 8 ký tự.',

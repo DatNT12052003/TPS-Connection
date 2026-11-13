@@ -205,10 +205,18 @@ describe('register', () => {
     });
     expect(res.status).toBe(422);
     expect(res.body.error.code).toBe('validation_failed');
-    const paths = (res.body.error.details as { path: string }[]).map((d) => d.path);
-    expect(paths).toEqual(
-      expect.arrayContaining(['role', 'fullName', 'email', 'password', 'acceptTerms']),
-    );
+    const details = res.body.error.details as { path: string; code: string }[];
+    // `code` là khóa validation.* trong i18n; web hiển thị t('validation.<code>'), lỗi đầu tiên của mỗi ô
+    // (một ô có thể sai nhiều quy tắc: "short" vừa ngắn vừa thiếu chữ số).
+    const firstByPath = new Map<string, string>();
+    for (const d of details) if (!firstByPath.has(d.path)) firstByPath.set(d.path, d.code);
+    expect(Object.fromEntries(firstByPath)).toEqual({
+      role: 'invalid',
+      fullName: 'required',
+      email: 'invalid_email',
+      password: 'password_too_short',
+      acceptTerms: 'must_accept_terms',
+    });
   });
 
   it('lets an unverified sign-up be redone (e.g. another role), without resending within 45 s', async () => {

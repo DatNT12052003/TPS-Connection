@@ -312,7 +312,10 @@ describe('learner profiles', () => {
     );
     expect(noConsent.status).toBe(422);
     expect(noConsent.body.error.details).toEqual([
-      expect.objectContaining({ path: 'acceptChildDataProcessing' }),
+      expect.objectContaining({
+        path: 'acceptChildDataProcessing',
+        code: 'must_accept_child_data',
+      }),
     ]);
 
     const badGrade = await api(parent).post('/learners', childInput({ gradeLevelId: 99_999 }));

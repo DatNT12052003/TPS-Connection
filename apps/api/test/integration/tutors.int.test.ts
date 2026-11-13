@@ -319,10 +319,9 @@ describe('own tutor profile', () => {
       serviceAreaIds: [ids.baDinh],
     });
     expect(online.status).toBe(422);
-    // Lỗi từ schema Zod: mã i18n nằm ở `message` (error-handler.ts).
     expect(online.body.error.details[0]).toMatchObject({
       path: 'serviceAreaIds',
-      message: 'service_areas_need_in_person',
+      code: 'service_areas_need_in_person',
     });
   });
 

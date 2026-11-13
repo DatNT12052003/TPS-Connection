@@ -46,6 +46,7 @@ export const en: Messages = {
       'The system is under maintenance or overloaded. Try again in a few minutes.',
   },
   validation: {
+    invalid: 'This value is not valid. Please check it.',
     required: 'Please fill in this field.',
     invalid_email: 'Enter a valid email address, for example name@gmail.com.',
     password_too_short: 'Your password needs at least 8 characters.',

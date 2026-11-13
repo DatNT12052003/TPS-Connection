@@ -52,7 +52,11 @@ export const ERROR_HTTP_STATUS = {
   service_unavailable: 503,
 } as const satisfies Record<ErrorCode, number>;
 
-/** Một lỗi ở một trường dữ liệu (lỗi validation). `path` dạng `email`, `items.0.price`. */
+/**
+ * Một lỗi ở một trường dữ liệu (lỗi validation). `path` dạng `email`, `items.0.price`.
+ * `code` LUÔN là khóa của `validation.*` trong i18n (`ValidationCode`; dự phòng `invalid`): client hiển thị
+ * `t('validation.<code>')`. `message` là mô tả tiếng Anh cho lập trình viên, không hiển thị cho người dùng.
+ */
 export const FieldError = z.object({
   path: z.string(),
   code: z.string(),
