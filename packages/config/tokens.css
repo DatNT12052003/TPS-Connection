@@ -1,0 +1,196 @@
+/* TPS-Connection — sinh từ design-tokens/tokens.json. KHÔNG sửa tay: sửa tokens.json rồi chạy `npm run tokens -w @tps/config`. */
+
+/* Chế độ sáng (mặc định) và các token không phụ thuộc chế độ. */
+:root {
+  color-scheme: light;
+  --tps-primary: #1D4ED8;
+  --tps-primary-hover: #1E40AF;
+  --tps-primary-fg: #FFFFFF;
+  --tps-primary-subtle: #E6EDFF;
+  --tps-primary-subtle-fg: #1C3B9E;
+  --tps-accent: #F97316;
+  --tps-accent-subtle: #FFEDD5;
+  --tps-accent-subtle-fg: #9A3412;
+  --tps-bg: #F6F8FC;
+  --tps-surface: #FFFFFF;
+  --tps-surface-raised: #FFFFFF;
+  --tps-surface-sunken: #EEF2F8;
+  --tps-border: #D8DEE9;
+  --tps-border-strong: #8A94A6;
+  --tps-text: #111827;
+  --tps-text-muted: #4B5563;
+  --tps-focus-ring: #2563EB;
+  --tps-success: #17603A;
+  --tps-success-subtle: #E3F5E8;
+  --tps-warning: #8A4B00;
+  --tps-warning-subtle: #FFF1DB;
+  --tps-danger: #A1231B;
+  --tps-danger-subtle: #FDE7E7;
+  --tps-danger-solid: #B42318;
+  --tps-danger-solid-fg: #FFFFFF;
+  --tps-shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.06);
+  --tps-shadow-md: 0 4px 12px rgba(17, 24, 39, 0.08);
+  --tps-shadow-lg: 0 12px 32px rgba(17, 24, 39, 0.16);
+
+  --tps-font-sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --tps-text-display-size: 36px;
+  --tps-text-display-line-height: 44px;
+  --tps-text-display-weight: 700;
+  --tps-text-display-letter-spacing: -0.01em;
+  --tps-text-h1-size: 28px;
+  --tps-text-h1-line-height: 36px;
+  --tps-text-h1-weight: 700;
+  --tps-text-h1-letter-spacing: normal;
+  --tps-text-h2-size: 22px;
+  --tps-text-h2-line-height: 30px;
+  --tps-text-h2-weight: 600;
+  --tps-text-h2-letter-spacing: normal;
+  --tps-text-h3-size: 18px;
+  --tps-text-h3-line-height: 26px;
+  --tps-text-h3-weight: 600;
+  --tps-text-h3-letter-spacing: normal;
+  --tps-text-body-lg-size: 17px;
+  --tps-text-body-lg-line-height: 26px;
+  --tps-text-body-lg-weight: 400;
+  --tps-text-body-lg-letter-spacing: normal;
+  --tps-text-body-size: 15px;
+  --tps-text-body-line-height: 24px;
+  --tps-text-body-weight: 400;
+  --tps-text-body-letter-spacing: normal;
+  --tps-text-body-strong-size: 15px;
+  --tps-text-body-strong-line-height: 24px;
+  --tps-text-body-strong-weight: 600;
+  --tps-text-body-strong-letter-spacing: normal;
+  --tps-text-small-size: 13px;
+  --tps-text-small-line-height: 20px;
+  --tps-text-small-weight: 400;
+  --tps-text-small-letter-spacing: normal;
+  --tps-text-label-size: 13px;
+  --tps-text-label-line-height: 18px;
+  --tps-text-label-weight: 600;
+  --tps-text-label-letter-spacing: normal;
+  --tps-text-overline-size: 12px;
+  --tps-text-overline-line-height: 16px;
+  --tps-text-overline-weight: 600;
+  --tps-text-overline-letter-spacing: 0.06em;
+  --tps-space-1: 4px;
+  --tps-space-2: 8px;
+  --tps-space-3: 12px;
+  --tps-space-4: 16px;
+  --tps-space-5: 20px;
+  --tps-space-6: 24px;
+  --tps-space-8: 32px;
+  --tps-space-12: 48px;
+  --tps-space-16: 64px;
+  --tps-radius-sm: 6px;
+  --tps-radius-md: 10px;
+  --tps-radius-lg: 14px;
+  --tps-radius-xl: 20px;
+  --tps-radius-full: 9999px;
+  --tps-control-md: 44px;
+  --tps-control-lg: 52px;
+  --tps-container-max: 1280px;
+  --tps-bp-sm: 640px;
+  --tps-bp-md: 768px;
+  --tps-bp-lg: 1024px;
+  --tps-bp-xl: 1280px;
+
+  /* shadcn/ui */
+  --background: var(--tps-bg);
+  --foreground: var(--tps-text);
+  --card: var(--tps-surface);
+  --card-foreground: var(--tps-text);
+  --popover: var(--tps-surface-raised);
+  --popover-foreground: var(--tps-text);
+  --primary: var(--tps-primary);
+  --primary-foreground: var(--tps-primary-fg);
+  --secondary: var(--tps-surface-sunken);
+  --secondary-foreground: var(--tps-text);
+  --muted: var(--tps-surface-sunken);
+  --muted-foreground: var(--tps-text-muted);
+  --accent: var(--tps-primary-subtle);
+  --accent-foreground: var(--tps-primary-subtle-fg);
+  --destructive: var(--tps-danger-solid);
+  --destructive-foreground: var(--tps-danger-solid-fg);
+  --border: var(--tps-border);
+  --input: var(--tps-border-strong);
+  --ring: var(--tps-focus-ring);
+  --radius: var(--tps-radius-md);
+}
+
+/* Chế độ tối: theo hệ điều hành khi người dùng chưa chọn, hoặc khi <html data-theme="dark">. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --tps-primary: #8AAEFF;
+    --tps-primary-hover: #A9C3FF;
+    --tps-primary-fg: #0E1422;
+    --tps-primary-subtle: #1C2A4D;
+    --tps-primary-subtle-fg: #B3C8FF;
+    --tps-accent: #FDBA74;
+    --tps-accent-subtle: #3A2412;
+    --tps-accent-subtle-fg: #FDBA74;
+    --tps-bg: #0E1422;
+    --tps-surface: #172033;
+    --tps-surface-raised: #1E2940;
+    --tps-surface-sunken: #121A2B;
+    --tps-border: #2B364B;
+    --tps-border-strong: #66748E;
+    --tps-text: #E6EAF2;
+    --tps-text-muted: #A6B0C3;
+    --tps-focus-ring: #8AAEFF;
+    --tps-success: #93E2B2;
+    --tps-success-subtle: #153A26;
+    --tps-warning: #F7C77B;
+    --tps-warning-subtle: #3D2B10;
+    --tps-danger: #F6A9A3;
+    --tps-danger-subtle: #45191A;
+    --tps-danger-solid: #F6A9A3;
+    --tps-danger-solid-fg: #2A0E0E;
+    --tps-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --tps-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+    --tps-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --tps-primary: #8AAEFF;
+  --tps-primary-hover: #A9C3FF;
+  --tps-primary-fg: #0E1422;
+  --tps-primary-subtle: #1C2A4D;
+  --tps-primary-subtle-fg: #B3C8FF;
+  --tps-accent: #FDBA74;
+  --tps-accent-subtle: #3A2412;
+  --tps-accent-subtle-fg: #FDBA74;
+  --tps-bg: #0E1422;
+  --tps-surface: #172033;
+  --tps-surface-raised: #1E2940;
+  --tps-surface-sunken: #121A2B;
+  --tps-border: #2B364B;
+  --tps-border-strong: #66748E;
+  --tps-text: #E6EAF2;
+  --tps-text-muted: #A6B0C3;
+  --tps-focus-ring: #8AAEFF;
+  --tps-success: #93E2B2;
+  --tps-success-subtle: #153A26;
+  --tps-warning: #F7C77B;
+  --tps-warning-subtle: #3D2B10;
+  --tps-danger: #F6A9A3;
+  --tps-danger-subtle: #45191A;
+  --tps-danger-solid: #F6A9A3;
+  --tps-danger-solid-fg: #2A0E0E;
+  --tps-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --tps-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --tps-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
+
+/* Điện thoại (dưới bp-md = 768px): tiêu đề nhỏ lại. */
+@media (max-width: 767.98px) {
+  :root {
+    --tps-text-display-size: 28px;
+    --tps-text-display-line-height: 36px;
+    --tps-text-h1-size: 24px;
+    --tps-text-h1-line-height: 32px;
+  }
+}

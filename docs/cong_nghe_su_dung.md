@@ -26,7 +26,7 @@ TPS-Connection/
 | API                               | Node.js (LTS) + Express + TypeORM                    |
 | Cơ sở dữ liệu                     | PostgreSQL                                           |
 | Cache / hàng đợi / realtime scale | Redis                                                |
-| Lưu trữ tệp                       | Object storage tương thích S3 (MinIO khi chạy local) |
+| Lưu trữ tệp                       | Object storage tương thích S3 (SeaweedFS, D53) |
 | Web                               | React + React Router (framework mode, SSR cho trang công khai) + Vite + Tailwind CSS |
 | Mobile                            | React Native + Expo (bản phát hành thứ hai, D2)      |
 | Môi trường phát triển             | Docker Compose                                       |
@@ -166,7 +166,7 @@ Chia module theo nghiệp vụ: `auth`, `users`, `tutors`, `students`, `posts`, 
 | -------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Quản lý package / monorepo | `npm` (workspaces), `turbo`                                                                                           |
 | Chất lượng code            | `eslint` (typescript-eslint), `prettier`, `husky`, `lint-staged`                                            |
-| Môi trường local           | Docker Compose: PostgreSQL, Redis, MinIO, Mailpit (bắt email test)                                          |
+| Môi trường local           | Docker Compose: PostgreSQL, Redis, SeaweedFS (D53), Mailpit (bắt email test)                                          |
 | CI                         | GitHub Actions: lint, type-check, test, build                                                               |
 | Theo dõi lỗi               | Sentry (`@sentry/node`, `@sentry/react`, `@sentry/react-native`)                                            |
 | Triển khai                 | Docker Compose trên một máy chủ đặt tại Việt Nam, xem mục 7.1                                               |
@@ -179,7 +179,7 @@ Chia module theo nghiệp vụ: `auth`, `users`, `tutors`, `students`, `posts`, 
 
 | Giai đoạn                 | Nơi chạy                                                                       | Ghi chú                                                                |
 | ------------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| Phát triển                | Máy của lập trình viên, Docker Compose (PostgreSQL, Redis, MinIO, Mailpit)     | Chưa cần server                                                        |
+| Phát triển                | Máy của lập trình viên, Docker Compose (PostgreSQL, Redis, SeaweedFS, Mailpit) | Chưa cần server                                                        |
 | MVP / thử nghiệm          | **VPS trong nước** (Viettel IDC, VNG Cloud, FPT Cloud, CMC Cloud…) _(đề xuất)_ hoặc PC tự host tại nhà | VPS tốn ít chi phí ban đầu, ổn định hơn và có sẵn IP tĩnh |
 | Vận hành có người dùng thật | VPS / cloud trong nước, nâng cấu hình khi cần                                | Dùng chung bộ Docker Compose nên chuyển máy gần như không phải sửa gì |
 
@@ -191,13 +191,13 @@ Internet ── tên miền (HTTPS) ── Caddy (reverse proxy, tự cấp SSL 
                                   ├── api      (Express + Socket.IO)
                                   ├── postgres (không mở ra Internet)
                                   ├── redis    (không mở ra Internet)
-                                  └── minio    (lưu tệp, API tương thích S3)
+                                  └── seaweedfs (lưu tệp, API tương thích S3; D53)
 ```
 
 - Tên miền (.vn hoặc .com) là bắt buộc, vì app mobile và trình duyệt cần HTTPS hợp lệ.
-- Lưu tệp bằng MinIO. Code dùng `@aws-sdk/client-s3` nên có thể chuyển sang object storage của nhà cung cấp trong nước chỉ bằng cách đổi cấu hình.
+- Lưu tệp bằng SeaweedFS _(D53, thay MinIO vì MinIO ngừng phát hành Docker image bản cộng đồng)_. Code dùng `@aws-sdk/client-s3` nên có thể chuyển sang object storage của nhà cung cấp trong nước chỉ bằng cách đổi cấu hình.
 - Chỉ reverse proxy được truy cập từ Internet. SSH chỉ cho đăng nhập bằng khóa, bật tường lửa (`ufw`) và tự động cập nhật bản vá.
-- **Backup:** dump PostgreSQL và đồng bộ dữ liệu MinIO hằng ngày ra nơi khác (ổ ngoài hoặc máy/cloud khác), **mã hóa** trước khi chuyển đi, và thử khôi phục định kỳ.
+- **Backup:** dump PostgreSQL và đồng bộ dữ liệu SeaweedFS hằng ngày ra nơi khác (ổ ngoài hoặc máy/cloud khác), **mã hóa** trước khi chuyển đi, và thử khôi phục định kỳ.
 - Dịch vụ bên thứ ba ở nước ngoài (Gmail, Sentry, Expo Push) chỉ nhận lượng dữ liệu cá nhân tối thiểu: không ghi thông tin học sinh vào log, báo lỗi hay nội dung push.
 
 **Nếu chọn PC tự host tại nhà:**

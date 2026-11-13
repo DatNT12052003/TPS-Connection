@@ -115,3 +115,19 @@ Chi tiết ở [danh mục hành chính](../danh_muc_hanh_chinh.md).
 | --- | ------ | ---------- |
 | D46 | Wireframe và thiết kế giao diện | Duyệt wireframe 9 màn hình MVP về **nội dung và luồng**; hình thức (màu, font, icon, chi tiết bố cục, bản điện thoại) và các màn hình chưa vẽ do giai đoạn thiết kế giao diện mới (G1b) quyết định. Làm thiết kế giao diện chuẩn ngay từ đầu, song song với G1, xong trước G2. |
 | D47 | Việc bên ngoài của G0 | Pháp lý (gửi luật sư), đăng ký tên miền và chọn khu vực pilot chuyển thành việc của chủ dự án: pháp lý và tên miền trước G8, khu vực pilot trước G9. G0 được coi là hoàn thành. |
+
+## 9. Thiết kế giao diện ngày 2026-11-12 (D48)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D48 | Hướng thương hiệu | **Hướng A**: màu chính xanh dương `#1D4ED8` (chế độ tối `#8AAEFF`), màu nhấn cam `#F97316` (tối `#FDBA74`), font Be Vietnam Pro, bo góc vừa (thẻ 14 px, nút 10 px). Có chế độ sáng và tối ngay từ MVP. Logo dạng chữ dùng tạm (hai chấm nối bằng đường cong); logo chính thức do designer làm sau. Tham khảo: [canvas hướng thương hiệu](https://claude.ai/artifact/J8wj5FypcPZRJA7gwwy8mg). |
+| D49 | Hệ thống thiết kế | Duyệt [TPS-Connection Design System](https://claude.ai/artifact/263FLgUp1zeKVVnVnRMUY1) (bản ngày 2026-11-12, theo D48) làm chuẩn cho mọi màn hình Web và Mobile. Bước tiếp theo: áp vào 9 màn hình đã có wireframe (bản máy tính và điện thoại), rồi vẽ các màn hình chưa có. |
+| D50 | Quy tắc tài khoản (từ thiết kế G1b đợt 1) | Xác thực email bằng **liên kết** gửi qua email (không dùng mã số); gửi lại cách nhau tối thiểu 45 giây. Liên kết mời con tạo tài khoản học sinh dùng một lần, hết hạn sau **7 ngày**. Đổi hoặc đặt lại mật khẩu thì đăng xuất các thiết bị khác. Mật khẩu tối thiểu 8 ký tự, có cả chữ và số. Độ tuổi tối thiểu của tài khoản học sinh vẫn chờ luật sư (D4). Chủ dự án có thể điều chỉnh sau. |
+| D51 | Giao diện trên máy tính bảng | Ba cỡ màn hình theo điểm ngắt của hệ thống thiết kế. Dưới 768 px: bố cục điện thoại. 768–1023 px (máy tính bảng dọc): điều hướng như điện thoại (thanh trên gọn, thanh dưới đáy), nội dung 2 cột, cột bên xếp xuống dưới, hộp thoại ở giữa rộng tối đa 560 px. Từ 1024 px (máy tính bảng ngang, máy tính): bố cục máy tính. Không có thao tác chỉ dùng được bằng chuột. Không làm màn hình riêng cho máy tính bảng; dùng lớp theo điểm ngắt khi code. |
+| D52 | Duyệt giao diện G1b | Duyệt [canvas giao diện MVP](https://claude.ai/artifact/UNVxzXt9ZZvhxvtvqMK6o3) (bản ngày 2026-11-12: 45 màn hình, 94 bảng vẽ gồm bản máy tính, điện thoại và 4 mẫu máy tính bảng) làm chuẩn để code từ G2. Chỉnh sửa về sau: chỉnh hình thức (màu, khoảng cách, chữ, vị trí) thì sửa thẳng trên canvas hoặc trong code; chỉnh làm đổi luồng hoặc quy tắc nghiệp vụ thì ghi quyết định mới vào decision log trước rồi mới sửa giao diện. Code là bản cuối cùng; canvas được cập nhật theo khi có thay đổi đáng kể. |
+
+## 10. Nền móng kỹ thuật ngày 2026-11-12 (D53)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D53 | Dịch vụ lưu tệp | **SeaweedFS** thay MinIO, cho cả máy local và máy chủ thật (thay phần MinIO trong [công nghệ sử dụng](../cong_nghe_su_dung.md) §2, §7, §7.1). Lý do: MinIO đã ngừng phát hành Docker image bản cộng đồng (Docker Hub và quay.io không còn kéo được; bản lưu trữ `bitnamilegacy/minio` đóng băng từ 06/2025, không được vá lỗi bảo mật). SeaweedFS mã nguồn mở Apache 2.0, còn phát hành đều, tương thích S3 (presigned URL, bucket public/private). Code vẫn dùng `@aws-sdk/client-s3`, nên sau này đổi sang object storage của nhà cung cấp trong nước chỉ cần đổi cấu hình. |

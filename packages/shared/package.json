@@ -1,0 +1,31 @@
+{
+  "name": "@tps/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Enum trạng thái, Zod schema, mã lỗi và chuỗi i18n dùng chung cho API, Web, Mobile.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@tps/config": "^0.0.0",
+    "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}

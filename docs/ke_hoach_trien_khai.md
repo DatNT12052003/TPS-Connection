@@ -6,7 +6,7 @@ Tài liệu này chia việc phát triển TPS-Connection thành các giai đo�
 
 - [Mô tả nghiệp vụ](mo_ta_nghiep_vu.md): phạm vi bản đầu ở §15.1, mở rộng ở §15.2, quy tắc ở §16.
 - [Công nghệ sử dụng](cong_nghe_su_dung.md): stack và hạ tầng.
-- [Decision log](00-product/decision-log.md): các quyết định D1–D47 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
+- [Decision log](00-product/decision-log.md): các quyết định D1–D48 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
 
 > Trạng thái: **đề xuất**. Chưa ước lượng thời gian theo tuần vì chưa có quy mô đội ngũ, số giờ làm việc và ngân sách (C13). Thứ tự giai đoạn là thứ tự phụ thuộc; khi có nguồn lực, một số giai đoạn có thể chạy song song như ghi chú ở mục 4.
 
@@ -71,7 +71,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Công việc:**
 
-1. ~~Chép các quyết định sang decision log~~: **xong ngày 2026-11-12** ([decision log](00-product/decision-log.md), D1–D47, C1–C13).
+1. ~~Chép các quyết định sang decision log~~: **xong ngày 2026-11-12** ([decision log](00-product/decision-log.md), D1–D48, C1–C13).
 2. ~~Đồng bộ mô tả nghiệp vụ, tài liệu công nghệ và `CLAUDE.md` theo decision log~~: **xong ngày 2026-11-12**.
 3. ~~Lập bảng thuật ngữ Việt–Anh dùng cho code~~: **bản nháp xong ngày 2026-11-12** ([thuật ngữ và sơ đồ trạng thái](thuat_ngu_va_trang_thai.md), Phần A), đã duyệt.
 4. ~~Vẽ sơ đồ trạng thái~~: **bản nháp xong ngày 2026-11-12** (cùng tài liệu, Phần B: kết nối, bài đăng, hồ sơ gia sư, lớp, buổi học, xác nhận buổi, khiếu nại, kiểm duyệt, học phí), đã duyệt; quy tắc bổ sung chốt thành D30–D41.
@@ -93,7 +93,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 **Công việc:**
 
 - Monorepo npm workspaces + Turborepo _(D29)_: `apps/api`, `apps/web`, `packages/shared`, `packages/config` (tsconfig, ESLint, Prettier dùng chung).
-- Docker Compose cho môi trường local: PostgreSQL (bật `unaccent`, `pg_trgm`), Redis, MinIO, Mailpit.
+- Docker Compose cho môi trường local: PostgreSQL (bật `unaccent`, `pg_trgm`), Redis, SeaweedFS (lưu tệp, D53), Mailpit.
 - **API:** Express + TypeScript, cấu trúc module theo nghiệp vụ (router → controller → service → repository), TypeORM với migration (tắt `synchronize`), validate biến môi trường bằng Zod, logging `pino`, định dạng lỗi thống nhất với mã lỗi để client tự dịch, OpenAPI sinh từ Zod, endpoint health check.
 - **Web:** React + Vite + Tailwind + shadcn/ui; React Router framework mode có SSR cho trang công khai _(D12)_; TanStack Query; i18next với hai ngôn ngữ; layout theo vai trò; route `/admin`.
 - **Shared:** enum trạng thái, Zod schema, mã lỗi, file ngôn ngữ `vi`/`en`.
@@ -114,11 +114,11 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Công việc:**
 
-1. **Hệ thống thiết kế:** màu (chính, phụ, màu trạng thái như chờ, đã xác nhận, quá hạn), font và thang cỡ chữ (hỗ trợ tiếng Việt), khoảng cách, bo góc, đổ bóng, icon; các thành phần: nút, ô nhập, chọn, thẻ, bảng, nhãn trạng thái, thông báo, hộp thoại, thanh điều hướng. Đạt chuẩn tương phản (WCAG AA), vùng bấm tối thiểu 44 px.
-2. **Logo:** logo dạng chữ dùng tạm; logo chính thức nên do designer chuyên nghiệp làm.
-3. **Giao diện hoàn chỉnh 9 màn hình đã có wireframe**, mỗi màn hình có bản máy tính và bản điện thoại.
-4. **Các màn hình chưa vẽ:** đăng ký, đăng nhập, xác thực email, quên mật khẩu; tạo hồ sơ con và mời học sinh; bài tìm gia sư (đăng và xem); trang tin nhắn; giao diện học sinh; trang Admin (tài khoản, danh mục); các trạng thái rỗng, đang tải, lỗi.
-5. **Chuyển giao cho code:** bộ token (màu, font, khoảng cách) để đưa vào cấu hình Tailwind và theme shadcn/ui.
+1. **Hệ thống thiết kế:** màu (chính, phụ, màu trạng thái như chờ, đã xác nhận, quá hạn), font và thang cỡ chữ (hỗ trợ tiếng Việt), khoảng cách, bo góc, đổ bóng, icon; các thành phần: nút, ô nhập, chọn, thẻ, bảng, nhãn trạng thái, thông báo, hộp thoại, thanh điều hướng. Đạt chuẩn tương phản (WCAG AA), vùng bấm tối thiểu 44 px. **Bản đầu xong ngày 2026-11-12** theo hướng A (D48): [TPS-Connection Design System](https://claude.ai/artifact/263FLgUp1zeKVVnVnRMUY1), **đã duyệt ngày 2026-11-12** _(D49)_.
+2. **Logo:** logo dạng chữ dùng tạm; logo chính thức nên do designer chuyên nghiệp làm. **Logo tạm đã có** trong hệ thống thiết kế (nhóm Logos).
+3. **Giao diện hoàn chỉnh 9 màn hình đã có wireframe**, mỗi màn hình có bản máy tính và bản điện thoại. **Bản đầu xong ngày 2026-11-12**: [canvas giao diện MVP](https://claude.ai/artifact/UNVxzXt9ZZvhxvtvqMK6o3) (18 bảng vẽ, có chế độ tối), **đã duyệt ngày 2026-11-12** _(D52)_.
+4. **Các màn hình chưa vẽ:** đăng ký, đăng nhập, xác thực email, quên mật khẩu; tạo hồ sơ con và mời học sinh; bài tìm gia sư (đăng và xem); trang tin nhắn; giao diện học sinh; trang Admin (tài khoản, danh mục); các trạng thái rỗng, đang tải, lỗi. Bổ sung (có liên kết từ 9 màn hình chính): lịch dạy/lịch học, danh sách lớp, chi tiết lớp phía gia sư (tạm nghỉ, kết thúc, đổi học phí, buổi bù), bài tuyển học sinh của gia sư, tìm học sinh, trang học phí, yêu thích, thông báo, tài khoản và cài đặt, hộp thoại khiếu nại buổi học, báo cáo/chặn; Manager: báo cáo vi phạm, tranh chấp buổi học, kiểm duyệt bài đăng; Admin: xử lý kháng nghị. **Bản đầu xong ngày 2026-11-12**: 36 màn hình (72 bảng vẽ máy tính và điện thoại) trên canvas giao diện MVP, chia các trang: Tài khoản và hồ sơ con; Bài đăng; Tin nhắn và thông báo; Lớp học, lịch và học phí; Học sinh, cài đặt, trạng thái; Manager và Admin; Bổ sung (sửa hồ sơ gia sư, buổi học bù, sửa lịch, tạm nghỉ/kết thúc lớp, mẫu email); Máy tính bảng (4 mẫu, quy tắc ở D51). **Đã duyệt ngày 2026-11-12** _(D52)_. Chưa vẽ (làm theo màn tương tự khi code): xem/sửa hồ sơ từng con, danh sách lớp của phụ huynh, lịch và điểm của học sinh, trang "Dành cho gia sư", điều khoản, nhật ký kiểm toán. Quy tắc tài khoản phát sinh khi thiết kế ghi ở D50.
+5. **Chuyển giao cho code:** bộ token (màu, font, khoảng cách) để đưa vào cấu hình Tailwind và theme shadcn/ui. **Đã xuất ngày 2026-11-12** vào `packages/config`: `tokens.css` sinh từ `tokens.json` của hệ thống thiết kế, preset Tailwind v4 `tailwind.css`, biến shadcn/ui gán theo bảng ánh xạ. Đã nạp vào `apps/web` ngày 2026-11-12 (khung Web G1): Button, Badge, Card, Alert dựng theo hệ thống thiết kế; điều hướng theo canvas giao diện.
 
 **Đầu ra:** hệ thống thiết kế, giao diện các màn hình MVP (máy tính và điện thoại), bộ token.
 
@@ -250,7 +250,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Review bảo mật** (skill `security-review`): xác thực, phân quyền theo quan hệ, upload tệp, rate limit, header bảo mật, CORS, lộ dữ liệu qua API, log không chứa dữ liệu của trẻ.
 - **Kiểm thử end-to-end** bằng Playwright cho các luồng §14.1, §14.2, §14.3.
 - **Hiệu năng:** kiểm tra truy vấn tìm kiếm và danh sách bằng dữ liệu mẫu lớn; bổ sung index thiếu.
-- **Hạ tầng** (§7.1 tài liệu công nghệ): server đặt tại Việt Nam, Caddy + HTTPS, tên miền, tường lửa, backup PostgreSQL và MinIO hằng ngày có mã hóa, thử khôi phục, Sentry.
+- **Hạ tầng** (§7.1 tài liệu công nghệ): server đặt tại Việt Nam, Caddy + HTTPS, tên miền, tường lửa, backup PostgreSQL và SeaweedFS hằng ngày có mã hóa, thử khôi phục, Sentry.
 - **Pháp lý và nội dung:** điều khoản sử dụng, chính sách quyền riêng tư (đã qua luật sư), hướng dẫn sử dụng cơ bản hai ngôn ngữ.
 
 **Hoàn thành khi:** không còn lỗi bảo mật mức cao; backup đã thử khôi phục thành công; toàn bộ test E2E xanh trên staging.

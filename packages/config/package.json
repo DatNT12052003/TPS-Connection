@@ -1,0 +1,42 @@
+{
+  "name": "@tps/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Cấu hình dùng chung của TPS-Connection: token thiết kế, preset Tailwind, TypeScript, ESLint, Prettier.",
+  "type": "module",
+  "exports": {
+    "./tokens.css": {
+      "style": "./tokens.css",
+      "default": "./tokens.css"
+    },
+    "./tailwind.css": {
+      "style": "./tailwind.css",
+      "default": "./tailwind.css"
+    },
+    "./tokens.json": "./design-tokens/tokens.json",
+    "./tsconfig/*.json": "./tsconfig/*.json",
+    "./eslint": "./eslint/index.js",
+    "./prettier": "./prettier/index.json"
+  },
+  "files": [
+    "tokens.css",
+    "tailwind.css",
+    "design-tokens",
+    "tsconfig",
+    "eslint",
+    "prettier"
+  ],
+  "scripts": {
+    "tokens": "node design-tokens/build.mjs",
+    "tokens:check": "node design-tokens/build.mjs --check",
+    "lint": "eslint .",
+    "test": "node design-tokens/build.mjs --check"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "globals": "^16.5.0",
+    "typescript-eslint": "^8.72.2"
+  }
+}
