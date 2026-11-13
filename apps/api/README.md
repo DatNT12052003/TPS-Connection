@@ -20,17 +20,17 @@ Kiểm tra: `http://127.0.0.1:3000/health/ready` trả `{"status":"ok", ...}` v�
 
 ## Lệnh
 
-| Lệnh (thêm `-w @tps/api` khi chạy từ gốc)                  | Việc                                                                                  |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `npm run dev`                                              | Chạy bằng tsx, tự khởi động lại khi sửa code                                          |
-| `npm run build` / `npm start`                              | Biên dịch ra `dist/` / chạy bản đã biên dịch                                          |
-| `npm test`                                                 | Toàn bộ test (cần Docker: test tích hợp tự bật PostgreSQL, Redis bằng Testcontainers) |
-| `npm run test:unit`                                        | Chỉ unit test, không cần Docker                                                       |
-| `npm exec -- jest test/app.test.ts`                        | Một tệp test; thêm `-t "not_found"` để lọc theo tên                                   |
-| `npm run lint`, `npm run type-check`                       |                                                                                       |
-| `npm run db:migrate` / `db:revert` / `db:status`           | Chạy migration / hoàn tác migration cuối / xem trạng thái                             |
-| `npm run db:migration:create -- src/db/migrations/<Tên>`   | Tạo migration rỗng                                                                    |
-| `npm run db:migration:generate -- src/db/migrations/<Tên>` | Sinh migration từ khác biệt giữa entity và database                                   |
+| Lệnh (thêm `-w @tps/api` khi chạy từ gốc)                  | Việc                                                                                                      |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                                              | Chạy bằng tsx, tự khởi động lại khi sửa code                                                              |
+| `npm run build` / `npm start`                              | Biên dịch ra `dist/` / chạy bản đã biên dịch                                                              |
+| `npm test`                                                 | Toàn bộ test (cần Docker: test tích hợp tự bật PostgreSQL, Redis, SeaweedFS, Mailpit bằng Testcontainers) |
+| `npm run test:unit`                                        | Chỉ unit test, không cần Docker                                                                           |
+| `npm exec -- jest test/app.test.ts`                        | Một tệp test; thêm `-t "not_found"` để lọc theo tên                                                       |
+| `npm run lint`, `npm run type-check`                       |                                                                                                           |
+| `npm run db:migrate` / `db:revert` / `db:status`           | Chạy migration / hoàn tác migration cuối / xem trạng thái                                                 |
+| `npm run db:migration:create -- src/db/migrations/<Tên>`   | Tạo migration rỗng                                                                                        |
+| `npm run db:migration:generate -- src/db/migrations/<Tên>` | Sinh migration từ khác biệt giữa entity và database                                                       |
 
 Migration mới phải được **thêm vào** `src/db/migrations/index.ts` (danh sách tường minh, không dùng glob).
 
