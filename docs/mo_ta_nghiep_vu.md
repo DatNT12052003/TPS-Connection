@@ -101,7 +101,7 @@ Nền tảng có hai vai trò vận hành với ranh giới quyền tách biệt
 
 ### 3.1. Đăng ký và sử dụng tài khoản
 
-Người dùng đăng ký tài khoản bằng email, xác thực email và đăng nhập để sử dụng các chức năng tương ứng với vai trò. Phiên bản đầu không đăng ký bằng số điện thoại. Người dùng có thể khai báo số điện thoại, nhưng số này được ghi nhận là thông tin tự khai, chưa xác thực _(C12)_.
+Người dùng đăng ký tài khoản bằng email, xác thực email và đăng nhập để sử dụng các chức năng tương ứng với vai trò. Xác thực email và đặt lại mật khẩu đều bằng mã dùng một lần (OTP) gửi qua email _(D54)_. Phiên bản đầu không đăng ký bằng số điện thoại. Người dùng có thể khai báo số điện thoại, nhưng số này được ghi nhận là thông tin tự khai, chưa xác thực _(C12)_.
 
 Các vai trò nghiệp vụ gồm gia sư, phụ huynh, học sinh, người kiểm duyệt và quản trị viên. Phụ huynh có thể tạo, cập nhật và quản lý hồ sơ của nhiều học sinh. Tài khoản học sinh được tạo qua lời mời của phụ huynh.
 

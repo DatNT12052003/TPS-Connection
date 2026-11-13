@@ -6,7 +6,7 @@ Tài liệu này chia việc phát triển TPS-Connection thành các giai đo�
 
 - [Mô tả nghiệp vụ](mo_ta_nghiep_vu.md): phạm vi bản đầu ở §15.1, mở rộng ở §15.2, quy tắc ở §16.
 - [Công nghệ sử dụng](cong_nghe_su_dung.md): stack và hạ tầng.
-- [Decision log](00-product/decision-log.md): các quyết định D1–D53 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
+- [Decision log](00-product/decision-log.md): các quyết định D1–D54 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
 
 > Trạng thái: **đề xuất**. Chưa ước lượng thời gian theo tuần vì chưa có quy mô đội ngũ, số giờ làm việc và ngân sách (C13). Thứ tự giai đoạn là thứ tự phụ thuộc; khi có nguồn lực, một số giai đoạn có thể chạy song song như ghi chú ở mục 4.
 
@@ -134,7 +134,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Công việc:**
 
-- **Xác thực:** đăng ký bằng email, OTP qua email (lưu Redis có TTL), đăng nhập, quên và đặt lại mật khẩu (băm `argon2`), JWT access token ngắn hạn + refresh token xoay vòng lưu hash, đăng xuất và thu hồi phiên. Rate limit cho đăng nhập và gửi OTP.
+- **Xác thực:** đăng ký bằng email, xác thực email bằng OTP 6 số qua email (lưu Redis có TTL; hiệu lực 10 phút, sai 5 lần thì hủy, gửi lại sau 45 giây, tối đa 5 lần mỗi giờ _(D54)_), đăng nhập, quên và đặt lại mật khẩu bằng OTP (băm `argon2`), JWT access token ngắn hạn + refresh token xoay vòng lưu hash, đăng xuất và thu hồi phiên. Rate limit cho đăng nhập và gửi OTP.
 - **Vai trò:** gia sư, phụ huynh, học sinh, Manager, Admin. Thiết kế bảng vai trò cho phép một người có nhiều vai trò về sau.
 - **Hồ sơ phụ huynh** và **hồ sơ học sinh:** phụ huynh tạo nhiều hồ sơ con. Hồ sơ học sinh tồn tại độc lập với tài khoản. Mỗi trẻ có đúng một phụ huynh quản lý _(C9)_. Lưu đồng ý xử lý dữ liệu của phụ huynh.
 - **Tài khoản học sinh:** phụ huynh gửi lời mời qua email; học sinh nhận lời mời, tạo tài khoản và liên kết với hồ sơ có sẵn; quyền chỉ xem _(D4)_.

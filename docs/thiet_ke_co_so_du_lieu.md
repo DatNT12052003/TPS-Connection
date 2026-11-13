@@ -101,7 +101,7 @@ PostGIS chưa cần ở bản đầu; lọc theo bán kính để sau _(D11)_.
 | Học tập | `assignments`, `assignment_resources`, `assignment_recipients`, `submissions`, `submission_files`, `learning_reports` | Bản 3 |
 | Đánh giá | `reviews`, `review_replies` | Bản 3 |
 
-Dữ liệu ngắn hạn **không** nằm trong PostgreSQL: OTP xác thực email, token đặt lại mật khẩu, bộ đếm rate limit, trạng thái online. Các dữ liệu này nằm ở Redis, có TTL.
+Dữ liệu ngắn hạn **không** nằm trong PostgreSQL: OTP xác thực email và đặt lại mật khẩu (D54), bộ đếm rate limit, trạng thái online. Các dữ liệu này nằm ở Redis, có TTL.
 
 ### 2.1. Sơ đồ quan hệ chính
 

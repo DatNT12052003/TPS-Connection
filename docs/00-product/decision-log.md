@@ -131,3 +131,9 @@ Chi tiết ở [danh mục hành chính](../danh_muc_hanh_chinh.md).
 | Mã  | Chủ đề | Quyết định |
 | --- | ------ | ---------- |
 | D53 | Dịch vụ lưu tệp | **SeaweedFS** thay MinIO, cho cả máy local và máy chủ thật (thay phần MinIO trong [công nghệ sử dụng](../cong_nghe_su_dung.md) §2, §7, §7.1). Lý do: MinIO đã ngừng phát hành Docker image bản cộng đồng (Docker Hub và quay.io không còn kéo được; bản lưu trữ `bitnamilegacy/minio` đóng băng từ 06/2025, không được vá lỗi bảo mật). SeaweedFS mã nguồn mở Apache 2.0, còn phát hành đều, tương thích S3 (presigned URL, bucket public/private). Code vẫn dùng `@aws-sdk/client-s3`, nên sau này đổi sang object storage của nhà cung cấp trong nước chỉ cần đổi cấu hình. |
+
+## 11. Xác thực bằng mã OTP ngày 2026-11-13 (D54)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D54 | Xác thực email và đặt lại mật khẩu | **Thay phần "xác thực email bằng liên kết" của D50.** Xác thực email khi đăng ký và đặt lại mật khẩu đều bằng **mã OTP 6 chữ số** gửi qua email. Mã có hiệu lực **10 phút**; gửi mã mới thì mã cũ mất hiệu lực. Nhập sai **5 lần** thì mã bị hủy, phải xin mã mới. Gửi lại cách nhau tối thiểu **45 giây** (giữ như D50), tối đa **5 lần mỗi giờ** cho một email. Liên kết mời học sinh tạo tài khoản vẫn là liên kết dùng một lần, hết hạn sau 7 ngày (D50). Các quy tắc khác của D50 giữ nguyên. Lý do: một cơ chế cho cả hai luồng, và nhập mã tiện khi người dùng đăng ký trên máy tính nhưng đọc email trên điện thoại. Giao diện: màn "kiểm tra email" của canvas D52 đổi thành màn nhập mã. |
