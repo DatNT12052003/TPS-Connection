@@ -89,7 +89,7 @@ Lệnh riêng của từng gói (migration, build bản chạy thật, token thi
 ## Commit và CI
 
 - **Trước mỗi commit**, Husky chạy lint-staged trên các tệp đã stage: `eslint --fix` trong gói chứa tệp, rồi Prettier. Còn lỗi lint thì commit bị chặn. Cấu hình ở `lint-staged.config.js`.
-- **CI** (GitHub Actions, `.github/workflows/ci.yml`) chạy với mỗi pull request và mỗi lần push lên `main`: kiểm tra định dạng, `compose.yaml`, lint, type-check, build, rồi toàn bộ test (kể cả test tích hợp với PostgreSQL, Redis, SeaweedFS, Mailpit thật, và kiểm tra `tokens.css` khớp `tokens.json`).
+- **CI** (GitHub Actions, `.github/workflows/ci.yml`) chạy với mỗi pull request và mỗi lần push lên `main` hoặc `develop`: kiểm tra định dạng, `compose.yaml`, lint, type-check, build, rồi toàn bộ test (kể cả test tích hợp với PostgreSQL, Redis, SeaweedFS, Mailpit thật, và kiểm tra `tokens.css` khớp `tokens.json`).
 - Message commit theo dạng Conventional Commits, ví dụ `feat(api): ...`, `fix(web): ...`, `docs: ...`.
 
 ## Sự cố thường gặp

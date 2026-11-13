@@ -6,7 +6,7 @@ Tài liệu này chia việc phát triển TPS-Connection thành các giai đo�
 
 - [Mô tả nghiệp vụ](mo_ta_nghiep_vu.md): phạm vi bản đầu ở §15.1, mở rộng ở §15.2, quy tắc ở §16.
 - [Công nghệ sử dụng](cong_nghe_su_dung.md): stack và hạ tầng.
-- [Decision log](00-product/decision-log.md): các quyết định D1–D48 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
+- [Decision log](00-product/decision-log.md): các quyết định D1–D53 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
 
 > Trạng thái: **đề xuất**. Chưa ước lượng thời gian theo tuần vì chưa có quy mô đội ngũ, số giờ làm việc và ngân sách (C13). Thứ tự giai đoạn là thứ tự phụ thuộc; khi có nguồn lực, một số giai đoạn có thể chạy song song như ghi chú ở mục 4.
 
@@ -17,8 +17,8 @@ Tài liệu này chia việc phát triển TPS-Connection thành các giai đo�
 | Giai đoạn | Tên                                         | Bản phát hành |
 | --------- | ------------------------------------------- | ------------- |
 | 0         | Chuẩn bị và chốt quyết định (**hoàn thành**) | –            |
-| 1         | Nền móng kỹ thuật                           | MVP           |
-| 1b        | Thiết kế giao diện (song song với G1)       | MVP           |
+| 1         | Nền móng kỹ thuật (**hoàn thành**)          | MVP           |
+| 1b        | Thiết kế giao diện (**hoàn thành**)         | MVP           |
 | 2         | Tài khoản, phân quyền và hồ sơ              | MVP           |
 | 3         | Xác minh gia sư và trang quản trị cơ bản    | MVP           |
 | 4         | Bài đăng và tìm kiếm (marketplace)          | MVP           |
@@ -88,6 +88,8 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 ### Giai đoạn 1. Nền móng kỹ thuật
 
+> **Hoàn thành ngày 2026-11-13.** Mã nằm trên `main` (PR #2, #3); CI xanh trên pull request và trên `main`. Đã thử tiêu chí hoàn thành: clone repo mới, làm theo `README.md` là chạy được API, web và các dịch vụ phụ (trang `/status` báo cả ba dịch vụ hoạt động). Lưu tệp dùng SeaweedFS thay MinIO _(D53)_. Giới hạn dung lượng tệp theo từng mục đích là giá trị đề xuất trong `packages/shared/src/files.ts`, chờ chủ dự án duyệt.
+
 **Mục tiêu:** một bộ khung chạy được end-to-end, để các giai đoạn sau chỉ thêm tính năng.
 
 **Công việc:**
@@ -104,9 +106,11 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Đầu ra:** `npm run dev` chạy API, web và các dịch vụ phụ; CI xanh; một trang mẫu gọi được API.
 
-**Hoàn thành khi:** lập trình viên mới clone repo và chạy được toàn bộ hệ thống chỉ với hướng dẫn trong README.
+**Hoàn thành khi:** lập trình viên mới clone repo và chạy được toàn bộ hệ thống chỉ với hướng dẫn trong README. ✅ Đạt.
 
 ### Giai đoạn 1b. Thiết kế giao diện
+
+> **Hoàn thành ngày 2026-11-13.** Hệ thống thiết kế và giao diện MVP đã duyệt _(D49, D52)_; bộ token đã vào `packages/config` và được web dùng.
 
 **Mục tiêu:** có giao diện hoàn chỉnh, thống nhất cho Web trước khi bắt đầu code giao diện ở G2. Làm song song với G1 _(D46)_.
 
@@ -122,7 +126,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Đầu ra:** hệ thống thiết kế, giao diện các màn hình MVP (máy tính và điện thoại), bộ token.
 
-**Hoàn thành khi:** chủ dự án duyệt hệ thống thiết kế và giao diện các màn hình dùng ở G2; bộ token đã đưa vào cấu hình web.
+**Hoàn thành khi:** chủ dự án duyệt hệ thống thiết kế và giao diện các màn hình dùng ở G2; bộ token đã đưa vào cấu hình web. ✅ Đạt.
 
 ### Giai đoạn 2. Tài khoản, phân quyền và hồ sơ
 
@@ -343,4 +347,6 @@ Các việc bên ngoài, không chặn việc viết code nhưng có hạn chót
 
 ## 6. Việc cần làm tiếp
 
-1. Bắt đầu G1 (nền móng kỹ thuật) và G1b (thiết kế giao diện) song song.
+1. ~~Bắt đầu G1 (nền móng kỹ thuật) và G1b (thiết kế giao diện) song song~~: **xong ngày 2026-11-13**.
+2. Trước khi bắt đầu G2, chủ dự án chốt: giới hạn dung lượng tệp (đề xuất 5/10/20 MB, xem ghi chú G1) và đường dẫn trang bằng tiếng Việt hay tiếng Anh (G2 tạo các trang đăng ký, đăng nhập, hồ sơ).
+3. Bắt đầu G2 (tài khoản, phân quyền và hồ sơ).
