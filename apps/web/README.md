@@ -28,16 +28,20 @@ app/
   root.tsx               khung HTML: lang + data-theme từ cookie (SSR, không nháy), provider i18n + TanStack Query, trang lỗi
   routes.ts              khai báo route
   routes/public/         khu công khai (SSR cho SEO): trang chủ, /status, 404
-  routes/app/            khu người dùng: gia sư, phụ huynh, học sinh
+  routes/app/            khu người dùng: tổng quan theo vai trò; phụ huynh: children/new, children/:id, children/:id/invite, account
   routes/admin/          khu Manager / Admin
-  routes/auth/           /login, /register, /verify-email, /forgot-password; /logout (chỉ action)
+  routes/auth/           /login, /register, /verify-email, /forgot-password, /student-invitation; /logout (chỉ action)
+  routes/catalog/        GET /catalog/provinces/:id/communes (chỉ dữ liệu, cho ô chọn xã)
   routes/preferences.ts  POST: lưu ngôn ngữ / chế độ màu vào cookie
   components/ui/         Button, Badge, Card, Alert theo hệ thống thiết kế (cva + token)
-  components/ui/field    TextField, CheckboxField, ChoiceCard (ô nhập theo hệ thống thiết kế)
+  components/ui/field    TextField, SelectField, TextAreaField, CheckboxField, ChoiceCard (ô nhập theo hệ thống thiết kế)
+  components/ui/date-field  DateField: gõ dd/mm/yyyy hoặc chọn trên lịch (react-day-picker trong Popover của Radix)
+  components/forms/      LocationFields (tỉnh + xã, đổi tỉnh thì tải lại xã)
+  components/learners/   các ô của hồ sơ con, tình trạng tài khoản học sinh
   components/auth/       ô nhập mã OTP, nút gửi lại mã có đếm ngược
   components/layout/     PublicLayout, AppShell, AdminShell, AuthSplitLayout, AuthCenteredLayout, điều hướng, SettingsMenu (bánh răng: ngôn ngữ, chế độ màu)
   features/<tính năng>/  phần giao diện + query của từng tính năng (hiện có system-status)
-  lib/                   api, server-api.server + session.server (phiên đăng nhập), form, i18n, navigation, preferences, cn
+  lib/                   api, server-api.server + session.server (phiên đăng nhập), catalog(.server) (danh mục cho form), learners(.server), form, format (ngày theo giờ VN), dates (dd/mm/yyyy ↔ YYYY-MM-DD), i18n, navigation, preferences, cn
 test/                    setup Vitest, server msw, renderWithProviders, routeArgs (gọi loader/action trong test)
 ```
 
@@ -47,6 +51,7 @@ test/                    setup Vitest, server msw, renderWithProviders, routeArg
 - **Component:** Button, Badge, Card, Alert ở `components/ui` theo hệ thống thiết kế. Thêm component shadcn/ui bằng `npx shadcn@latest add <tên>` (chạy trong `apps/web`); nếu CLI chèn khối `:root`/`.dark` vào `app.css` thì xóa đi. Gộp class bằng `cn()`; dùng `buttonVariants(...)` cho `<Link>` trông như nút.
 - **Chữ trên giao diện** lấy từ i18n (`@tps/shared`, `t('nav.overview')`), không viết cứng. Khóa sai là lỗi type-check. Tiêu đề trang (`meta`) dùng `messagesFromMatches(matches)`.
 - **Gọi API:** trong `loader`/`action` dùng `getServerApi(context).call(path, { method, body, schema })` (`lib/server-api.server.ts`): chuyển cookie phiên, tự làm mới phiên. Trên trình duyệt (TanStack Query, `features/*/…-query.ts`) dùng `apiGet` của `lib/api.ts` cho dữ liệu công khai. Không gọi `fetch` trong component.
+- **Ô ngày:** dùng `DateField`, không dùng `<input type="date">` (lịch của trình duyệt mỗi nơi một kiểu). Ô gửi chữ `dd/mm/yyyy`; action đổi sang `YYYY-MM-DD` bằng `displayToIso`, sai dạng thì gửi nguyên văn để API báo `invalid_date`.
 - **Form:** `<Form method="post">` + `action` của route (chạy được cả khi chưa tải JavaScript). Lỗi API đổi thành thông điệp bằng `fieldErrorsFrom` / `formErrorFrom` (`lib/form.ts`): lỗi theo ô lấy `details[].code` làm khóa `validation.*`; hiển thị bằng `useMessage()`. Giữ lại giá trị đã nhập, trừ mật khẩu.
 - **Điều hướng** khai báo ở `lib/navigation.ts`, đúng thứ tự trên canvas giao diện MVP (D52). Dưới 1024 px dùng thanh dưới đáy, tối đa 5 mục (D51).
 - **Trạng thái giao diện:** mỗi phần lấy dữ liệu có đủ đang tải, lỗi (Alert nói rõ chuyện gì và cách xử lý), thành công; lỗi API hiển thị theo `errors.<code>`.
@@ -63,4 +68,6 @@ Server web đứng giữa trình duyệt và API: trình duyệt chỉ nói chuy
 - Chống CSRF: React Router từ chối action có Origin khác trang (400); API kiểm tra lại Origin được chuyển tiếp. Đăng xuất là form POST `/logout`.
 - Email đang chờ nhập mã giữ trong cookie httpOnly `tps_pending_verification` (1 giờ), không đặt trên URL.
 - Ô nhập mã OTP là một ô (dán cả mã, `autocomplete="one-time-code"`) thay cho 6 ô trên canvas.
+- Trang nhận lời mời học sinh `/student-invitation#token=…` (D50): token nằm sau `#` nên không tới server web; trang đọc token ở trình duyệt, xóa khỏi thanh địa chỉ, rồi gửi trong body tới action (tra cứu, nhận lời mời). Token chỉ được xóa sau khi tra cứu xong: StrictMode ở bản dev chạy effect hai lần. Nhận lời mời xong API trả cookie phiên: con vào thẳng `/app`.
+- Hồ sơ người khác không quản lý (hoặc không tồn tại) trả 404, giống API: `loadOwnLearner` (`lib/learners.server.ts`).
 - Khi chạy thật: web phải đứng sau Caddy (ghi đè X-Forwarded-For bằng IP thật), và `TRUST_PROXY` của API phải tin web; nếu không, rate limit theo IP của API chỉ thấy IP của web, hoặc người dùng giả được IP.

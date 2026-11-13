@@ -51,7 +51,11 @@ export const PATHS = {
   privacy: '/privacy',
   contact: '/contact',
   status: '/status',
+  studentInvitation: '/student-invitation',
   app: '/app',
+  children: '/app/children',
+  newChild: '/app/children/new',
+  account: '/app/account',
   admin: '/admin',
   notifications: '/app/notifications',
 } as const;

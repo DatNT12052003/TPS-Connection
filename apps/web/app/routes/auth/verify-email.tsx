@@ -113,7 +113,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     return data<ActionResult>(
       {
         status: 'verified',
-        homePath: homePathFor(session.user),
+        // Phụ huynh: bước tiếp theo là tạo hồ sơ con (canvas). Gia sư: về /app cho tới khi có trang sửa hồ sơ
+        // gia sư (đợt 3).
+        homePath:
+          !session.user.roles.includes('tutor') && session.user.roles.includes('parent')
+            ? PATHS.newChild
+            : homePathFor(session.user),
         isTutor: session.user.roles.includes('tutor'),
       },
       { headers: { 'Set-Cookie': await clearPendingVerification() } },
@@ -158,7 +163,11 @@ export default function VerifyEmailPage({ loaderData, actionData }: Route.Compon
             {t(result.isTutor ? 'verifyEmail.doneTutor' : 'verifyEmail.doneParent')}
           </p>
           <Link to={result.homePath} className={buttonVariants({ size: 'lg', block: true })}>
-            {t('verifyEmail.doneCta')}
+            {t(
+              result.homePath === PATHS.newChild
+                ? 'verifyEmail.doneCtaParent'
+                : 'verifyEmail.doneCta',
+            )}
           </Link>
         </Card>
       </AuthCenteredLayout>

@@ -1,6 +1,7 @@
 // Ô nhập theo hệ thống thiết kế (components/TextField): nhãn luôn hiện phía trên, gợi ý và lỗi ngay dưới ô,
 // lỗi nói rõ sai gì và sửa thế nào. Lỗi được nối với ô bằng aria-describedby và aria-invalid.
 // Ô đánh dấu và thẻ lựa chọn (radio dạng thẻ) theo canvas giao diện (.check, .choice).
+import { ChevronDown } from 'lucide-react';
 import { type ComponentProps, type ReactNode, useId } from 'react';
 import { cn } from '~/lib/utils';
 
@@ -14,27 +15,33 @@ export const inputClassName = cn(
   'aria-invalid:border-danger',
 );
 
-export type TextFieldProps = Omit<ComponentProps<'input'>, 'children'> & {
+export interface FieldFrameProps {
   label: ReactNode;
   hint?: ReactNode;
   /** Thông điệp lỗi đã dịch; có lỗi thì ô được đánh dấu aria-invalid. */
   error?: string | undefined;
   /** Nội dung cùng hàng với nhãn, bên phải (ví dụ liên kết "Quên mật khẩu?"). */
   labelAside?: ReactNode;
-  /** Class thêm cho chính ô nhập (ví dụ ô mã 6 số chữ lớn). */
-  inputClassName?: string;
-};
+}
 
-export function TextField({
+/** Khung chung của ô nhập, ô chọn, ô nhiều dòng: nhãn trên, lỗi rồi gợi ý dưới, nối bằng aria. */
+export function FieldFrame({
   id,
   label,
   hint,
   error,
   labelAside,
   className,
-  inputClassName: extraInputClassName,
-  ...props
-}: TextFieldProps) {
+  control,
+}: FieldFrameProps & {
+  id: string | undefined;
+  className: string | undefined;
+  control: (aria: {
+    id: string;
+    'aria-invalid': true | undefined;
+    'aria-describedby': string | undefined;
+  }) => ReactNode;
+}) {
   const autoId = useId();
   const inputId = id ?? autoId;
   const hintId = `${inputId}-hint`;
@@ -49,13 +56,11 @@ export function TextField({
         </label>
         {labelAside}
       </div>
-      <input
-        id={inputId}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-        className={cn(inputClassName, extraInputClassName)}
-        {...props}
-      />
+      {control({
+        id: inputId,
+        'aria-invalid': error ? true : undefined,
+        'aria-describedby': describedBy,
+      })}
       {error && (
         <span id={errorId} className="text-small font-medium text-danger">
           {error}
@@ -67,6 +72,109 @@ export function TextField({
         </span>
       )}
     </div>
+  );
+}
+
+export type TextFieldProps = Omit<ComponentProps<'input'>, 'children'> &
+  FieldFrameProps & {
+    /** Class thêm cho chính ô nhập (ví dụ ô mã 6 số chữ lớn). */
+    inputClassName?: string;
+  };
+
+export function TextField({
+  id,
+  label,
+  hint,
+  error,
+  labelAside,
+  className,
+  inputClassName: extraInputClassName,
+  ...props
+}: TextFieldProps) {
+  return (
+    <FieldFrame
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      labelAside={labelAside}
+      className={className}
+      control={(aria) => (
+        <input {...aria} className={cn(inputClassName, extraInputClassName)} {...props} />
+      )}
+    />
+  );
+}
+
+export type SelectFieldProps = ComponentProps<'select'> & FieldFrameProps;
+
+/**
+ * Ô chọn một giá trị (select gốc của trình duyệt: dùng tốt trên điện thoại và bằng bàn phím). Mũi tên gốc của
+ * trình duyệt bị ẩn (mỗi trình duyệt đặt sát lề một kiểu) và thay bằng icon cách lề phải 12 px.
+ */
+export function SelectField({
+  id,
+  label,
+  hint,
+  error,
+  labelAside,
+  className,
+  children,
+  ...props
+}: SelectFieldProps) {
+  return (
+    <FieldFrame
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      labelAside={labelAside}
+      className={className}
+      control={(aria) => (
+        <div className="relative">
+          <select {...aria} className={cn(inputClassName, 'appearance-none pr-10')} {...props}>
+            {children}
+          </select>
+          <ChevronDown
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 right-3 size-4.5 -translate-y-1/2 text-muted-foreground"
+          />
+        </div>
+      )}
+    />
+  );
+}
+
+export type TextAreaFieldProps = Omit<ComponentProps<'textarea'>, 'children'> & FieldFrameProps;
+
+/** Ô nhập nhiều dòng (ghi chú, mô tả). */
+export function TextAreaField({
+  id,
+  label,
+  hint,
+  error,
+  labelAside,
+  className,
+  rows = 4,
+  ...props
+}: TextAreaFieldProps) {
+  return (
+    <FieldFrame
+      id={id}
+      label={label}
+      hint={hint}
+      error={error}
+      labelAside={labelAside}
+      className={className}
+      control={(aria) => (
+        <textarea
+          {...aria}
+          rows={rows}
+          className={cn(inputClassName, 'min-h-24 py-2.5')}
+          {...props}
+        />
+      )}
+    />
   );
 }
 

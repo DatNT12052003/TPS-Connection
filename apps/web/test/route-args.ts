@@ -8,7 +8,12 @@ export const WEB = 'http://localhost:5173';
 
 export function routeArgs(
   path: string,
-  init: { method?: string; form?: Record<string, string>; cookie?: string } = {},
+  init: {
+    method?: string;
+    form?: Record<string, string>;
+    cookie?: string;
+    params?: Record<string, string>;
+  } = {},
 ) {
   const headers = new Headers({ Origin: WEB });
   if (init.cookie) headers.set('Cookie', init.cookie);
@@ -21,7 +26,7 @@ export function routeArgs(
   const context = new RouterContextProvider();
   context.set(serverApiContext, api);
   // Kiểu đầy đủ của Route.*Args có thêm vài trường không dùng tới; ép kiểu cho gọn.
-  return { args: { request, context, params: {} } as never, api };
+  return { args: { request, context, params: init.params ?? {} } as never, api };
 }
 
 /** Response được trả về hoặc ném ra (loader/action ném redirect). */

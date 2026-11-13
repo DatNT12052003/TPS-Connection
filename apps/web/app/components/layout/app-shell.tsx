@@ -51,7 +51,8 @@ export function AppShell({ user, role, children }: AppShellProps) {
             </Link>
           )}
           <SettingsMenu />
-          <AccountControls user={user} />
+          {/* Trang tài khoản: hiện chỉ phụ huynh có (G2 đợt 2); gia sư, học sinh thêm ở đợt 3. */}
+          <AccountControls user={user} accountTo={role === 'parent' ? PATHS.account : undefined} />
         </div>
       </header>
 

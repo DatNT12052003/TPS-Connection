@@ -216,7 +216,12 @@ describe('verify-email', () => {
       data: object;
       init: { headers: Record<string, string> };
     };
-    expect(result.data).toEqual({ status: 'verified', homePath: '/app', isTutor: false });
+    // Phụ huynh: bước tiếp theo là tạo hồ sơ con.
+    expect(result.data).toEqual({
+      status: 'verified',
+      homePath: '/app/children/new',
+      isTutor: false,
+    });
     expect(result.init.headers['Set-Cookie']).toMatch(/^tps_pending_verification=;.*Max-Age=0/);
     expect(api.responseCookies()).toHaveLength(2);
   });
