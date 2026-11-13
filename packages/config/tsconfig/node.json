@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "TPS Node app (apps/api)",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  }
+}

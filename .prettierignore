@@ -1,0 +1,11 @@
+# Tài liệu nghiệp vụ: giữ nguyên định dạng do chủ dự án viết.
+docs/
+
+# Bản chép nguyên văn từ hệ thống thiết kế và tệp sinh tự động.
+packages/config/design-tokens/tokens.json
+packages/config/tokens.css
+
+package-lock.json
+dist/
+coverage/
+.turbo/

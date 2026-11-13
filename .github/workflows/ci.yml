@@ -1,0 +1,57 @@
+# Kiểm tra mỗi pull request và mỗi lần push lên main: định dạng, lint, kiểu, build, test.
+# Test tích hợp của API tự chạy PostgreSQL, Redis, SeaweedFS và Mailpit bằng Testcontainers
+# (máy ubuntu của GitHub có sẵn Docker), nên không cần compose.yaml ở đây.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Push mới lên cùng nhánh/PR thì hủy lần chạy cũ.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TELEMETRY_DISABLED: '1'
+  HUSKY: '0'
+
+jobs:
+  checks:
+    name: Lint, type-check, build, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Format
+        run: npm run format:check
+
+      - name: Docker Compose file
+        run: docker compose config --quiet
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Build
+        run: npm run build
+
+      # Gồm cả kiểm tra tokens.css khớp tokens.json (test của @tps/config).
+      - name: Test
+        run: npm test
