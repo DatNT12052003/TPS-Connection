@@ -11,6 +11,14 @@ export const ErrorCode = z.enum([
   'conflict',
   'invalid_state_transition',
   'rate_limited',
+  // Tài khoản và xác thực (G2)
+  'invalid_credentials',
+  'account_locked',
+  'email_not_verified',
+  'email_taken',
+  'invalid_code',
+  'code_expired',
+  'code_attempts_exceeded',
   'internal_error',
   'service_unavailable',
 ]);
@@ -26,6 +34,13 @@ export const ERROR_HTTP_STATUS = {
   conflict: 409,
   invalid_state_transition: 409,
   rate_limited: 429,
+  invalid_credentials: 401,
+  account_locked: 403,
+  email_not_verified: 403,
+  email_taken: 409,
+  invalid_code: 400,
+  code_expired: 400,
+  code_attempts_exceeded: 400,
   internal_error: 500,
   service_unavailable: 503,
 } as const satisfies Record<ErrorCode, number>;
@@ -39,6 +54,13 @@ export const FieldError = z.object({
 export type FieldError = z.infer<typeof FieldError>;
 
 /**
+ * Thông tin kèm theo một số lỗi để client hiển thị, ví dụ `retryAfterSeconds` (rate_limited),
+ * `attemptsLeft` (invalid_code).
+ */
+export const ErrorMeta = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]));
+export type ErrorMeta = z.infer<typeof ErrorMeta>;
+
+/**
  * Thân response khi lỗi, ví dụ:
  * `{ "error": { "code": "not_found", "message": "Lesson not found", "requestId": "..." } }`
  */
@@ -47,6 +69,7 @@ export const ApiErrorBody = z.object({
     code: ErrorCode,
     message: z.string(),
     details: z.array(FieldError).optional(),
+    meta: ErrorMeta.optional(),
     requestId: z.string().optional(),
   }),
 });

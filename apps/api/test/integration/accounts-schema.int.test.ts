@@ -2,9 +2,23 @@
 // quan trọng và bộ nạp đơn vị hành chính.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-import { GradeStage, Role } from '@tps/shared';
+import {
+  AdministrativeLevel,
+  AdministrativeUnitType,
+  AuthSessionRevokeReason,
+  ConsentType,
+  FileBucket,
+  FilePurpose,
+  FileStatus,
+  GradeStage,
+  Locale,
+  Role,
+  UserStatus,
+} from '@tps/shared';
+import type { z } from 'zod';
 import type { DataSource } from 'typeorm';
 import { createDataSource } from '../../src/db/data-source.js';
+import { MIGRATIONS } from '../../src/db/migrations/index.js';
 import { seedAdministrativeAreas, toAreaRows } from '../../src/db/seeds/administrative-areas.js';
 import { AdministrativeArea } from '../../src/modules/catalog/administrative-area.entity.js';
 import { Subject } from '../../src/modules/catalog/subject.entity.js';
@@ -52,7 +66,7 @@ function newUser(overrides: Partial<User> = {}) {
 
 describe('migrations', () => {
   it('revert completely and re-apply', async () => {
-    for (let i = 0; i < 3; i += 1) await db.undoLastMigration();
+    for (let i = 0; i < MIGRATIONS.length; i += 1) await db.undoLastMigration();
     const tables = await db.query<{ count: number }[]>(
       `SELECT count(*) AS count FROM information_schema.tables WHERE table_schema = 'public'
          AND table_name <> 'typeorm_migrations'`,
@@ -60,6 +74,30 @@ describe('migrations', () => {
     expect(tables[0]?.count).toBe(0);
     await db.runMigrations();
     expect(await db.showMigrations()).toBe(false);
+  });
+});
+
+describe('CHECK constraints', () => {
+  // Enum của @tps/shared và CHECK trong migration phải có đúng cùng một tập giá trị (CLAUDE.md).
+  it.each<[string, z.ZodEnum]>([
+    ['users_status_chk', UserStatus],
+    ['users_locale_chk', Locale],
+    ['auth_sessions_revoke_reason_chk', AuthSessionRevokeReason],
+    ['user_consents_type_chk', ConsentType],
+    ['files_bucket_chk', FileBucket],
+    ['files_purpose_chk', FilePurpose],
+    ['files_status_chk', FileStatus],
+    ['grade_levels_stage_chk', GradeStage],
+    ['administrative_areas_level_chk', AdministrativeLevel],
+    ['administrative_areas_unit_type_chk', AdministrativeUnitType],
+  ])('%s allows exactly the values of the shared enum', async (constraint, schema) => {
+    const [row] = await db.query<{ def: string }[]>(
+      `SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname = $1`,
+      [constraint],
+    );
+    expect(row).toBeDefined();
+    const values = [...(row?.def ?? '').matchAll(/'([^']+)'::text/g)].map((m) => m[1]);
+    expect(values.sort()).toEqual([...schema.options].map(String).sort());
   });
 });
 

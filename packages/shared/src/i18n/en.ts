@@ -25,6 +25,15 @@ export const en: Messages = {
     invalid_state_transition:
       'This can no longer be done because the status has changed. Reload the page to see the new status.',
     rate_limited: 'You are going too fast. Wait a moment and try again.',
+    invalid_credentials:
+      'The email or password is not correct. Check them, or reset your password.',
+    account_locked: 'This account is locked. Contact support if you think this is a mistake.',
+    email_not_verified: 'Your email is not verified yet. Enter the code we sent to your email.',
+    email_taken: 'This email is already used by another account. Sign in or reset your password.',
+    invalid_code: 'The code is not correct. Check the code in the email.',
+    code_expired: 'The code has expired or is no longer valid. Tap Resend code to get a new one.',
+    code_attempts_exceeded:
+      'You entered a wrong code 5 times, so it was cancelled. Request a new code.',
     internal_error:
       'Something went wrong on our side while handling your request. Try again in a few minutes.',
     service_unavailable:
@@ -39,6 +48,30 @@ export const en: Messages = {
     file_type_not_allowed:
       'This file type is not supported. Choose a JPG, PNG or WEBP image or a PDF file.',
     file_too_large: 'This file is too large. Choose a smaller file or compress it and try again.',
+    too_long: 'This is too long.',
+    invalid_phone: 'Enter a valid phone number, for example 0912 345 678.',
+    invalid_code_format: 'The code has 6 digits.',
+    must_accept_terms: 'You need to accept the terms to create an account.',
+  },
+
+  emailCommon: {
+    tagline: 'TPS-Connection · Connecting tutors, parents and students',
+    automated: 'This is an automated email. Please do not reply.',
+    greeting: 'Hi {{name}},',
+    codeExpiry: 'The code expires in {{minutes}} minutes.',
+    codeWarning: 'Never share this code, even with someone who says they work for TPS-Connection.',
+  },
+  emailVerifyCode: {
+    subject: 'Your TPS-Connection email verification code',
+    intro:
+      'Thanks for signing up for TPS-Connection. Enter this code on the verification page to activate your account.',
+    ignore: "Didn't sign up? Ignore this email; the account will not be activated.",
+  },
+  emailResetCode: {
+    subject: 'Your TPS-Connection password reset code',
+    intro:
+      'We received a request to reset your password. Enter this code on the reset page to choose a new one.',
+    ignore: "Didn't ask for this? Ignore this email; your password stays the same.",
   },
 
   layout: {

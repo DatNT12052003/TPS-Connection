@@ -1,4 +1,4 @@
-import type { ApiErrorBody, ErrorCode, FieldError } from '@tps/shared';
+import type { ApiErrorBody, ErrorCode, ErrorMeta, FieldError } from '@tps/shared';
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../lib/app-error.js';
@@ -8,6 +8,7 @@ interface ErrorResponse {
   code: ErrorCode;
   message: string;
   details?: FieldError[];
+  meta?: ErrorMeta;
 }
 
 /** Lỗi từ body-parser / http-errors của Express (JSON sai cú pháp, body quá lớn…). */
@@ -29,6 +30,7 @@ export function toErrorResponse(err: unknown): ErrorResponse {
       code: err.code,
       message: err.message,
       ...(err.details && { details: err.details }),
+      ...(err.meta && { meta: err.meta }),
     };
   }
   if (err instanceof ZodError) {
@@ -55,6 +57,9 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     return;
   }
   const { status, ...error } = toErrorResponse(err);
+  if (typeof error.meta?.retryAfterSeconds === 'number') {
+    res.setHeader('Retry-After', String(error.meta.retryAfterSeconds));
+  }
   if (status >= 500) {
     req.log.error({ err }, 'Unhandled error');
   } else {

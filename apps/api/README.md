@@ -117,6 +117,27 @@ Tạo một lần trong `main.ts`, module nghiệp vụ nhận qua tham số (đ
 
 **Hàng đợi** (`jobs/`, BullMQ trên Redis). Job thử lại 5 lần, chờ 30 giây rồi tăng gấp đôi; dữ liệu job sai dạng thì ném `UnrecoverableError` (không thử lại). Log không ghi nội dung thư, địa chỉ nhận được che (`ph***@gmail.com`). Worker chạy cùng tiến trình API (`WORKERS_ENABLED=true`); khi cần tách, chạy thêm một tiến trình với `true` và đặt `false` cho các tiến trình API. Thêm loại việc mới (tự hủy yêu cầu quá hạn, tự xác nhận buổi học, xóa ảnh giấy tờ…): một hàng đợi + một worker trong `jobs/` theo mẫu email.
 
+## Xác thực (G2)
+
+Module `src/modules/auth`, quyết định D54 (mã OTP) và D57 (phiên đăng nhập). Các endpoint dưới `/api/v1/auth` (chi tiết ở `/openapi.json`):
+
+| Endpoint                                      | Việc                                                     |
+| --------------------------------------------- | -------------------------------------------------------- |
+| `POST /register`                              | Đăng ký phụ huynh/gia sư, gửi mã; chưa đăng nhập         |
+| `POST /email-verification/resend`, `/confirm` | Gửi lại mã / nhập mã: xác thực email và đăng nhập        |
+| `POST /login`, `/refresh`, `/logout`          | Đăng nhập, làm mới phiên (xoay refresh token), đăng xuất |
+| `POST /password-reset/request`, `/confirm`    | Quên mật khẩu bằng mã; đổi xong đăng xuất mọi thiết bị   |
+| `GET /me`                                     | Người dùng hiện tại                                      |
+
+- Token nằm trong cookie httpOnly `tps_at` (access, 15 phút) và `tps_rt` (refresh). App mobile gửi `Authorization: Bearer <access>`.
+- Middleware `authenticate` (`src/http/authenticate.ts`) kiểm tra token rồi đọc lại tài khoản ở mỗi request (khóa tài khoản có hiệu lực ngay), gắn `req.auth`.
+- `originCheck` từ chối request thay đổi dữ liệu từ origin ngoài `CORS_ORIGINS` (chống CSRF).
+- Mã OTP và bộ đếm rate limit ở Redis; mật khẩu băm argon2id; refresh token chỉ lưu hash SHA-256.
+- Không lộ email nào đã đăng ký: gửi lại mã và quên mật khẩu luôn trả cùng một kết quả; đăng nhập sai email hay sai mật khẩu cùng là `invalid_credentials`.
+- Không bao giờ log mật khẩu, mã OTP, token.
+
+Khi dev: mã OTP xem ở Mailpit (http://127.0.0.1:8025). Gọi thử bằng curl trên Windows: gửi body từ tệp UTF-8 (`--data-binary @body.json`); tham số dòng lệnh của Git Bash làm mất dấu tiếng Việt.
+
 ## Ghi chú cho Windows
 
 Test tích hợp cần Docker Desktop đang chạy. Một số bản Docker Desktop không mở pipe `//./pipe/docker_engine` mà Testcontainers cần; khi đó `test/global-setup.ts` tự mở pipe tạm, chuyển tiếp sang endpoint của Docker context hiện tại, và đóng lại khi test xong.

@@ -26,6 +26,15 @@ export const vi = {
     invalid_state_transition:
       'Không thực hiện được vì trạng thái đã thay đổi. Hãy tải lại trang để xem trạng thái mới.',
     rate_limited: 'Bạn thao tác quá nhanh. Hãy chờ một lát rồi thử lại.',
+    invalid_credentials: 'Email hoặc mật khẩu chưa đúng. Kiểm tra lại, hoặc đặt lại mật khẩu.',
+    account_locked: 'Tài khoản đang bị khóa. Liên hệ hỗ trợ nếu bạn cho rằng đây là nhầm lẫn.',
+    email_not_verified: 'Email chưa được xác thực. Nhập mã chúng tôi đã gửi tới email của bạn.',
+    email_taken:
+      'Email này đã được dùng cho một tài khoản khác. Hãy đăng nhập hoặc đặt lại mật khẩu.',
+    invalid_code: 'Mã chưa đúng. Kiểm tra lại mã trong email.',
+    code_expired: 'Mã đã hết hạn hoặc không còn hiệu lực. Bấm Gửi lại mã để nhận mã mới.',
+    code_attempts_exceeded:
+      'Bạn đã nhập sai quá 5 lần nên mã đã bị hủy. Gửi lại mã để nhận mã mới.',
     internal_error: 'Hệ thống gặp sự cố khi xử lý yêu cầu. Hãy thử lại sau ít phút.',
     service_unavailable: 'Hệ thống đang bảo trì hoặc quá tải. Hãy thử lại sau ít phút.',
   },
@@ -38,6 +47,31 @@ export const vi = {
     file_type_not_allowed:
       'Loại tệp này không được hỗ trợ. Hãy chọn ảnh JPG, PNG, WEBP hoặc tệp PDF.',
     file_too_large: 'Tệp quá lớn. Hãy chọn tệp nhỏ hơn hoặc nén lại rồi thử lại.',
+    too_long: 'Nội dung quá dài.',
+    invalid_phone: 'Số điện thoại chưa đúng, ví dụ: 0912 345 678.',
+    invalid_code_format: 'Mã gồm 6 chữ số.',
+    must_accept_terms: 'Bạn cần đồng ý với điều khoản để tạo tài khoản.',
+  },
+
+  // ---- Email gửi người dùng (API dựng nội dung theo ngôn ngữ của người nhận) ----
+  emailCommon: {
+    tagline: 'TPS-Connection · Kết nối gia sư, phụ huynh và học sinh',
+    automated: 'Email tự động, vui lòng không trả lời.',
+    greeting: 'Chào {{name}},',
+    codeExpiry: 'Mã có hiệu lực trong {{minutes}} phút.',
+    codeWarning: 'Không đưa mã này cho bất kỳ ai, kể cả người tự nhận là nhân viên TPS-Connection.',
+  },
+  emailVerifyCode: {
+    subject: 'Mã xác thực email TPS-Connection của bạn',
+    intro:
+      'Cảm ơn bạn đã đăng ký TPS-Connection. Nhập mã dưới đây vào trang xác thực để kích hoạt tài khoản.',
+    ignore: 'Nếu bạn không đăng ký, hãy bỏ qua email này; tài khoản sẽ không được kích hoạt.',
+  },
+  emailResetCode: {
+    subject: 'Mã đặt lại mật khẩu TPS-Connection',
+    intro:
+      'Chúng tôi nhận được yêu cầu đặt lại mật khẩu của bạn. Nhập mã dưới đây vào trang đặt lại mật khẩu để chọn mật khẩu mới.',
+    ignore: 'Nếu bạn không yêu cầu, hãy bỏ qua email này; mật khẩu của bạn không thay đổi.',
   },
 
   // ---- Khung giao diện (web, sau này mobile) ----

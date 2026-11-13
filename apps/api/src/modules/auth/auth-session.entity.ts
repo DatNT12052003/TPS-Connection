@@ -39,6 +39,10 @@ export class AuthSession {
   @Column({ name: 'revoke_reason', type: 'text', nullable: true })
   revokeReason!: AuthSessionRevokeReason | null;
 
+  /** Ghi nhớ đăng nhập: refresh cookie bền 30 ngày; không thì cookie phiên, token 12 giờ. */
+  @Column({ name: 'remember_me', type: 'boolean', default: false })
+  rememberMe!: boolean;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }

@@ -5,6 +5,11 @@ import { createDataSource } from './db/data-source.js';
 import { createJobs } from './jobs/index.js';
 import { createSmtpEmailSender } from './lib/email/smtp-email-sender.js';
 import { createLogger, type Logger } from './lib/logger.js';
+import { createRedisRateLimiter } from './lib/rate-limiter.js';
+import { createAuthService } from './modules/auth/auth.service.js';
+import { createRedisOtpStore } from './modules/auth/otp-store.js';
+import { createArgon2Hasher } from './modules/auth/password-hasher.js';
+import { createTokenService } from './modules/auth/tokens.js';
 import { createRedis } from './lib/redis.js';
 import { createStorage } from './lib/storage.js';
 import { createHealthService } from './modules/health/health.service.js';
@@ -78,7 +83,20 @@ async function main() {
     },
   });
 
-  const app = createApp({ env, logger, health });
+  // Xác thực (G2).
+  const rateLimiter = createRedisRateLimiter(redis);
+  const tokens = createTokenService({ secret: env.JWT_SECRET });
+  const auth = createAuthService({
+    dataSource,
+    hasher: createArgon2Hasher(),
+    tokens,
+    otp: createRedisOtpStore({ redis, secret: env.OTP_SECRET }),
+    rateLimiter,
+    sendEmail: (message) => jobs.enqueueEmail(message),
+    logger,
+  });
+
+  const app = createApp({ env, logger, health, auth, tokens, rateLimiter });
   const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API chạy tại http://${env.HOST}:${env.PORT} (môi trường ${env.NODE_ENV})`);
   });

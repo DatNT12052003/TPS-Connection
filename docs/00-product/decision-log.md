@@ -144,3 +144,9 @@ Chi tiết ở [danh mục hành chính](../danh_muc_hanh_chinh.md).
 | --- | ------ | ---------- |
 | D55 | Giới hạn tệp tải lên | Ảnh đại diện, ảnh bài đăng: tối đa **5 MB**, chỉ ảnh (JPG, PNG, WEBP), lưu ở bucket công khai. Giấy tờ xác minh, bằng cấp, tệp đính kèm tin nhắn, tệp khác: tối đa **10 MB**, ảnh hoặc PDF, bucket riêng tư. Tài liệu bài tập, bài nộp (bản 3): tối đa **20 MB**, ảnh, PDF, Word, Excel, PowerPoint, bucket riêng tư. Giá trị nằm ở `FILE_RULES` trong `packages/shared/src/files.ts`. |
 | D56 | Đường dẫn trang web | **Toàn bộ đường dẫn bằng tiếng Anh**, cho cả trang công khai và trang sau đăng nhập (ví dụ `/register`, `/tutors/<slug>`, `/app/classes`, `/admin/verifications`), giống nhau cho mọi ngôn ngữ giao diện. Phần định danh trong đường dẫn (slug) sinh từ nội dung, bỏ dấu tiếng Việt (ví dụ `nguyen-van-a-toan-ha-noi`). Tiêu đề, mô tả và nội dung trang theo ngôn ngữ người dùng chọn (mặc định tiếng Việt). |
+
+## 13. Xác thực ngày 2026-11-13 (D57)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D57 | Phiên đăng nhập | Web giữ token trong **cookie httpOnly** do API đặt (JavaScript không đọc được; trang SSR biết người dùng đã đăng nhập). Access token JWT 15 phút; refresh token xoay vòng, 30 ngày khi chọn "ghi nhớ đăng nhập", 12 giờ (cookie phiên) khi không chọn; dùng lại refresh token đã đổi thì thu hồi cả chuỗi phiên. Cookie SameSite=Lax, Secure khi chạy thật, kèm kiểm tra Origin để chống CSRF. Web và API phải cùng tên miền gốc (ví dụ tps.vn và api.tps.vn; khi dev cùng là localhost). App mobile dùng header Authorization. Đăng ký xong **chưa đăng nhập**: nhập đúng mã xác thực (D54) mới đăng nhập. Email đã đăng ký nhưng chưa xác thực có thể đăng ký lại (không để một lần đăng ký dở chặn chủ thật của email). Đăng nhập sai 5 lần trong 15 phút thì tạm khóa đăng nhập email đó tới hết 15 phút. |
