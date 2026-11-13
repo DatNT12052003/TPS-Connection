@@ -151,9 +151,13 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Còn lại của G2:**
 
-- Các màn hình web (mục Đầu ra), kể cả trang nhận lời mời `/student-invitation` (token nằm sau `#` trong liên kết email).
-  - Màn xem/sửa hồ sơ từng con chưa có trên canvas giao diện (G1b mục 4): dựng theo màn tạo hồ sơ con.
-  - Thay thanh chọn vai trò tạm thời khi dev (`apps/web/app/lib/dev-role.server.ts`, `routes/dev-role.ts`) bằng đăng nhập thật; xóa hai tệp đó.
+- Các màn hình web (mục Đầu ra), chia ba đợt:
+  - ~~Đợt 1, đăng nhập thật~~: **xong ngày 2026-11-13**. Đăng ký, nhập mã OTP, đăng nhập, quên mật khẩu, đăng xuất; server web đứng giữa trình duyệt và API, chuyển cookie phiên và tự làm mới phiên (`apps/web/README.md`, mục Đăng nhập và phiên). Đã gỡ thanh chọn vai trò tạm thời. Đã chạy thử cả luồng với API, PostgreSQL, Redis, Mailpit thật.
+  - Đợt 2, phụ huynh: hồ sơ phụ huynh, danh sách con, tạo và sửa hồ sơ con (kèm đồng ý xử lý dữ liệu của con), mời con, trang nhận lời mời `/student-invitation` (token nằm sau `#` trong liên kết email). Màn xem/sửa hồ sơ từng con chưa có trên canvas giao diện (G1b mục 4): dựng theo màn tạo hồ sơ con.
+  - Đợt 3, gia sư và cài đặt: sửa hồ sơ gia sư, bằng cấp, cài đặt tài khoản, ảnh đại diện.
+- Màn "Email đã được xác thực" hiện dẫn về `/app`. Khi có trang tạo hồ sơ con (đợt 2) và sửa hồ sơ gia sư (đợt 3), đổi nút chính thành "Tạo hồ sơ con" / "Hoàn thiện hồ sơ gia sư" như canvas (`apps/web/app/routes/auth/verify-email.tsx`).
+- Người có nhiều vai trò (ví dụ vừa gia sư vừa phụ huynh) hiện vào khu `/app` theo thứ tự gia sư, phụ huynh, học sinh (`appRoleOf` trong `apps/web/app/lib/session.ts`); chưa có chỗ chuyển vai trò. Tự đăng ký chỉ chọn được một vai trò nên chưa gặp; thêm khi có trường hợp thật.
+- Trang tổng quan `/app` và `/admin` hiện chỉ là trang giữ chỗ; canvas ParentHome, TutorHome, StudentHome cần dữ liệu của G4 đến G7 (xem "Việc chuyển từ G2" ở các giai đoạn đó). Trong G2 làm bản tối thiểu theo vai trò: phụ huynh thấy danh sách con và nút tạo hồ sơ con (đợt 2); gia sư thấy trạng thái hồ sơ và các trường còn thiếu để nộp xác minh, từ `missingForVerification` (đợt 3); học sinh thấy hồ sơ của mình (đợt 2).
 - ~~Thống nhất định dạng lỗi validation trước phần web~~: **xong ngày 2026-11-13**. Mọi lỗi theo từng ô có `details[].code` là khóa `validation.*` trong i18n (mã lạ quy về `invalid`); web hiển thị `t('validation.<code>')`, lỗi đầu tiên của mỗi ô.
 
 **Câu hỏi chờ chủ dự án quyết** (chốt xong thì ghi vào decision log):
@@ -203,6 +207,8 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
   - Slug cho URL hồ sơ gia sư `/tutors/<slug>` _(D56)_. API hiện dùng id: `GET /api/v1/tutors/:tutorId`.
   - Danh sách và tìm kiếm gia sư dùng cùng điều kiện hiển thị công khai với `GET /tutors/:tutorId`: đã xác minh, tài khoản `active`, chưa xóa. Không trả email, số điện thoại, họ tên thật (đã có test ở `tutors.int.test.ts`; thêm test tương tự cho danh sách).
 
+- **Việc chuyển từ G2 (trang chủ công khai):** trang `/` hiện là khung đơn giản từ G1 (khối giới thiệu, ba thẻ tin cậy). Làm đúng canvas Main / MainMobile khi có tìm kiếm: ô tìm gia sư theo môn, lớp, khu vực; gia sư nổi bật; bài tuyển học sinh mới.
+
 **Đầu ra:** trang tìm gia sư, chi tiết gia sư, chi tiết bài đăng, quản lý bài đăng của gia sư và phụ huynh.
 
 **Hoàn thành khi:** khách chưa đăng nhập tìm được gia sư đã xác minh; trang công khai render phía server; không có dữ liệu nhận dạng của trẻ trong bất kỳ response công khai nào.
@@ -221,6 +227,8 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Mở thông tin liên hệ và danh tính trẻ:** email, số điện thoại và thông tin nhận dạng của trẻ (họ tên đầy đủ, trường, địa chỉ) chỉ hiện cho bên kia sau khi hai bên xác nhận hợp tác. Trong lúc trao đổi, gia sư chỉ thấy cấp lớp, môn, mục tiêu, tỉnh/xã _(D8, D16)_.
 - **Chặn và báo cáo** tài khoản và tin nhắn (dữ liệu báo cáo dùng cho giai đoạn 8).
 - **Thông báo** (§12): bảng thông báo, đẩy realtime qua Socket.IO, email cho sự kiện quan trọng, tùy chọn bật/tắt theo loại. Các loại trong MVP: yêu cầu mới, được chấp nhận/từ chối, tin nhắn mới, sắp hết hạn yêu cầu, kết quả xác minh. Nội dung email không chứa thông tin của trẻ.
+
+- **Trang tổng quan (từ G2):** thêm khối yêu cầu kết nối cần xử lý và tin nhắn mới vào trang tổng quan của phụ huynh và gia sư (canvas ParentHome, TutorHome).
 
 **Đầu ra:** hộp yêu cầu kết nối của gia sư và phụ huynh, màn hình chat, trung tâm thông báo.
 
@@ -245,6 +253,8 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Thông báo:** buổi học sắp diễn ra, lịch thay đổi hoặc bị hủy, buổi cần xác nhận, điểm và nhận xét mới.
 - **Việc chuyển từ G2:** hàm `teachesStudent` (gia sư dạy hoặc đã dạy người học qua lớp; thiết kế CSDL mục 12 gọi là `teachesLearner`). Đặt cạnh `isParentOf`, `isStudentSelf` trong `apps/api/src/modules/learners/learner-access.ts`, kèm test chứng minh gia sư không xem được học sinh mình không dạy. Xóa hồ sơ con khi đã có lớp: không được xóa lịch sử học tập (C2), nên phải chặn hoặc chỉ ẩn.
 
+- **Trang tổng quan (từ G2):** thêm buổi học sắp tới, buổi cần xác nhận, lớp đang học vào trang tổng quan của phụ huynh, gia sư, học sinh (canvas ParentHome, TutorHome, StudentHome).
+
 **Đầu ra:** trang lớp học, lịch, điểm danh, xác nhận buổi, khiếu nại buổi, xem kết quả của con.
 
 **Hoàn thành khi:** chạy trọn luồng §14.3 từ bước 1 đến 5 và bước 8–9 (phần điểm, nhận xét); kết thúc lớp không làm mất dữ liệu; test quyền cho gia sư, phụ huynh và học sinh trên dữ liệu lớp.
@@ -261,6 +271,8 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - Lưu tiền bằng số nguyên VND; giá theo buổi lấy từ bản ghi buổi học, không tính lại theo giá hiện tại.
 - Thông báo khoản học phí đến hạn.
 - Thiết kế bảng thanh toán có trường phương thức (thủ công / trực tuyến) để mở rộng sau mà không phải đổi cấu trúc.
+
+- **Trang tổng quan (từ G2):** thêm khối học phí tháng này vào trang tổng quan của phụ huynh và gia sư (canvas ParentHome, TutorHome).
 
 **Đầu ra:** trang học phí của lớp cho gia sư và phụ huynh, bảng tổng hợp theo tháng.
 
@@ -280,6 +292,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Kiểm thử end-to-end** bằng Playwright cho các luồng §14.1, §14.2, §14.3.
 - **Hiệu năng:** kiểm tra truy vấn tìm kiếm và danh sách bằng dữ liệu mẫu lớn; bổ sung index thiếu.
 - **Hạ tầng** (§7.1 tài liệu công nghệ): server đặt tại Việt Nam, Caddy + HTTPS, tên miền, tường lửa, backup PostgreSQL và SeaweedFS hằng ngày có mã hóa, thử khôi phục, Sentry.
+- **Việc chuyển từ G2 (triển khai web):** server web gọi API thay trình duyệt và chuyển tiếp header `X-Forwarded-For`. Khi chạy thật: chỉ cho web nhận request qua Caddy (Caddy ghi đè `X-Forwarded-For` bằng IP thật, không giữ giá trị trình duyệt gửi), và đặt `TRUST_PROXY` của API tin địa chỉ của server web. Nếu không, rate limit theo IP của API hoặc chỉ thấy IP của web (mọi người dùng chung một giới hạn), hoặc người dùng giả được IP. Đặt `COOKIE_DOMAIN` là tên miền gốc và `COOKIE_SECURE=true` (D57). Kiểm tra trong review bảo mật ở trên.
 - **Pháp lý và nội dung:** điều khoản sử dụng, chính sách quyền riêng tư (đã qua luật sư), hướng dẫn sử dụng cơ bản hai ngôn ngữ.
 
 **Hoàn thành khi:** không còn lỗi bảo mật mức cao; backup đã thử khôi phục thành công; toàn bộ test E2E xanh trên staging.

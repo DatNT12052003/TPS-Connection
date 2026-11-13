@@ -16,9 +16,19 @@ import './app.css';
 import { ErrorContent } from './components/layout/error-content';
 import { createI18n } from './lib/i18n';
 import { readPreferences, type Preferences } from './lib/preferences';
+import { serverApiMiddleware } from './lib/server-api.server';
+import { getCurrentUserOrNull } from './lib/session.server';
 
-export async function loader({ request }: Route.LoaderArgs) {
-  return { preferences: await readPreferences(request) };
+/** Mỗi request một client gọi API, chuyển cookie phiên giữa trình duyệt và API (D57). */
+export const middleware: Route.MiddlewareFunction[] = [serverApiMiddleware];
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const [preferences, user] = await Promise.all([
+    readPreferences(request),
+    getCurrentUserOrNull(context),
+  ]);
+  // `user`: dạng gọn (tên hiển thị, vai trò), null khi chưa đăng nhập. Thanh trên đọc qua useRouteLoaderData('root').
+  return { preferences, user };
 }
 
 export const links: Route.LinksFunction = () => [

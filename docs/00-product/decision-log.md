@@ -150,3 +150,9 @@ Chi tiết ở [danh mục hành chính](../danh_muc_hanh_chinh.md).
 | Mã  | Chủ đề | Quyết định |
 | --- | ------ | ---------- |
 | D57 | Phiên đăng nhập | Web giữ token trong **cookie httpOnly** do API đặt (JavaScript không đọc được; trang SSR biết người dùng đã đăng nhập). Access token JWT 15 phút; refresh token xoay vòng, 30 ngày khi chọn "ghi nhớ đăng nhập", 12 giờ (cookie phiên) khi không chọn; dùng lại refresh token đã đổi thì thu hồi cả chuỗi phiên. Cookie SameSite=Lax, Secure khi chạy thật, kèm kiểm tra Origin để chống CSRF. Web và API phải cùng tên miền gốc (ví dụ tps.vn và api.tps.vn; khi dev cùng là localhost). App mobile dùng header Authorization. Đăng ký xong **chưa đăng nhập**: nhập đúng mã xác thực (D54) mới đăng nhập. Email đã đăng ký nhưng chưa xác thực có thể đăng ký lại (không để một lần đăng ký dở chặn chủ thật của email). Đăng nhập sai 5 lần trong 15 phút thì tạm khóa đăng nhập email đó tới hết 15 phút. |
+
+## 14. Giao diện ngày 2026-11-13 (D58)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D58 | Viền ô nhập khi focus | **Sửa một chi tiết của D49.** Ô nhập (TextField, ô chọn, ô nhiều dòng) khi focus: viền đổi sang màu `focus-ring` và dày thành **2 px liền** (viền 1 px + vòng 1 px sát ngoài viền), không còn khe hở giữa viền và vòng focus như bản D49 (outline cách viền 1 px). Nút và thẻ giữ vòng focus cách 2 px. Đã cập nhật [TPS-Connection Design System](https://claude.ai/artifact/263FLgUp1zeKVVnVnRMUY1) (TextField, `bundle.css`), canvas giao diện MVP và `apps/web/app/components/ui/field.tsx`. |

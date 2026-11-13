@@ -8,6 +8,12 @@ export default [
     route('*', 'routes/public/not-found.tsx'),
   ]),
 
+  // Tài khoản (D54, D57): mỗi trang tự dựng bố cục riêng theo canvas.
+  route('login', 'routes/auth/login.tsx'),
+  route('register', 'routes/auth/register.tsx'),
+  route('verify-email', 'routes/auth/verify-email.tsx'),
+  route('forgot-password', 'routes/auth/forgot-password.tsx'),
+
   // Khu người dùng đã đăng nhập: gia sư, phụ huynh, học sinh.
   route('app', 'routes/app/layout.tsx', [
     index('routes/app/home.tsx'),
@@ -22,5 +28,5 @@ export default [
 
   // Route chỉ có action (không có giao diện).
   route('preferences', 'routes/preferences.ts'),
-  route('dev/role', 'routes/dev-role.ts'),
+  route('logout', 'routes/auth/logout.ts'),
 ] satisfies RouteConfig;

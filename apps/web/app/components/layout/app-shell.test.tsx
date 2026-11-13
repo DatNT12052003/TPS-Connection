@@ -3,9 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '../../../test/render';
 import { AppShell } from './app-shell';
 
+const USER = { displayName: 'Nguyễn Thị Mai' };
+
 describe('AppShell', () => {
   it('shows the parent navigation from the approved canvas', () => {
-    renderWithProviders(<AppShell role="parent">content</AppShell>, { path: '/app' });
+    renderWithProviders(
+      <AppShell user={USER} role="parent">
+        content
+      </AppShell>,
+      { path: '/app' },
+    );
 
     const [desktop, mobile] = screen.getAllByRole('navigation', { name: 'Điều hướng chính' });
     expect(
@@ -21,7 +28,12 @@ describe('AppShell', () => {
   });
 
   it('marks the current page for assistive technology', () => {
-    renderWithProviders(<AppShell role="tutor">content</AppShell>, { path: '/app' });
+    renderWithProviders(
+      <AppShell user={USER} role="tutor">
+        content
+      </AppShell>,
+      { path: '/app' },
+    );
     const current = screen
       .getAllByRole('link', { name: 'Tổng quan' })
       .map((link) => link.getAttribute('aria-current'));
@@ -29,12 +41,22 @@ describe('AppShell', () => {
   });
 
   it('gives students no notifications link (view-only in v1)', () => {
-    renderWithProviders(<AppShell role="student">content</AppShell>, { path: '/app' });
+    renderWithProviders(
+      <AppShell user={USER} role="student">
+        content
+      </AppShell>,
+      { path: '/app' },
+    );
     expect(screen.queryByRole('link', { name: 'Thông báo' })).not.toBeInTheDocument();
   });
 
   it('provides a skip link to the main content', () => {
-    renderWithProviders(<AppShell role="tutor">content</AppShell>, { path: '/app' });
+    renderWithProviders(
+      <AppShell user={USER} role="tutor">
+        content
+      </AppShell>,
+      { path: '/app' },
+    );
     expect(screen.getByRole('link', { name: 'Bỏ qua, đến nội dung chính' })).toHaveAttribute(
       'href',
       '#main',

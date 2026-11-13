@@ -24,23 +24,38 @@ const segment = cn(
  * Chọn ngôn ngữ và chế độ màu. Gửi form POST /preferences (lưu cookie rồi quay lại trang hiện tại),
  * nên dùng được cả khi JavaScript chưa tải.
  */
-export function PreferencesControls({ className }: { className?: string }) {
+export function PreferencesControls({
+  className,
+  layout = 'inline',
+  onSubmit,
+}: {
+  className?: string;
+  /** inline: một hàng, nhãn nhóm ẩn. stacked: trong bảng cài đặt, có nhãn nhóm và chữ cạnh biểu tượng. */
+  layout?: 'inline' | 'stacked';
+  onSubmit?: () => void;
+}) {
   const { t } = useTranslation();
   const location = useLocation();
   const root = useRouteLoaderData<typeof rootLoader>('root');
   const current = root?.preferences ?? { locale: 'vi', theme: 'system' };
   const redirectTo = location.pathname + location.search;
+  const stacked = layout === 'stacked';
+  const legend = stacked ? 'mb-1.5 text-overline text-muted-foreground' : 'sr-only';
 
   return (
     <Form
       method="post"
       action="/preferences"
       preventScrollReset
-      className={cn('flex flex-wrap items-center gap-x-6 gap-y-2', className)}
+      onSubmit={onSubmit}
+      className={cn(
+        stacked ? 'flex flex-col gap-4' : 'flex flex-wrap items-center gap-x-6 gap-y-2',
+        className,
+      )}
     >
       <input type="hidden" name="redirectTo" value={redirectTo} />
-      <fieldset className="flex items-center gap-1">
-        <legend className="sr-only">{t('preferences.language')}</legend>
+      <fieldset className="flex flex-wrap items-center gap-1">
+        <legend className={legend}>{t('preferences.language')}</legend>
         {LOCALES.map((locale) => (
           <button
             key={locale}
@@ -55,8 +70,8 @@ export function PreferencesControls({ className }: { className?: string }) {
           </button>
         ))}
       </fieldset>
-      <fieldset className="flex items-center gap-1">
-        <legend className="sr-only">{t('preferences.theme')}</legend>
+      <fieldset className="flex flex-wrap items-center gap-1">
+        <legend className={legend}>{t('preferences.theme')}</legend>
         {THEMES.map(({ value, icon: Icon, label }) => (
           <button
             key={value}
@@ -64,11 +79,12 @@ export function PreferencesControls({ className }: { className?: string }) {
             name="theme"
             value={value}
             aria-pressed={current.theme === value}
-            aria-label={t(label)}
-            title={t(label)}
+            aria-label={stacked ? undefined : t(label)}
+            title={stacked ? undefined : t(label)}
             className={segment}
           >
             <Icon aria-hidden="true" className="size-4" />
+            {stacked && t(label)}
           </button>
         ))}
       </fieldset>

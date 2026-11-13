@@ -51,7 +51,7 @@ Tệp `apps/web/.env` không bắt buộc (thiếu thì dùng mặc định); `.
 | PostgreSQL                 | `127.0.0.1:5433`, user / mật khẩu / database: `tps` / `tps_dev_password` / `tps` |
 | Redis                      | `127.0.0.1:6379`                                                                 |
 
-Chưa có đăng nhập (làm ở G2). Khi chạy dev, thanh màu vàng ở `/app` và `/admin` cho chọn vai trò để xem giao diện.
+Đăng ký tài khoản ở http://localhost:5173/register; mã xác thực email xem ở Mailpit. Tài khoản Manager/Admin tạo bằng lệnh `users:staff` (xem `apps/api/README.md`).
 
 ## Lệnh
 

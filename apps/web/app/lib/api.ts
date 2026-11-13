@@ -1,21 +1,41 @@
 // Gọi API. Mọi lời gọi API của web đi qua đây (loader trên server và TanStack Query trên trình duyệt),
 // không gọi fetch rải rác trong component.
-import { ApiErrorBody, type ErrorCode } from '@tps/shared';
+import { ApiErrorBody, type ErrorCode, type ErrorMeta, type FieldError } from '@tps/shared';
 import type { z } from 'zod';
 
-const DEFAULT_API_URL = 'http://127.0.0.1:3000';
+export const DEFAULT_API_URL = 'http://127.0.0.1:3000';
 
-/** Lỗi từ API (hoặc không gọi được API). `code` dùng để hiển thị thông điệp i18n `errors.<code>`. */
+/**
+ * Lỗi từ API (hoặc không gọi được API). `code` dùng để hiển thị thông điệp i18n `errors.<code>`;
+ * `details` là lỗi theo từng ô (`details[].code` là khóa `validation.*`); `meta` là số liệu kèm theo
+ * (ví dụ `attemptsLeft`, `retryAfterSeconds`).
+ */
 export class ApiError extends Error {
+  readonly details: FieldError[];
+  readonly meta: ErrorMeta;
+
   constructor(
     readonly code: ErrorCode,
     readonly status: number,
     message: string,
     readonly requestId?: string,
+    extra: { details?: FieldError[] | undefined; meta?: ErrorMeta | undefined } = {},
   ) {
     super(message);
     this.name = 'ApiError';
+    this.details = extra.details ?? [];
+    this.meta = extra.meta ?? {};
   }
+}
+
+/** ApiError từ một response lỗi của API (thân lỗi thống nhất); thân lạ thì `internal_error`. */
+export function apiErrorFromBody(status: number, body: unknown): ApiError {
+  const parsed = ApiErrorBody.safeParse(body);
+  if (!parsed.success) {
+    return new ApiError('internal_error', status, `Unexpected ${status} response`);
+  }
+  const { code, message, requestId, details, meta } = parsed.data.error;
+  return new ApiError(code, status, message, requestId, { details, meta });
 }
 
 /** Server (SSR, loader) dùng API_URL; trình duyệt dùng VITE_API_URL. */
@@ -54,12 +74,7 @@ export async function apiGet<S extends z.ZodType>(
   const body: unknown = await response.json().catch(() => undefined);
 
   if (!response.ok && !acceptStatuses.includes(response.status)) {
-    const parsed = ApiErrorBody.safeParse(body);
-    if (parsed.success) {
-      const { code, message, requestId } = parsed.data.error;
-      throw new ApiError(code, response.status, message, requestId);
-    }
-    throw new ApiError('internal_error', response.status, `Unexpected ${response.status} response`);
+    throw apiErrorFromBody(response.status, body);
   }
 
   const result = schema.safeParse(body);

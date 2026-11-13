@@ -19,14 +19,15 @@ const GRID_COLS: Record<number, string> = {
 export function TopNav({ items, label }: { items: NavItem[]; label: string }) {
   const { t } = useTranslation();
   return (
-    <nav aria-label={label} className="flex flex-wrap items-center gap-1">
+    // Luôn một hàng: 1024–1279 px thu gọn khoảng đệm, từ 1280 px giãn ra (header cũng gọn lại tương ứng).
+    <nav aria-label={label} className="flex items-center gap-0.5 xl:gap-1">
       {items.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
           end={item.end ?? false}
           className={cn(
-            'inline-flex min-h-control-md items-center rounded-md px-3 font-semibold text-muted-foreground no-underline',
+            'inline-flex min-h-control-md items-center whitespace-nowrap rounded-md px-2.5 font-semibold text-muted-foreground no-underline xl:px-3',
             'hover:bg-surface-sunken hover:text-foreground',
             'aria-[current=page]:bg-primary-subtle aria-[current=page]:text-primary-subtle-foreground',
             focusRing,
