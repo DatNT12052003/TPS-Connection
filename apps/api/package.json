@@ -16,7 +16,8 @@
     "db:revert": "node --env-file-if-exists=.env --import tsx ../../node_modules/typeorm/cli.js migration:revert -d src/db/cli-data-source.ts",
     "db:status": "node --env-file-if-exists=.env --import tsx ../../node_modules/typeorm/cli.js migration:show -d src/db/cli-data-source.ts",
     "db:migration:create": "typeorm migration:create",
-    "db:migration:generate": "node --env-file-if-exists=.env --import tsx ../../node_modules/typeorm/cli.js migration:generate -p -d src/db/cli-data-source.ts"
+    "db:migration:generate": "node --env-file-if-exists=.env --import tsx ../../node_modules/typeorm/cli.js migration:generate -p -d src/db/cli-data-source.ts",
+    "db:seed:areas": "node --env-file-if-exists=.env --import tsx src/db/seeds/seed-areas.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1167.0",

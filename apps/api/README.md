@@ -11,6 +11,7 @@ npm install
 npm run infra:up                               # PostgreSQL, Redis, SeaweedFS, Mailpit (Docker)
 cp apps/api/.env.example apps/api/.env         # giá trị đã khớp với Docker, không cần sửa
 npm run db:migrate -w @tps/api
+npm run db:seed:areas -w @tps/api             # danh mục đơn vị hành chính (chạy lại được, không trùng)
 npm run dev -w @tps/api                        # http://127.0.0.1:3000
 ```
 
@@ -29,6 +30,7 @@ Kiểm tra: `http://127.0.0.1:3000/health/ready` trả `{"status":"ok", ...}` v�
 | `npm exec -- jest test/app.test.ts`                        | Một tệp test; thêm `-t "not_found"` để lọc theo tên                                                       |
 | `npm run lint`, `npm run type-check`                       |                                                                                                           |
 | `npm run db:migrate` / `db:revert` / `db:status`           | Chạy migration / hoàn tác migration cuối / xem trạng thái                                                 |
+| `npm run db:seed:areas` (`-- --dry-run`: chỉ xem)          | Nạp/cập nhật đơn vị hành chính từ `src/db/seeds/data/vn-units` (xem README ở đó)                          |
 | `npm run db:migration:create -- src/db/migrations/<Tên>`   | Tạo migration rỗng                                                                                        |
 | `npm run db:migration:generate -- src/db/migrations/<Tên>` | Sinh migration từ khác biệt giữa entity và database                                                       |
 

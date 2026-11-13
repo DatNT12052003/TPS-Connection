@@ -170,6 +170,21 @@ export const vi = {
     manager: 'Người kiểm duyệt',
     admin: 'Quản trị viên',
   },
+  consentType: {
+    terms_of_service: 'Điều khoản sử dụng',
+    privacy_policy: 'Chính sách bảo vệ dữ liệu cá nhân',
+    child_data_processing: 'Đồng ý xử lý dữ liệu của con',
+    marketing_email: 'Nhận email giới thiệu, khuyến mãi',
+  },
+  gradeStage: {
+    preschool: 'Mầm non',
+    primary: 'Tiểu học',
+    lower_secondary: 'Trung học cơ sở',
+    upper_secondary: 'Trung học phổ thông',
+    university: 'Đại học',
+    working_adult: 'Người đi làm',
+    other: 'Khác',
+  },
   tutorProfileStatus: {
     incomplete: 'Chưa hoàn thiện',
     pending_verification: 'Chờ xác minh',

@@ -9,3 +9,6 @@ package-lock.json
 dist/
 coverage/
 .turbo/
+
+# Dữ liệu nguồn chép nguyên văn (đơn vị hành chính).
+apps/api/src/db/seeds/data/

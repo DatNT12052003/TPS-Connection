@@ -19,6 +19,56 @@ export type Role = z.infer<typeof Role>;
 /** Vai trò nhân viên vận hành (`roles.is_staff`), dùng khu vực `/admin`. */
 export const STAFF_ROLES = [Role.enum.manager, Role.enum.admin] as const satisfies readonly Role[];
 
+/** `user_consents.consent_type`: bằng chứng đồng ý xử lý dữ liệu. */
+export const ConsentType = z.enum([
+  'terms_of_service',
+  'privacy_policy',
+  'child_data_processing',
+  'marketing_email',
+]);
+export type ConsentType = z.infer<typeof ConsentType>;
+
+/** `auth_sessions.revoke_reason`: vì sao một phiên đăng nhập (chuỗi refresh token) bị thu hồi. */
+export const AuthSessionRevokeReason = z.enum([
+  'logout',
+  'reuse_detected',
+  'account_locked',
+  'password_changed',
+  'admin',
+]);
+export type AuthSessionRevokeReason = z.infer<typeof AuthSessionRevokeReason>;
+
+// ---- Danh mục ---------------------------------------------------------------------------------
+
+/** `grade_levels.stage`: cấp học, dùng để nhóm khối lớp. */
+export const GradeStage = z.enum([
+  'preschool',
+  'primary',
+  'lower_secondary',
+  'upper_secondary',
+  'university',
+  'working_adult',
+  'other',
+]);
+export type GradeStage = z.infer<typeof GradeStage>;
+
+/** `administrative_areas.level`: hai cấp tỉnh – xã (sắp xếp năm 2025). */
+export const AdministrativeLevel = z.enum(['province', 'commune']);
+export type AdministrativeLevel = z.infer<typeof AdministrativeLevel>;
+
+/**
+ * `administrative_areas.unit_type`. Cấp tỉnh: `province` (tỉnh), `municipality` (thành phố trực thuộc
+ * Trung ương). Cấp xã: `commune` (xã), `ward` (phường), `special_zone` (đặc khu).
+ */
+export const AdministrativeUnitType = z.enum([
+  'province',
+  'municipality',
+  'commune',
+  'ward',
+  'special_zone',
+]);
+export type AdministrativeUnitType = z.infer<typeof AdministrativeUnitType>;
+
 // ---- Hồ sơ gia sư và xác minh ----------------------------------------------------------------
 
 /** `tutor_profiles.profile_status` (B.4.1). */
@@ -202,6 +252,8 @@ export type SanctionType = z.infer<typeof SanctionType>;
 export const LABELLED_ENUMS = {
   userStatus: UserStatus,
   role: Role,
+  consentType: ConsentType,
+  gradeStage: GradeStage,
   tutorProfileStatus: TutorProfileStatus,
   verificationRequestKind: VerificationRequestKind,
   verificationRequestStatus: VerificationRequestStatus,

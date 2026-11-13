@@ -31,7 +31,8 @@ cd TPS-Connection
 npm install                                   # cài mọi gói, đồng thời cài git hook (Husky)
 npm run infra:up                              # bật PostgreSQL, Redis, SeaweedFS, Mailpit và chờ sẵn sàng
 cp apps/api/.env.example apps/api/.env        # giá trị đã khớp với Docker, không cần sửa
-npm run db:migrate -w @tps/api                # tạo cấu trúc CSDL
+npm run db:migrate -w @tps/api                # tạo cấu trúc CSDL (kèm danh mục môn học, khối lớp, vai trò)
+npm run db:seed:areas -w @tps/api             # nạp 34 tỉnh/thành và 3.321 xã/phường
 npm run dev                                   # chạy API và web cùng lúc
 ```
 

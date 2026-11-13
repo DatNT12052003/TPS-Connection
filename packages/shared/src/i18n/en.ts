@@ -169,6 +169,21 @@ export const en: Messages = {
     manager: 'Manager',
     admin: 'Admin',
   },
+  consentType: {
+    terms_of_service: 'Terms of service',
+    privacy_policy: 'Personal data protection policy',
+    child_data_processing: "Consent to process my child's data",
+    marketing_email: 'Product news and offers by email',
+  },
+  gradeStage: {
+    preschool: 'Preschool',
+    primary: 'Primary school',
+    lower_secondary: 'Lower secondary school',
+    upper_secondary: 'Upper secondary school',
+    university: 'University',
+    working_adult: 'Working adult',
+    other: 'Other',
+  },
   tutorProfileStatus: {
     incomplete: 'Incomplete',
     pending_verification: 'Pending verification',
