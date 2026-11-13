@@ -137,3 +137,10 @@ Chi tiết ở [danh mục hành chính](../danh_muc_hanh_chinh.md).
 | Mã  | Chủ đề | Quyết định |
 | --- | ------ | ---------- |
 | D54 | Xác thực email và đặt lại mật khẩu | **Thay phần "xác thực email bằng liên kết" của D50.** Xác thực email khi đăng ký và đặt lại mật khẩu đều bằng **mã OTP 6 chữ số** gửi qua email. Mã có hiệu lực **10 phút**; gửi mã mới thì mã cũ mất hiệu lực. Nhập sai **5 lần** thì mã bị hủy, phải xin mã mới. Gửi lại cách nhau tối thiểu **45 giây** (giữ như D50), tối đa **5 lần mỗi giờ** cho một email. Liên kết mời học sinh tạo tài khoản vẫn là liên kết dùng một lần, hết hạn sau 7 ngày (D50). Các quy tắc khác của D50 giữ nguyên. Lý do: một cơ chế cho cả hai luồng, và nhập mã tiện khi người dùng đăng ký trên máy tính nhưng đọc email trên điện thoại. Giao diện: màn "kiểm tra email" của canvas D52 đổi thành màn nhập mã. |
+
+## 12. Trước giai đoạn 2 ngày 2026-11-13 (D55–D56)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D55 | Giới hạn tệp tải lên | Ảnh đại diện, ảnh bài đăng: tối đa **5 MB**, chỉ ảnh (JPG, PNG, WEBP), lưu ở bucket công khai. Giấy tờ xác minh, bằng cấp, tệp đính kèm tin nhắn, tệp khác: tối đa **10 MB**, ảnh hoặc PDF, bucket riêng tư. Tài liệu bài tập, bài nộp (bản 3): tối đa **20 MB**, ảnh, PDF, Word, Excel, PowerPoint, bucket riêng tư. Giá trị nằm ở `FILE_RULES` trong `packages/shared/src/files.ts`. |
+| D56 | Đường dẫn trang web | **Toàn bộ đường dẫn bằng tiếng Anh**, cho cả trang công khai và trang sau đăng nhập (ví dụ `/register`, `/tutors/<slug>`, `/app/classes`, `/admin/verifications`), giống nhau cho mọi ngôn ngữ giao diện. Phần định danh trong đường dẫn (slug) sinh từ nội dung, bỏ dấu tiếng Việt (ví dụ `nguyen-van-a-toan-ha-noi`). Tiêu đề, mô tả và nội dung trang theo ngôn ngữ người dùng chọn (mặc định tiếng Việt). |

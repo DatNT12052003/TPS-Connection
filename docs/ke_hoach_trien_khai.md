@@ -6,7 +6,7 @@ Tài liệu này chia việc phát triển TPS-Connection thành các giai đo�
 
 - [Mô tả nghiệp vụ](mo_ta_nghiep_vu.md): phạm vi bản đầu ở §15.1, mở rộng ở §15.2, quy tắc ở §16.
 - [Công nghệ sử dụng](cong_nghe_su_dung.md): stack và hạ tầng.
-- [Decision log](00-product/decision-log.md): các quyết định D1–D54 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
+- [Decision log](00-product/decision-log.md): các quyết định D1–D56 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
 
 > Trạng thái: **đề xuất**. Chưa ước lượng thời gian theo tuần vì chưa có quy mô đội ngũ, số giờ làm việc và ngân sách (C13). Thứ tự giai đoạn là thứ tự phụ thuộc; khi có nguồn lực, một số giai đoạn có thể chạy song song như ghi chú ở mục 4.
 
@@ -88,7 +88,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 ### Giai đoạn 1. Nền móng kỹ thuật
 
-> **Hoàn thành ngày 2026-11-13.** Mã nằm trên `main` (PR #2, #3); CI xanh trên pull request và trên `main`. Đã thử tiêu chí hoàn thành: clone repo mới, làm theo `README.md` là chạy được API, web và các dịch vụ phụ (trang `/status` báo cả ba dịch vụ hoạt động). Lưu tệp dùng SeaweedFS thay MinIO _(D53)_. Giới hạn dung lượng tệp theo từng mục đích là giá trị đề xuất trong `packages/shared/src/files.ts`, chờ chủ dự án duyệt.
+> **Hoàn thành ngày 2026-11-13.** Mã nằm trên `main` (PR #2, #3); CI xanh trên pull request và trên `main`. Đã thử tiêu chí hoàn thành: clone repo mới, làm theo `README.md` là chạy được API, web và các dịch vụ phụ (trang `/status` báo cả ba dịch vụ hoạt động). Lưu tệp dùng SeaweedFS thay MinIO _(D53)_. Giới hạn dung lượng tệp theo từng mục đích đã chốt ở D55.
 
 **Mục tiêu:** một bộ khung chạy được end-to-end, để các giai đoạn sau chỉ thêm tính năng.
 
@@ -348,5 +348,5 @@ Các việc bên ngoài, không chặn việc viết code nhưng có hạn chót
 ## 6. Việc cần làm tiếp
 
 1. ~~Bắt đầu G1 (nền móng kỹ thuật) và G1b (thiết kế giao diện) song song~~: **xong ngày 2026-11-13**.
-2. Trước khi bắt đầu G2, chủ dự án chốt: giới hạn dung lượng tệp (đề xuất 5/10/20 MB, xem ghi chú G1) và đường dẫn trang bằng tiếng Việt hay tiếng Anh (G2 tạo các trang đăng ký, đăng nhập, hồ sơ).
+2. ~~Chốt giới hạn dung lượng tệp và ngôn ngữ của đường dẫn trang~~: **xong ngày 2026-11-13** (D55, D56).
 3. Bắt đầu G2 (tài khoản, phân quyền và hồ sơ).
