@@ -113,10 +113,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     return data<ActionResult>(
       {
         status: 'verified',
-        // Phụ huynh: bước tiếp theo là tạo hồ sơ con (canvas). Gia sư: về /app cho tới khi có trang sửa hồ sơ
-        // gia sư (đợt 3).
-        homePath:
-          !session.user.roles.includes('tutor') && session.user.roles.includes('parent')
+        // Bước tiếp theo theo canvas: gia sư hoàn thiện hồ sơ, phụ huynh tạo hồ sơ con.
+        homePath: session.user.roles.includes('tutor')
+          ? PATHS.tutorProfileEdit
+          : session.user.roles.includes('parent')
             ? PATHS.newChild
             : homePathFor(session.user),
         isTutor: session.user.roles.includes('tutor'),
@@ -166,7 +166,9 @@ export default function VerifyEmailPage({ loaderData, actionData }: Route.Compon
             {t(
               result.homePath === PATHS.newChild
                 ? 'verifyEmail.doneCtaParent'
-                : 'verifyEmail.doneCta',
+                : result.homePath === PATHS.tutorProfileEdit
+                  ? 'verifyEmail.doneCtaTutor'
+                  : 'verifyEmail.doneCta',
             )}
           </Link>
         </Card>

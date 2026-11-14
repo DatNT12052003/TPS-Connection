@@ -28,7 +28,8 @@ app/
   root.tsx               khung HTML: lang + data-theme từ cookie (SSR, không nháy), provider i18n + TanStack Query, trang lỗi
   routes.ts              khai báo route
   routes/public/         khu công khai (SSR cho SEO): trang chủ, /status, 404
-  routes/app/            khu người dùng: tổng quan theo vai trò; phụ huynh: children/new, children/:id, children/:id/invite, account
+  routes/app/            khu người dùng: tổng quan theo vai trò; account (cài đặt, mọi vai trò) + account/avatar (chỉ action, JSON);
+                         phụ huynh: children/new, children/:id, children/:id/invite; gia sư: profile (hồ sơ và xác minh), profile/edit
   routes/admin/          khu Manager / Admin
   routes/auth/           /login, /register, /verify-email, /forgot-password, /student-invitation; /logout (chỉ action)
   routes/catalog/        GET /catalog/provinces/:id/communes (chỉ dữ liệu, cho ô chọn xã)
@@ -38,10 +39,12 @@ app/
   components/ui/date-field  DateField: gõ dd/mm/yyyy hoặc chọn trên lịch (react-day-picker trong Popover của Radix)
   components/forms/      LocationFields (tỉnh + xã, đổi tỉnh thì tải lại xã)
   components/learners/   các ô của hồ sơ con, tình trạng tài khoản học sinh
+  components/tutor/      ô môn × khối, khu vực dạy, lịch rảnh, thẻ "Phụ huynh sẽ thấy", bằng cấp
+  components/account/    ảnh đại diện (AvatarField)
   components/auth/       ô nhập mã OTP, nút gửi lại mã có đếm ngược
   components/layout/     PublicLayout, AppShell, AdminShell, AuthSplitLayout, AuthCenteredLayout, điều hướng, SettingsMenu (bánh răng: ngôn ngữ, chế độ màu)
   features/<tính năng>/  phần giao diện + query của từng tính năng (hiện có system-status)
-  lib/                   api, server-api.server + session.server (phiên đăng nhập), catalog(.server) (danh mục cho form), learners(.server), form, format (ngày theo giờ VN), dates (dd/mm/yyyy ↔ YYYY-MM-DD), i18n, navigation, preferences, cn
+  lib/                   api, server-api.server + session.server (phiên đăng nhập), catalog(.server) (danh mục cho form), learners(.server), tutor-profile (form hồ sơ gia sư ↔ body API), avatar-upload, user-agent, form, format (ngày theo giờ VN), dates (dd/mm/yyyy ↔ YYYY-MM-DD), i18n, navigation, preferences, cn
 test/                    setup Vitest, server msw, renderWithProviders, routeArgs (gọi loader/action trong test)
 ```
 
@@ -70,4 +73,7 @@ Server web đứng giữa trình duyệt và API: trình duyệt chỉ nói chuy
 - Ô nhập mã OTP là một ô (dán cả mã, `autocomplete="one-time-code"`) thay cho 6 ô trên canvas.
 - Trang nhận lời mời học sinh `/student-invitation#token=…` (D50): token nằm sau `#` nên không tới server web; trang đọc token ở trình duyệt, xóa khỏi thanh địa chỉ, rồi gửi trong body tới action (tra cứu, nhận lời mời). Token chỉ được xóa sau khi tra cứu xong: StrictMode ở bản dev chạy effect hai lần. Nhận lời mời xong API trả cookie phiên: con vào thẳng `/app`.
 - Hồ sơ người khác không quản lý (hoặc không tồn tại) trả 404, giống API: `loadOwnLearner` (`lib/learners.server.ts`).
+- Ảnh đại diện: trình duyệt xin vé qua `POST /app/account/avatar` (server web gọi API `/files/uploads`), PUT tệp thẳng lên kho lưu trữ, rồi báo lại route đó để đặt ảnh (`lib/avatar-upload.ts`, chỗ duy nhất giao diện gọi `fetch`).
+- Đổi ngôn ngữ (`POST /preferences`) khi đã đăng nhập lưu cả vào tài khoản (`PATCH /me`), để email gửi đúng ngôn ngữ.
+- Form nhiều phần trên một trang (Cài đặt) gửi `intent`; action trả kết quả kèm intent để hiện thông báo đúng thẻ. Danh sách động (môn × khối, khu vực, lịch rảnh) gửi trong ô ẩn dạng JSON nên cần JavaScript.
 - Khi chạy thật: web phải đứng sau Caddy (ghi đè X-Forwarded-For bằng IP thật), và `TRUST_PROXY` của API phải tin web; nếu không, rate limit theo IP của API chỉ thấy IP của web, hoặc người dùng giả được IP.

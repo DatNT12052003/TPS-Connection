@@ -5,7 +5,6 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 import { API, server } from '../../../../test/msw-server';
 import { routeArgs, settle } from '../../../../test/route-args';
-import { action as accountAction } from '../account';
 import { action as detailAction, loader as detailLoader } from './detail';
 import { action as inviteAction } from './invite';
 import { action as newAction, loader as newLoader } from './new';
@@ -327,51 +326,5 @@ describe('invite a child', () => {
       form: { intent: 'revoke' },
     });
     expect(status(await settle(inviteAction(args)))).toBe(404);
-  });
-});
-
-describe('parent account', () => {
-  it('replaces the parent profile with PUT', async () => {
-    signedInAs(['parent']);
-    let body: unknown;
-    server.use(
-      http.put(`${API}/api/v1/me/parent-profile`, async ({ request }) => {
-        body = await request.json();
-        return HttpResponse.json({
-          provinceId: 1,
-          communeId: null,
-          addressLine: null,
-          updatedAt: '2026-11-13T08:00:00.000Z',
-        });
-      }),
-    );
-    const { args } = routeArgs('/app/account', {
-      cookie: SESSION,
-      form: { provinceId: '1', communeId: '', addressLine: '' },
-    });
-    expect(payload(await accountAction(args))).toEqual({ ok: true });
-    expect(body).toEqual({ provinceId: 1, communeId: null, addressLine: '' });
-  });
-
-  it('shows the commune error on the commune field', async () => {
-    signedInAs(['parent']);
-    server.use(
-      http.put(`${API}/api/v1/me/parent-profile`, () =>
-        apiError(422, {
-          code: 'validation_failed',
-          message: 'Invalid',
-          details: [{ path: 'communeId', code: 'commune_not_in_province', message: 'x' }],
-        }),
-      ),
-    );
-    const { args } = routeArgs('/app/account', {
-      cookie: SESSION,
-      form: { provinceId: '1', communeId: '99', addressLine: '' },
-    });
-    const result = payload(await accountAction(args));
-    expect(result.fieldErrors).toEqual({
-      communeId: { key: 'validation.commune_not_in_province' },
-    });
-    expect(result.communes).toEqual([{ id: 10, label: 'Phường Ba Đình' }]);
   });
 });

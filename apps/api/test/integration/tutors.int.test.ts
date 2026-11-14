@@ -250,6 +250,23 @@ describe('catalog', () => {
     expect(communes.body.items).toEqual([expect.objectContaining({ id: ids.baDinh })]);
     expect((await api(null).get(`/catalog/provinces/${ids.baDinh}/communes`)).status).toBe(404);
   });
+
+  it('looks up provinces and communes by id, with the province of each commune', async () => {
+    const found = await api(null).get(`/catalog/areas?ids=${ids.baDinh},${ids.hanoi},999999`);
+    expect(found.status).toBe(200);
+    // Id không tồn tại bị bỏ qua.
+    expect(found.body.items).toEqual([
+      expect.objectContaining({ id: ids.hanoi, level: 'province', parentId: null }),
+      expect.objectContaining({ id: ids.baDinh, level: 'commune', parentId: ids.hanoi }),
+    ]);
+
+    const invalid = await api(null).get('/catalog/areas?ids=1,abc');
+    expect(invalid.status).toBe(422);
+    expect(invalid.body.error.details[0]).toMatchObject({ path: 'ids.1' });
+    const tooMany = Array.from({ length: 51 }, (_, i) => i + 1).join(',');
+    expect((await api(null).get(`/catalog/areas?ids=${tooMany}`)).status).toBe(422);
+    expect((await api(null).get('/catalog/areas')).status).toBe(422);
+  });
 });
 
 // ---- Hồ sơ gia sư của chính mình --------------------------------------------------------------

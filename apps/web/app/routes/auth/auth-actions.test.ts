@@ -226,6 +226,25 @@ describe('verify-email', () => {
     expect(api.responseCookies()).toHaveLength(2);
   });
 
+  it('sends a verified tutor to complete the tutor profile', async () => {
+    server.use(
+      http.post(`${API}/api/v1/auth/email-verification/confirm`, () =>
+        HttpResponse.json(
+          { ...session, user: { ...session.user, roles: ['tutor'] } },
+          { headers: sessionCookies() },
+        ),
+      ),
+    );
+    const { args } = routeArgs('/verify-email', {
+      form: { intent: 'verify', email: 'a@example.com', code: '123456' },
+    });
+    expect(payload(await verifyAction(args))).toEqual({
+      status: 'verified',
+      homePath: '/app/profile/edit',
+      isTutor: true,
+    });
+  });
+
   it('shows the attempts left on a wrong code', async () => {
     server.use(
       http.post(`${API}/api/v1/auth/email-verification/confirm`, () =>

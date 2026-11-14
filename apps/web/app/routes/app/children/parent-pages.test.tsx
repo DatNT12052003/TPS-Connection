@@ -180,9 +180,24 @@ describe('date field', () => {
 describe('location fields', () => {
   it('loads the communes of the chosen province', async () => {
     renderRoute('/app/account', AccountPage, {
-      profile: { provinceId: null, communeId: null, addressLine: null, updatedAt: null },
-      provinces,
-      communes: [],
+      account: {
+        id: '0193a1b2-0000-7000-8000-000000000001',
+        email: 'mai@example.com',
+        displayName: 'Mai',
+        fullName: null,
+        fullNameLocked: false,
+        phone: null,
+        phoneVerified: false,
+        locale: 'vi',
+        avatarUrl: null,
+        roles: ['parent'],
+      },
+      sessions: [],
+      area: {
+        profile: { provinceId: null, communeId: null, addressLine: null, updatedAt: null },
+        provinces,
+        communes: [],
+      },
     });
     const commune = await screen.findByLabelText('Xã/phường');
     expect(commune).toBeDisabled();

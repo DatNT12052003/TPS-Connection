@@ -11,16 +11,21 @@ export function routeArgs(
   init: {
     method?: string;
     form?: Record<string, string>;
+    /** Body JSON (route chỉ có action trả JSON, ví dụ /app/account/avatar). */
+    json?: unknown;
     cookie?: string;
     params?: Record<string, string>;
   } = {},
 ) {
   const headers = new Headers({ Origin: WEB });
   if (init.cookie) headers.set('Cookie', init.cookie);
+  if (init.json !== undefined) headers.set('Content-Type', 'application/json');
+  const hasBody = init.form !== undefined || init.json !== undefined;
   const request = new Request(`${WEB}${path}`, {
-    method: init.method ?? (init.form ? 'POST' : 'GET'),
+    method: init.method ?? (hasBody ? 'POST' : 'GET'),
     headers,
     ...(init.form && { body: new URLSearchParams(init.form) }),
+    ...(init.json !== undefined && { body: JSON.stringify(init.json) }),
   });
   const api = new ServerApi(request, API);
   const context = new RouterContextProvider();

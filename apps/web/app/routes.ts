@@ -19,11 +19,16 @@ export default [
   // Khu người dùng đã đăng nhập: gia sư, phụ huynh, học sinh.
   route('app', 'routes/app/layout.tsx', [
     index('routes/app/home.tsx'),
-    // Phụ huynh: hồ sơ con, mời con tạo tài khoản, hồ sơ phụ huynh.
+    // Phụ huynh: hồ sơ con, mời con tạo tài khoản.
     route('children/new', 'routes/app/children/new.tsx'),
     route('children/:learnerId', 'routes/app/children/detail.tsx'),
     route('children/:learnerId/invite', 'routes/app/children/invite.tsx'),
+    // Gia sư: hồ sơ và xác minh, bằng cấp; sửa hồ sơ.
+    route('profile', 'routes/app/profile/index.tsx'),
+    route('profile/edit', 'routes/app/profile/edit.tsx'),
+    // Tài khoản và cài đặt (mọi vai trò); đổi ảnh đại diện (chỉ action, trả JSON).
     route('account', 'routes/app/account.tsx'),
+    route('account/avatar', 'routes/app/account-avatar.ts'),
     route('*', 'routes/app/not-found.tsx'),
   ]),
 

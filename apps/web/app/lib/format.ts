@@ -13,3 +13,16 @@ export function formatDate(value: string, language: string): string {
     timeZone: TIME_ZONE,
   }).format(new Date(value));
 }
+
+/** Ngày giờ dạng 20/11/2026 19:30 (giờ Việt Nam). */
+export function formatDateTime(value: string, language: string): string {
+  return new Intl.DateTimeFormat(intlLocale(language), {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: TIME_ZONE,
+  }).format(new Date(value));
+}

@@ -1,7 +1,7 @@
 // Đọc danh mục công khai (môn học, khối lớp, tỉnh, xã) cho các form hồ sơ. Chỉ trả mục đang dùng.
 // Không phụ thuộc Express.
-import type { CatalogArea, CatalogGradeLevel, CatalogSubject } from '@tps/shared';
-import type { DataSource } from 'typeorm';
+import type { CatalogArea, CatalogAreaRef, CatalogGradeLevel, CatalogSubject } from '@tps/shared';
+import { type DataSource, In } from 'typeorm';
 import { notFound } from '../../lib/app-error.js';
 import { AdministrativeArea } from './administrative-area.entity.js';
 import { GradeLevel } from './grade-level.entity.js';
@@ -64,6 +64,15 @@ export function createCatalogService(deps: { dataSource: DataSource }) {
         order: { nameAscii: 'ASC' },
       });
       return rows.map(toArea);
+    },
+
+    /**
+     * Tỉnh/xã theo id, kèm cấp và tỉnh chứa xã. Gồm cả đơn vị đã ngừng dùng, để dữ liệu đã lưu trước đó vẫn
+     * hiện được tên. Id không tồn tại thì bỏ qua (không lỗi).
+     */
+    async areasByIds(ids: number[]): Promise<CatalogAreaRef[]> {
+      const rows = await areas().find({ where: { id: In(ids) }, order: { id: 'ASC' } });
+      return rows.map((a) => ({ ...toArea(a), level: a.level, parentId: a.parentId }));
     },
   };
 }

@@ -189,6 +189,7 @@ Module `src/modules/tutors`, `src/modules/users` (account), `src/modules/files`,
 | `GET`, `PATCH /me`                                                                | đã đăng nhập | Thông tin cá nhân: tên hiển thị, họ tên, số điện thoại, ngôn ngữ     |
 | `POST /files/uploads`; `PUT`, `DELETE /me/avatar`                                 | đã đăng nhập | Cấp URL tải ảnh lên kho; đặt / bỏ ảnh đại diện                       |
 | `GET /catalog/subjects`, `/grade-levels`, `/provinces`, `/provinces/:id/communes` | ai cũng xem  | Danh mục cho form (Cache-Control 1 giờ)                              |
+| `GET /catalog/areas?ids=1,2,3`                                                    | ai cũng xem  | Tra tỉnh/xã theo id (tối đa 50), kèm `level` và `parentId`           |
 
 - **Hồ sơ công khai** chỉ gồm gia sư `profile_status = 'verified'`, tài khoản `active`, chưa xóa (D5, C8); còn lại 404. Không có email, số điện thoại, họ tên thật (D16): chỉ tên hiển thị. Bằng cấp bị từ chối không hiện, đang chờ duyệt hiện như tự khai.
 - Sửa hồ sơ không đổi `profile_status` (B.4.1). DTO của gia sư có `missingForVerification`: trường bắt buộc còn thiếu trước khi nộp xác minh (họ tên, môn – khối, hình thức dạy, học phí; D34). Nộp xác minh và duyệt thuộc G3.

@@ -1,4 +1,4 @@
-import { ProvinceIdParams } from '@tps/shared';
+import { AreaLookupQuery, ProvinceIdParams } from '@tps/shared';
 import { type RequestHandler, Router } from 'express';
 import { validate } from '../../http/validate.js';
 import type { CatalogService } from './catalog.service.js';
@@ -13,6 +13,7 @@ const CACHE_CONTROL = 'public, max-age=3600';
  *   GET /grade-levels                      200  khối lớp / cấp học
  *   GET /provinces                         200  tỉnh, thành phố
  *   GET /provinces/:provinceId/communes    200  xã, phường, đặc khu của tỉnh
+ *   GET /areas?ids=1,2,3                   200  tra tỉnh/xã theo id (kèm cấp, tỉnh chứa xã)
  */
 export function catalogRouter(service: CatalogService): Router {
   const router = Router();
@@ -39,6 +40,11 @@ export function catalogRouter(service: CatalogService): Router {
     '/provinces/:provinceId/communes',
     validate({ params: ProvinceIdParams }),
     list((req) => service.communes((req.params as unknown as ProvinceIdParams).provinceId)),
+  );
+  router.get(
+    '/areas',
+    validate({ query: AreaLookupQuery }),
+    list((req) => service.areasByIds((req.query as unknown as AreaLookupQuery).ids)),
   );
   return router;
 }

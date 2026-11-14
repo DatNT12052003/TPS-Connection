@@ -1,17 +1,50 @@
 // Đọc danh mục công khai qua API (`/api/v1/catalog/...`) cho loader. Chỉ chạy trên server.
-import { CatalogArea, CatalogGradeLevel, catalogList, type Locale } from '@tps/shared';
+import {
+  CatalogArea,
+  CatalogAreaRef,
+  CatalogGradeLevel,
+  catalogList,
+  CatalogSubject,
+  type Locale,
+} from '@tps/shared';
 import type { RouterContextProvider } from 'react-router';
 import {
+  type AreaRef,
   type CatalogOption,
   catalogIdFrom,
   communeOption,
   gradeOption,
   provinceOption,
+  subjectOption,
 } from './catalog';
 import { readPreferences } from './preferences';
 import { getServerApi } from './server-api.server';
 
 type Context = Readonly<RouterContextProvider>;
+
+export async function loadSubjects(context: Context, locale: Locale): Promise<CatalogOption[]> {
+  const { items } = await getServerApi(context).call('/api/v1/catalog/subjects', {
+    schema: catalogList(CatalogSubject),
+  });
+  return items.map((subject) => subjectOption(subject, locale));
+}
+
+/** Tra tỉnh/xã theo id (khu vực dạy đã lưu); id không còn trong danh mục thì bỏ qua. */
+export async function loadAreaRefs(
+  context: Context,
+  locale: Locale,
+  ids: readonly number[],
+): Promise<AreaRef[]> {
+  if (ids.length === 0) return [];
+  const { items } = await getServerApi(context).call(`/api/v1/catalog/areas?ids=${ids.join(',')}`, {
+    schema: catalogList(CatalogAreaRef),
+  });
+  return items.map((area) => ({
+    ...(area.level === 'province' ? provinceOption(area, locale) : communeOption(area, locale)),
+    level: area.level,
+    provinceId: area.parentId ?? area.id,
+  }));
+}
 
 export async function loadGradeLevels(context: Context, locale: Locale): Promise<CatalogOption[]> {
   const { items } = await getServerApi(context).call('/api/v1/catalog/grade-levels', {

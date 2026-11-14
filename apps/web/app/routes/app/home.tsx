@@ -1,14 +1,16 @@
 // /app: trang tổng quan theo vai trò. Bản tối thiểu của G2 (ke_hoach_trien_khai.md, "Còn lại của G2"):
 // phụ huynh thấy thẻ "Con của tôi" của canvas ParentHome; học sinh thấy hồ sơ của mình (canvas StudentHome
-// chưa có lịch, điểm: G6, G7); gia sư làm ở đợt 3. Các khối khác của canvas thêm ở giai đoạn có dữ liệu.
-import { type Learner, LearnerList } from '@tps/shared';
-import { ChevronRight, Plus } from 'lucide-react';
+// chưa có lịch, điểm: G6, G7); gia sư thấy trạng thái hồ sơ, việc còn thiếu để xác minh và công tắc "Đang
+// nhận học sinh" (canvas TutorHome; lớp, lịch dạy, yêu cầu kết nối: G4 đến G7).
+import { type Learner, LearnerList, OwnTutorProfile } from '@tps/shared';
+import { ChevronRight, Plus, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
+import { data, Form, Link, useNavigation } from 'react-router';
 import { invitePath, StudentAccountBadge } from '~/components/learners/student-account-status';
 import { PageContainer } from '~/components/layout/page';
 import { Alert } from '~/components/ui/alert';
-import { buttonVariants } from '~/components/ui/button';
+import { Badge } from '~/components/ui/badge';
+import { Button, buttonVariants } from '~/components/ui/button';
 import { Card, CardHeader } from '~/components/ui/card';
 import { type CatalogOption, labelOf } from '~/lib/catalog';
 import { loadCommunes, loadGradeLevels, loadProvinces } from '~/lib/catalog.server';
@@ -20,6 +22,10 @@ import { readPreferences } from '~/lib/preferences';
 import { getServerApi } from '~/lib/server-api.server';
 import { appRoleOf } from '~/lib/session';
 import { requireUser } from '~/lib/session.server';
+import { profileBody } from '~/lib/tutor-profile';
+import { ApiError } from '~/lib/api';
+import { formErrorFrom, formText, type Message } from '~/lib/form';
+import { useMessage } from '~/lib/use-message';
 import type { Route } from './+types/home';
 
 export function meta({ matches }: Route.MetaArgs) {
@@ -31,7 +37,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, context);
   const role = appRoleOf(user);
   const greeting = { displayName: user.displayName };
-  if (role !== 'parent' && role !== 'student') return { view: 'tutor' as const, ...greeting };
+  if (role === 'tutor') {
+    const profile = await getServerApi(context).call('/api/v1/me/tutor-profile', {
+      schema: OwnTutorProfile,
+    });
+    return { view: 'tutor' as const, ...greeting, profile };
+  }
+  if (role !== 'parent' && role !== 'student') throw data(null, { status: 404 });
 
   const { locale } = await readPreferences(request);
   const [{ items }, gradeLevels] = await Promise.all([
@@ -53,8 +65,27 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return { view: 'student' as const, ...greeting, own, gradeLevels, provinces, communes };
 }
 
-export default function AppHomePage({ loaderData }: Route.ComponentProps) {
-  const { t } = useTranslation();
+/** Gia sư bật/tắt "Đang nhận học sinh" (API chỉ có PUT cả hồ sơ: đọc hồ sơ rồi gửi lại với giá trị mới). */
+export async function action({ request, context }: Route.ActionArgs) {
+  await requireUser(request, context, { roles: ['tutor'] });
+  const form = await request.formData();
+  if (formText(form, 'intent') !== 'accepting') throw data(null, { status: 400 });
+  const api = getServerApi(context);
+  try {
+    const profile = await api.call('/api/v1/me/tutor-profile', { schema: OwnTutorProfile });
+    await api.call('/api/v1/me/tutor-profile', {
+      method: 'PUT',
+      body: { ...profileBody(profile), acceptingStudents: formText(form, 'accepting') === 'true' },
+      schema: OwnTutorProfile,
+    });
+    return { ok: true as const };
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status === 0 || error.status >= 500) throw error;
+    return { ok: false as const, formError: formErrorFrom(error) };
+  }
+}
+
+export default function AppHomePage({ loaderData, actionData }: Route.ComponentProps) {
   switch (loaderData.view) {
     case 'parent':
       return <ParentHome {...loaderData} />;
@@ -62,12 +93,101 @@ export default function AppHomePage({ loaderData }: Route.ComponentProps) {
       return <StudentHome {...loaderData} />;
     default:
       return (
-        <PageContainer>
-          <h1 className="text-h1">{t('appHome.title')}</h1>
-          <Alert>{t('appHome.placeholder', { role: t('role.tutor') })}</Alert>
-        </PageContainer>
+        <TutorHome
+          {...loaderData}
+          formError={actionData && !actionData.ok ? actionData.formError : undefined}
+        />
       );
   }
+}
+
+function TutorHome({
+  displayName,
+  profile,
+  formError,
+}: {
+  displayName: string;
+  profile: OwnTutorProfile;
+  formError: Message | undefined;
+}) {
+  const { t } = useTranslation();
+  const tr = useMessage();
+  const navigation = useNavigation();
+  const switching = navigation.state !== 'idle' && navigation.formMethod === 'POST';
+  const status = profile.profileStatus;
+  const missing = profile.missingForVerification;
+
+  return (
+    <PageContainer>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-h1">{t('appHome.hello', { name: displayName })}</h1>
+          <span className="flex flex-wrap items-center gap-2">
+            {status === 'verified' ? (
+              <Badge variant="verified">
+                <ShieldCheck aria-hidden="true" className="size-3.5" />
+                {t('tutorProfile.identityVerified')}
+              </Badge>
+            ) : (
+              <Badge variant={status === 'incomplete' ? 'warning' : 'neutral'}>
+                {t(`tutorProfileStatus.${status}`)}
+              </Badge>
+            )}
+            <span className="text-small text-muted-foreground">
+              {t(status === 'verified' ? 'tutorHome.public' : 'tutorHome.notPublic')}
+            </span>
+          </span>
+        </div>
+        <Form method="post" className="flex flex-col items-start gap-1 sm:items-end">
+          <input type="hidden" name="intent" value="accepting" />
+          <input type="hidden" name="accepting" value={String(!profile.acceptingStudents)} />
+          <span className="text-small font-semibold">
+            {t(profile.acceptingStudents ? 'tutorHome.accepting' : 'tutorHome.notAccepting')}
+          </span>
+          <Button type="submit" variant="secondary" disabled={switching} aria-busy={switching}>
+            {t(profile.acceptingStudents ? 'tutorHome.stopAccepting' : 'tutorHome.startAccepting')}
+          </Button>
+        </Form>
+      </div>
+      {formError && (
+        <Alert variant="danger" role="alert">
+          {tr(formError)}
+        </Alert>
+      )}
+
+      {status !== 'verified' && (
+        <Card className="gap-3 border-primary ring-1 ring-primary sm:p-6">
+          <h2 className="text-h3">
+            {missing.length > 0 ? t('tutorHome.finishTitle') : t('tutorHome.verifyTitle')}
+          </h2>
+          <p className="text-small text-muted-foreground">
+            {missing.length > 0
+              ? t('tutorHome.finishBody', { count: missing.length })
+              : status === 'pending_verification'
+                ? t('tutorProfile.identityPending')
+                : t('tutorHome.verifyBody')}
+          </p>
+          <Link
+            to={missing.length > 0 ? PATHS.tutorProfileEdit : PATHS.tutorProfile}
+            className={buttonVariants({ className: 'self-start' })}
+          >
+            {missing.length > 0 ? t('tutorProfile.completeProfile') : t('tutorHome.openProfile')}
+          </Link>
+        </Card>
+      )}
+
+      <Card className="gap-3 sm:p-6">
+        <CardHeader>
+          <h2 className="text-h3">{t('tutorHome.profileTitle')}</h2>
+          <Link to={PATHS.tutorProfile} className={buttonVariants({ variant: 'ghost' })}>
+            {t('tutorHome.openProfile')}
+            <ChevronRight aria-hidden="true" />
+          </Link>
+        </CardHeader>
+        <p className="text-small text-muted-foreground">{t('tutorHome.comingSoon')}</p>
+      </Card>
+    </PageContainer>
+  );
 }
 
 function ParentHome({
