@@ -1,22 +1,21 @@
+import { STAFF_ROLES } from '@tps/shared';
 import { Outlet } from 'react-router';
 import { AdminShell } from '~/components/layout/admin-shell';
-import { DevRoleSwitcher } from '~/components/layout/dev-role-switcher';
-import { isDevRoleEnabled, readDevRole, requireRole } from '~/lib/dev-role.server';
-import { STAFF_ROLES } from '~/lib/navigation';
+import { staffRoleOf } from '~/lib/session';
+import { requireUser } from '~/lib/session.server';
 import type { Route } from './+types/layout';
 
-// G1: vai trò lấy từ công cụ chọn vai trò ở môi trường dev (production trả 404).
-// G2: thay bằng phiên đăng nhập thật + kiểm tra vai trò manager/admin ở server.
-export async function loader({ request }: Route.LoaderArgs) {
-  const role = await requireRole(request, STAFF_ROLES);
-  const devRole = isDevRoleEnabled() ? ((await readDevRole(request)) ?? role) : null;
-  return { role, devRole };
+// Khu Manager/Admin: phải đăng nhập và có vai trò nhân viên; đăng nhập mà không có vai trò đó: 404
+// (không để lộ khu quản trị). API vẫn kiểm tra quyền ở từng endpoint.
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const user = await requireUser(request, context, { roles: STAFF_ROLES });
+  const role = staffRoleOf(user) ?? 'manager';
+  return { user, role };
 }
 
 export default function AdminLayoutRoute({ loaderData }: Route.ComponentProps) {
-  const { role, devRole } = loaderData;
   return (
-    <AdminShell role={role} banner={devRole && <DevRoleSwitcher current={devRole} />}>
+    <AdminShell user={loaderData.user} role={loaderData.role}>
       <Outlet />
     </AdminShell>
   );

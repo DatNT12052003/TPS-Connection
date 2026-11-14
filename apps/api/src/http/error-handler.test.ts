@@ -46,6 +46,41 @@ describe('errorHandler', () => {
     expect(error.details?.[0]?.path).toBe('email');
   });
 
+  it('puts the i18n validation code in details[].code for every kind of field error', async () => {
+    const schema = z.object({
+      title: z.string().max(3, { error: 'too_long' }), // mã riêng của schema
+      name: z.string(), // thiếu -> required
+      kind: z.enum(['a', 'b']), // sai giá trị, thông điệp mặc định -> invalid
+      note: z.string().max(1, { error: 'not_a_known_code' }), // mã chưa có bản dịch -> invalid
+    });
+    const result = schema.safeParse({ title: 'quá dài', kind: 'c', note: 'xx' });
+    const res = await request(appThrowing(result.error)).get('/boom');
+    const details = ApiErrorBody.parse(res.body).error.details ?? [];
+    expect(details.map(({ path, code }) => ({ path, code }))).toEqual([
+      { path: 'title', code: 'too_long' },
+      { path: 'name', code: 'required' },
+      { path: 'kind', code: 'invalid' },
+      { path: 'note', code: 'invalid' },
+    ]);
+    // `message` là mô tả tiếng Anh, không phải mã.
+    expect(details[0]?.message).toBe('This is too long.');
+  });
+
+  it('keeps the code of AppError field errors, unknown codes become invalid', async () => {
+    const res = await request(
+      appThrowing(
+        new AppError('validation_failed', 'Bad', [
+          { path: 'fullName', code: 'full_name_locked', message: 'Full name is locked' },
+          { path: 'x', code: 'typo_code', message: 'Typo' },
+        ]),
+      ),
+    ).get('/boom');
+    expect(ApiErrorBody.parse(res.body).error.details?.map((d) => d.code)).toEqual([
+      'full_name_locked',
+      'invalid',
+    ]);
+  });
+
   it('hides the message of unexpected errors', async () => {
     const res = await request(appThrowing(new Error('password=hunter2 leaked'))).get('/boom');
     expect(res.status).toBe(500);

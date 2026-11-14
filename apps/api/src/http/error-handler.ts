@@ -1,4 +1,12 @@
-import type { ApiErrorBody, ErrorCode, FieldError } from '@tps/shared';
+import {
+  type ApiErrorBody,
+  type ErrorCode,
+  type ErrorMeta,
+  type FieldError,
+  isValidationCode,
+  messages,
+  type ValidationCode,
+} from '@tps/shared';
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../lib/app-error.js';
@@ -8,6 +16,7 @@ interface ErrorResponse {
   code: ErrorCode;
   message: string;
   details?: FieldError[];
+  meta?: ErrorMeta;
 }
 
 /** Lỗi từ body-parser / http-errors của Express (JSON sai cú pháp, body quá lớn…). */
@@ -21,6 +30,28 @@ const isClientHttpError = (err: unknown): err is { status: number; message: stri
   'expose' in err &&
   err.expose === true;
 
+/** Mã không có trong `validation.*` (lỗi lập trình, hoặc thông điệp mặc định của Zod) quy về `invalid`. */
+const toValidationCode = (code: string): ValidationCode =>
+  isValidationCode(code) ? code : 'invalid';
+
+/**
+ * Một lỗi của Zod thành lỗi một ô. Schema đặt mã riêng (`{ error: 'too_long' }`) thì Zod để mã đó ở
+ * `message`; thiếu trường bắt buộc thì Zod báo `invalid_type` "received undefined" -> `required`; còn lại
+ * (sai kiểu, sai giá trị enum…) -> `invalid`. `message` trả về là bản tiếng Anh của mã.
+ */
+function zodIssueToFieldError(issue: ZodError['issues'][number]): FieldError {
+  let code: ValidationCode;
+  if (isValidationCode(issue.message)) code = issue.message;
+  else if (issue.code === 'invalid_type' && issue.message.endsWith('received undefined')) {
+    code = 'required';
+  } else code = 'invalid';
+  return {
+    path: issue.path.join('.'),
+    code,
+    message: code === 'invalid' ? issue.message : messages.en.validation[code],
+  };
+}
+
 /** Đổi mọi lỗi thành dạng response thống nhất. Lỗi không lường trước KHÔNG lộ thông điệp nội bộ. */
 export function toErrorResponse(err: unknown): ErrorResponse {
   if (err instanceof AppError) {
@@ -28,7 +59,10 @@ export function toErrorResponse(err: unknown): ErrorResponse {
       status: err.status,
       code: err.code,
       message: err.message,
-      ...(err.details && { details: err.details }),
+      ...(err.details && {
+        details: err.details.map((d) => ({ ...d, code: toValidationCode(d.code) })),
+      }),
+      ...(err.meta && { meta: err.meta }),
     };
   }
   if (err instanceof ZodError) {
@@ -36,11 +70,7 @@ export function toErrorResponse(err: unknown): ErrorResponse {
       status: 422,
       code: 'validation_failed',
       message: 'Validation failed',
-      details: err.issues.map((issue) => ({
-        path: issue.path.join('.'),
-        code: issue.code,
-        message: issue.message,
-      })),
+      details: err.issues.map(zodIssueToFieldError),
     };
   }
   if (isClientHttpError(err)) {
@@ -55,6 +85,9 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
     return;
   }
   const { status, ...error } = toErrorResponse(err);
+  if (typeof error.meta?.retryAfterSeconds === 'number') {
+    res.setHeader('Retry-After', String(error.meta.retryAfterSeconds));
+  }
   if (status >= 500) {
     req.log.error({ err }, 'Unhandled error');
   } else {

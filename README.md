@@ -31,7 +31,8 @@ cd TPS-Connection
 npm install                                   # cài mọi gói, đồng thời cài git hook (Husky)
 npm run infra:up                              # bật PostgreSQL, Redis, SeaweedFS, Mailpit và chờ sẵn sàng
 cp apps/api/.env.example apps/api/.env        # giá trị đã khớp với Docker, không cần sửa
-npm run db:migrate -w @tps/api                # tạo cấu trúc CSDL
+npm run db:migrate -w @tps/api                # tạo cấu trúc CSDL (kèm danh mục môn học, khối lớp, vai trò)
+npm run db:seed:areas -w @tps/api             # nạp 34 tỉnh/thành và 3.321 xã/phường
 npm run dev                                   # chạy API và web cùng lúc
 ```
 
@@ -50,7 +51,7 @@ Tệp `apps/web/.env` không bắt buộc (thiếu thì dùng mặc định); `.
 | PostgreSQL                 | `127.0.0.1:5433`, user / mật khẩu / database: `tps` / `tps_dev_password` / `tps` |
 | Redis                      | `127.0.0.1:6379`                                                                 |
 
-Chưa có đăng nhập (làm ở G2). Khi chạy dev, thanh màu vàng ở `/app` và `/admin` cho chọn vai trò để xem giao diện.
+Đăng ký tài khoản ở http://localhost:5173/register; mã xác thực email xem ở Mailpit. Tài khoản Manager/Admin tạo bằng lệnh `users:staff` (xem `apps/api/README.md`).
 
 ## Lệnh
 
@@ -89,7 +90,7 @@ Lệnh riêng của từng gói (migration, build bản chạy thật, token thi
 ## Commit và CI
 
 - **Trước mỗi commit**, Husky chạy lint-staged trên các tệp đã stage: `eslint --fix` trong gói chứa tệp, rồi Prettier. Còn lỗi lint thì commit bị chặn. Cấu hình ở `lint-staged.config.js`.
-- **CI** (GitHub Actions, `.github/workflows/ci.yml`) chạy với mỗi pull request và mỗi lần push lên `main`: kiểm tra định dạng, `compose.yaml`, lint, type-check, build, rồi toàn bộ test (kể cả test tích hợp với PostgreSQL, Redis, SeaweedFS, Mailpit thật, và kiểm tra `tokens.css` khớp `tokens.json`).
+- **CI** (GitHub Actions, `.github/workflows/ci.yml`) chạy với mỗi pull request và mỗi lần push lên `main` hoặc `develop`: kiểm tra định dạng, `compose.yaml`, lint, type-check, build, rồi toàn bộ test (kể cả test tích hợp với PostgreSQL, Redis, SeaweedFS, Mailpit thật, và kiểm tra `tokens.css` khớp `tokens.json`).
 - Message commit theo dạng Conventional Commits, ví dụ `feat(api): ...`, `fix(web): ...`, `docs: ...`.
 
 ## Sự cố thường gặp

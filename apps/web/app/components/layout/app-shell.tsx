@@ -8,29 +8,34 @@ import { Logo } from '~/components/brand/logo';
 import { buttonVariants } from '~/components/ui/button';
 import { APP_NAV, PATHS, type AppRole } from '~/lib/navigation';
 import { cn } from '~/lib/utils';
+import type { SessionUser } from '~/lib/session';
+import { AccountControls } from './account-controls';
 import { BottomNav, TopNav } from './nav-links';
 import { SkipLink } from './page';
-import { PreferencesControls } from './preferences-controls';
+import { SettingsMenu } from './settings-menu';
 
 interface AppShellProps {
+  user: Pick<SessionUser, 'displayName'>;
+  /** Vai trò dùng để dựng điều hướng (appRoleOf). */
   role: AppRole;
-  /** Thanh phụ phía trên (ví dụ công cụ chọn vai trò ở môi trường dev). */
-  banner?: ReactNode;
   children: ReactNode;
 }
 
-export function AppShell({ role, banner, children }: AppShellProps) {
+export function AppShell({ user, role, children }: AppShellProps) {
   const { t } = useTranslation();
   const nav = APP_NAV[role];
-  const roleLabel = t(`role.${role}`);
 
   return (
     <div className="flex min-h-dvh flex-col">
       <SkipLink label={t('layout.skipToContent')} />
-      {banner}
       <header className="sticky top-0 z-20 border-b border-border bg-surface">
-        <div className="mx-auto flex min-h-15 max-w-page items-center gap-2 px-4 md:px-6 lg:min-h-17 lg:gap-6 lg:px-8">
-          <Logo to={PATHS.app} className="text-body-lg lg:text-lg" />
+        {/* 1024–1279 px: thanh trên chật (tới 6 mục) nên chỉ hiện biểu tượng logo và chữ cái đầu của tên. */}
+        <div className="mx-auto flex min-h-15 max-w-page items-center gap-1 px-4 sm:gap-2 md:px-6 lg:min-h-17 lg:gap-4 lg:px-8 xl:gap-6">
+          <Logo
+            to={PATHS.app}
+            className="text-body-lg lg:text-lg"
+            labelClassName="lg:max-xl:sr-only"
+          />
           <div className="hidden lg:block">
             <TopNav items={nav.desktop} label={t('layout.primaryNav')} />
           </div>
@@ -45,24 +50,15 @@ export function AppShell({ role, banner, children }: AppShellProps) {
               <Bell aria-hidden="true" />
             </Link>
           )}
-          <span className="hidden min-h-control-md items-center gap-2 rounded-full border border-border py-1 pr-3 pl-1 font-semibold lg:inline-flex">
-            <span
-              aria-hidden="true"
-              className="inline-flex size-8.5 items-center justify-center rounded-full bg-primary-subtle text-small font-bold text-primary-subtle-foreground"
-            >
-              {roleLabel.charAt(0)}
-            </span>
-            {roleLabel}
-          </span>
+          <SettingsMenu />
+          {/* Trang tài khoản: hiện chỉ phụ huynh có (G2 đợt 2); gia sư, học sinh thêm ở đợt 3. */}
+          <AccountControls user={user} accountTo={PATHS.account} />
         </div>
       </header>
 
       {/* pb: chừa chỗ cho thanh dưới đáy (dưới 1024 px). */}
       <main id="main" className="flex-1 pb-24 lg:pb-0">
         {children}
-        <div className="mx-auto max-w-page px-4 pb-6 md:px-6 lg:px-8">
-          <PreferencesControls className="border-t border-border pt-4" />
-        </div>
       </main>
 
       <BottomNav items={nav.mobile} label={t('layout.primaryNav')} />

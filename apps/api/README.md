@@ -11,6 +11,7 @@ npm install
 npm run infra:up                               # PostgreSQL, Redis, SeaweedFS, Mailpit (Docker)
 cp apps/api/.env.example apps/api/.env         # giá trị đã khớp với Docker, không cần sửa
 npm run db:migrate -w @tps/api
+npm run db:seed:areas -w @tps/api             # danh mục đơn vị hành chính (chạy lại được, không trùng)
 npm run dev -w @tps/api                        # http://127.0.0.1:3000
 ```
 
@@ -29,6 +30,7 @@ Kiểm tra: `http://127.0.0.1:3000/health/ready` trả `{"status":"ok", ...}` v�
 | `npm exec -- jest test/app.test.ts`                        | Một tệp test; thêm `-t "not_found"` để lọc theo tên                                                       |
 | `npm run lint`, `npm run type-check`                       |                                                                                                           |
 | `npm run db:migrate` / `db:revert` / `db:status`           | Chạy migration / hoàn tác migration cuối / xem trạng thái                                                 |
+| `npm run db:seed:areas` (`-- --dry-run`: chỉ xem)          | Nạp/cập nhật đơn vị hành chính từ `src/db/seeds/data/vn-units` (xem README ở đó)                          |
 | `npm run db:migration:create -- src/db/migrations/<Tên>`   | Tạo migration rỗng                                                                                        |
 | `npm run db:migration:generate -- src/db/migrations/<Tên>` | Sinh migration từ khác biệt giữa entity và database                                                       |
 
@@ -45,7 +47,8 @@ src/
   lib/                 logger, Redis client, AppError, storage (S3), email/ (EmailSender + SMTP)
   jobs/                hàng đợi BullMQ và worker (hiện có: email)
   db/                  DataSource, danh sách entity và migration
-  modules/<miền>/      router → controller → service → repository (G2 trở đi); hiện có health
+  modules/<miền>/      router → controller → service → repository: health, auth, users (tài khoản, thông tin
+                       cá nhân), catalog, files, parents, learners, tutors
   openapi.ts           tài liệu OpenAPI từ schema Zod của @tps/shared
 test/                  test HTTP (Supertest), test tích hợp *.int.test.ts (Testcontainers)
 ```
@@ -90,7 +93,7 @@ Rồi gắn router vào `api` (`/api/v1`) trong `app.ts` và khai báo endpoint 
 
 ## Quy ước
 
-- **Lỗi:** service ném `AppError(code, message)` với `code` trong `ErrorCode` của `@tps/shared`. Response luôn có dạng `{ "error": { "code", "message", "details?", "requestId" } }`; client hiển thị theo `code` (i18n), không dùng `message`. Lỗi Zod tự thành `validation_failed` (422) có `details` theo từng trường. Lỗi không lường trước trả `internal_error` (500), không lộ thông điệp nội bộ.
+- **Lỗi:** service ném `AppError(code, message)` với `code` trong `ErrorCode` của `@tps/shared`. Response luôn có dạng `{ "error": { "code", "message", "details?", "requestId" } }`; client hiển thị theo `code` (i18n), không dùng `message`. Lỗi Zod tự thành `validation_failed` (422) có `details` theo từng trường. Mỗi mục `details` có `code` là khóa `validation.*` trong i18n của `@tps/shared` (lấy từ `{ error: '<mã>' }` của schema; thiếu trường bắt buộc thành `required`; còn lại và mã chưa có bản dịch thành `invalid`), `message` là mô tả tiếng Anh. Lỗi theo ô do service ném (`new AppError('validation_failed', …, [{ path, code, message }])`) cũng đặt khóa i18n ở `code`. Mã mới phải thêm vào `validation` của cả `vi.ts` và `en.ts` (test `validation-codes.test.ts` của shared kiểm tra các mã trong schema). Lỗi không lường trước trả `internal_error` (500), không lộ thông điệp nội bộ.
 - **Validate:** ở router bằng middleware `validate({ params, query, body })` với schema Zod (ưu tiên schema trong `@tps/shared`). Controller nhận giá trị đã parse (đã ép kiểu, có default, bỏ trường thừa) và khai báo kiểu qua `RequestHandler<Params, unknown, Body, Query>`.
 - **Route nghiệp vụ** gắn dưới `/api/v1` trong `app.ts`. `/health`, `/health/ready`, `/openapi.json` nằm ở gốc.
 - **Entity:** mọi `@Column` ghi rõ `type`. Không bật `emitDecoratorMetadata` (tsx không hỗ trợ), không bật `synchronize`.
@@ -114,6 +117,88 @@ Tạo một lần trong `main.ts`, module nghiệp vụ nhận qua tham số (đ
 **Email** (`lib/email/`). Nghiệp vụ dùng interface `EmailSender`; bản cài đặt hiện tại là SMTP (Mailpit khi local, Gmail SMTP + App Password khi chạy thật, chỉ khác biến môi trường). Không gửi thẳng trong request: xếp vào hàng đợi bằng `jobs.enqueueEmail({ to, subject, text, html? })`. Nội dung email không chứa thông tin của trẻ (§12).
 
 **Hàng đợi** (`jobs/`, BullMQ trên Redis). Job thử lại 5 lần, chờ 30 giây rồi tăng gấp đôi; dữ liệu job sai dạng thì ném `UnrecoverableError` (không thử lại). Log không ghi nội dung thư, địa chỉ nhận được che (`ph***@gmail.com`). Worker chạy cùng tiến trình API (`WORKERS_ENABLED=true`); khi cần tách, chạy thêm một tiến trình với `true` và đặt `false` cho các tiến trình API. Thêm loại việc mới (tự hủy yêu cầu quá hạn, tự xác nhận buổi học, xóa ảnh giấy tờ…): một hàng đợi + một worker trong `jobs/` theo mẫu email.
+
+## Xác thực (G2)
+
+Module `src/modules/auth`, quyết định D54 (mã OTP) và D57 (phiên đăng nhập). Các endpoint dưới `/api/v1/auth` (chi tiết ở `/openapi.json`):
+
+| Endpoint                                        | Việc                                                              |
+| ----------------------------------------------- | ----------------------------------------------------------------- |
+| `POST /register`                                | Đăng ký phụ huynh/gia sư, gửi mã; chưa đăng nhập                  |
+| `POST /email-verification/resend`, `/confirm`   | Gửi lại mã / nhập mã: xác thực email và đăng nhập                 |
+| `POST /login`, `/refresh`, `/logout`            | Đăng nhập, làm mới phiên (xoay refresh token), đăng xuất          |
+| `POST /password-reset/request`, `/confirm`      | Quên mật khẩu bằng mã; đổi xong đăng xuất mọi thiết bị            |
+| `GET /me`                                       | Người dùng hiện tại                                               |
+| `POST /password/change`                         | Đổi mật khẩu; đăng xuất các thiết bị khác, giữ thiết bị đang dùng |
+| `GET /sessions`, `POST /sessions/revoke-others` | Thiết bị đang đăng nhập; đăng xuất thiết bị khác                  |
+
+- Token nằm trong cookie httpOnly `tps_at` (access, 15 phút) và `tps_rt` (refresh). App mobile gửi `Authorization: Bearer <access>`.
+- Middleware `authenticate` (`src/http/authenticate.ts`) kiểm tra token rồi đọc lại tài khoản ở mỗi request (khóa tài khoản có hiệu lực ngay), gắn `req.auth`.
+- `originCheck` từ chối request thay đổi dữ liệu từ origin ngoài `CORS_ORIGINS` (chống CSRF).
+- Mã OTP và bộ đếm rate limit ở Redis; mật khẩu băm argon2id; refresh token chỉ lưu hash SHA-256.
+- Không lộ email nào đã đăng ký: gửi lại mã và quên mật khẩu luôn trả cùng một kết quả; đăng nhập sai email hay sai mật khẩu cùng là `invalid_credentials`.
+- Không bao giờ log mật khẩu, mã OTP, token.
+
+**Phân quyền** (`src/http/authorize.ts`, đặt sau `authenticate`): `requireRole('tutor', 'parent')` (có ít nhất một vai trò), `requireStaff()` (Manager hoặc Admin), `requireActiveAccount()` (chặn tài khoản bị hạn chế với hành động đăng bài, gửi yêu cầu, nhắn tin mới; B.9.3). Không có `req.auth` thì 401 (mặc định từ chối). Trong controller lấy người dùng bằng `requireAuth(req)`. Quyền theo quan hệ (phụ huynh – con, gia sư – lớp) kiểm tra ở service của từng module.
+
+**Tạo Admin/Manager** (nhân viên không tự đăng ký):
+
+```sh
+npm run users:staff -w @tps/api -- grant  --email admin@vidu.vn --role admin --name "Nguyễn Văn A"
+npm run users:staff -w @tps/api -- revoke --email admin@vidu.vn --role admin
+```
+
+Tài khoản mới chưa có mật khẩu: người được cấp chọn "Quên mật khẩu" để nhận mã qua email và tự đặt mật khẩu (không có mật khẩu nào đi qua terminal). Lệnh không cho thu hồi Admin cuối cùng.
+
+Thử tay các endpoint: [http/auth.http](http/auth.http) (extension REST Client của VS Code), hoặc import [http/tps-auth.postman_collection.json](http/tps-auth.postman_collection.json) vào Postman Desktop (cùng 21 bước, có test status code; bước nhập mã OTP tự lấy mã từ email mới nhất trong Mailpit).
+
+Khi dev: mã OTP xem ở Mailpit (http://127.0.0.1:8025). Gọi thử bằng curl trên Windows: gửi body từ tệp UTF-8 (`--data-binary @body.json`); tham số dòng lệnh của Git Bash làm mất dấu tiếng Việt.
+
+## Hồ sơ phụ huynh, hồ sơ con, lời mời học sinh (G2)
+
+Module `src/modules/parents` và `src/modules/learners`; thiết kế ở docs/thiet_ke_co_so_du_lieu.md mục 5.2 và 12, quyết định C9, D4, D16, D50.
+
+| Endpoint                                      | Ai                          | Việc                                                         |
+| --------------------------------------------- | --------------------------- | ------------------------------------------------------------ |
+| `GET`, `PUT /me/parent-profile`               | phụ huynh                   | Hồ sơ của chính mình (tỉnh, xã, địa chỉ)                     |
+| `GET /learners`                               | phụ huynh, học sinh         | Con đang quản lý / hồ sơ của chính học sinh                  |
+| `POST /learners`                              | phụ huynh                   | Tạo hồ sơ con, bắt buộc đồng ý xử lý dữ liệu của con         |
+| `GET /learners/:id`                           | phụ huynh quản lý, học sinh | Một hồ sơ                                                    |
+| `PATCH`, `DELETE /learners/:id`               | phụ huynh quản lý           | Sửa; xóa mềm (rút đồng ý, hủy lời mời)                       |
+| `POST`, `DELETE /learners/:id/invitation`     | phụ huynh quản lý           | Gửi lời mời (thay lời mời cũ); hủy lời mời đang mở           |
+| `POST /student-invitations/lookup`, `/accept` | chưa đăng nhập              | Xem lời mời; nhận lời mời: tạo tài khoản học sinh, đăng nhập |
+
+- **Quyền theo quan hệ** ở `src/modules/learners/learner-access.ts`: `isParentOf(userId, learnerId)` (qua view `learner_managers`), `isStudentSelf(userId, learnerId)`, `assertParentOf`, `assertCanView`. Mọi endpoint chạm vào một hồ sơ con đi qua các hàm này trong service. Không có quyền thì **404**, giống hồ sơ không tồn tại, để không lộ hồ sơ có tồn tại hay không. `teachesStudent` thêm ở G6 cùng bảng lớp học.
+- Mỗi hồ sơ con có đúng một phụ huynh quản lý (C9): partial unique index `learner_guardians_one_active_uq`.
+- Đồng ý xử lý dữ liệu của con: một dòng `user_consents` loại `child_data_processing` gắn `learner_id`, phiên bản `CHILD_DATA_CONSENT_VERSION` (@tps/shared), ghi cùng transaction với hồ sơ. Xóa hồ sơ thì ghi `withdrawn_at`, giữ dòng làm bằng chứng.
+- Học sinh chỉ xem (D4); không thấy ghi chú phụ huynh viết cho gia sư và lời mời.
+- Lời mời (D50): token 256 bit, chỉ lưu SHA-256; dùng một lần, hết hạn 7 ngày; mỗi hồ sơ một lời mời đang mở. Liên kết trong email là `<WEB_URL>/student-invitation#token=…` (token sau `#` không tới máy chủ web, không vào log). Nhận lời mời bằng email đã có tài khoản đã xác thực: 409 `email_taken`. Mời không kiểm tra email đã đăng ký hay chưa (không lộ email). Giới hạn 10 lời mời mỗi giờ cho một phụ huynh, cộng giới hạn theo IP.
+- Chưa làm ở bản này: xóa hồ sơ đã có tài khoản học sinh (409), đổi phụ huynh quản lý (Admin, C9), ngưỡng tuổi tài khoản học sinh (chờ luật sư, D4). Việc còn lại và câu hỏi chờ quyết định được theo dõi ở docs/ke_hoach_trien_khai.md (mục "Còn lại của G2" và "Việc chuyển từ G2" ở từng giai đoạn).
+
+Thử tay: [http/learners.http](http/learners.http).
+
+## Hồ sơ gia sư, thông tin cá nhân, ảnh đại diện, danh mục (G2)
+
+Module `src/modules/tutors`, `src/modules/users` (account), `src/modules/files`, `src/modules/catalog`; thiết kế ở docs/thiet_ke_co_so_du_lieu.md mục 5.1, quyết định D5, D16, D18, D34, C8, C12, D55.
+
+| Endpoint                                                                          | Ai           | Việc                                                                 |
+| --------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------- |
+| `GET`, `PUT /me/tutor-profile`                                                    | gia sư       | Hồ sơ của chính mình (tạo hồ sơ trống nếu chưa có); PUT thay toàn bộ |
+| `POST /me/tutor-profile/credentials`, `PATCH`, `DELETE …/:id`                     | gia sư       | Bằng cấp, chứng chỉ tự khai                                          |
+| `GET /tutors/:tutorId`                                                            | ai cũng xem  | Hồ sơ công khai                                                      |
+| `GET`, `PATCH /me`                                                                | đã đăng nhập | Thông tin cá nhân: tên hiển thị, họ tên, số điện thoại, ngôn ngữ     |
+| `POST /files/uploads`; `PUT`, `DELETE /me/avatar`                                 | đã đăng nhập | Cấp URL tải ảnh lên kho; đặt / bỏ ảnh đại diện                       |
+| `GET /catalog/subjects`, `/grade-levels`, `/provinces`, `/provinces/:id/communes` | ai cũng xem  | Danh mục cho form (Cache-Control 1 giờ)                              |
+| `GET /catalog/areas?ids=1,2,3`                                                    | ai cũng xem  | Tra tỉnh/xã theo id (tối đa 50), kèm `level` và `parentId`           |
+
+- **Hồ sơ công khai** chỉ gồm gia sư `profile_status = 'verified'`, tài khoản `active`, chưa xóa (D5, C8); còn lại 404. Không có email, số điện thoại, họ tên thật (D16): chỉ tên hiển thị. Bằng cấp bị từ chối không hiện, đang chờ duyệt hiện như tự khai.
+- Sửa hồ sơ không đổi `profile_status` (B.4.1). DTO của gia sư có `missingForVerification`: trường bắt buộc còn thiếu trước khi nộp xác minh (họ tên, môn – khối, hình thức dạy, học phí; D34). Nộp xác minh và duyệt thuộc G3.
+- Bằng cấp đang chờ duyệt hoặc đã xác minh thì không sửa, không xóa được (409 `invalid_state_transition`). Sửa bằng cấp bị từ chối thì quay về tự khai.
+- Họ tên thật của gia sư đã xác minh danh tính bị khóa: `PATCH /me` đổi họ tên trả 422 `full_name_locked` (D34). Đổi số điện thoại thì số mới là tự khai (C12).
+- **Ảnh đại diện:** `POST /files/uploads` (`purpose: avatar`, tối đa 5 MB, JPG/PNG/WEBP, D55) ghi `files` trạng thái `pending_upload` và trả URL ký sẵn; trình duyệt PUT tệp lên kho; `PUT /me/avatar { fileId }` kiểm tra tệp đã lên kho đúng dung lượng và loại (`headObject`) rồi mới chuyển `ready`. Ảnh cũ được đánh dấu xóa và xóa khỏi kho. Endpoint tải lên hiện chỉ nhận `avatar`; mục đích khác mở ở giai đoạn của nó.
+- Chưa làm: "tùy chọn riêng tư" (chưa có quyết định cụ thể), slug trong URL hồ sơ công khai và danh sách/tìm kiếm gia sư (G4), nộp xác minh (G3). Theo dõi ở docs/ke_hoach_trien_khai.md (mục "Còn lại của G2" và "Việc chuyển từ G2").
+
+Thử tay: [http/tutors.http](http/tutors.http).
 
 ## Ghi chú cho Windows
 
