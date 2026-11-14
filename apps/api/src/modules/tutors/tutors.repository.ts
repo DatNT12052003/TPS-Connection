@@ -1,4 +1,4 @@
-import type { AvailabilitySlot, TeachingSubject } from '@tps/shared';
+import type { AvailabilitySlot, TeachingSubject, TutorProfileStatus } from '@tps/shared';
 import type { EntityManager } from 'typeorm';
 import { TutorCredential } from './tutor-credential.entity.js';
 import {
@@ -69,6 +69,11 @@ export function createTutorsRepository(manager: EntityManager) {
       await profiles.update({ userId }, data);
     },
 
+    /** Đổi trạng thái hồ sơ (B.4.1). Chỉ service xác minh gọi. */
+    async setProfileStatus(userId: string, status: TutorProfileStatus): Promise<void> {
+      await profiles.update({ userId }, { profileStatus: status });
+    },
+
     async items(tutorId: string): Promise<TutorProfileItems> {
       const [subjectRows, areaRows, slotRows] = await Promise.all([
         subjects.find({ where: { tutorId }, order: { subjectId: 'ASC', gradeLevelId: 'ASC' } }),
@@ -114,8 +119,17 @@ export function createTutorsRepository(manager: EntityManager) {
     },
 
     /** Bằng cấp của đúng gia sư này (không tìm theo id trần: tránh sửa bằng cấp của người khác). */
-    findCredential(tutorId: string, id: string): Promise<TutorCredential | null> {
-      return credentials.findOneBy({ id, tutorId });
+    findCredential(
+      tutorId: string,
+      id: string,
+      options: { lock?: boolean } = {},
+    ): Promise<TutorCredential | null> {
+      const query = credentials
+        .createQueryBuilder('c')
+        .where('c.id = :id', { id })
+        .andWhere('c.tutorId = :tutorId', { tutorId });
+      if (options.lock) query.setLock('pessimistic_write');
+      return query.getOne();
     },
 
     createCredential(

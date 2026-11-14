@@ -28,7 +28,7 @@ export function accountRouter(controller: AccountController, authenticate: Reque
 /**
  * /api/v1/files: tệp tải lên.
  *
- *   POST /uploads   201  cấp URL để trình duyệt PUT tệp thẳng lên kho (hiện chỉ `purpose: avatar`)
+ *   POST /uploads   201  cấp URL để trình duyệt PUT tệp thẳng lên kho (avatar; giấy tờ xác minh và bằng cấp: chỉ gia sư)
  */
 export function filesRouter(
   controller: AccountController,

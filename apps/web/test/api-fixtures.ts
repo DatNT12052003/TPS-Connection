@@ -68,6 +68,54 @@ export const tutorProfile = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+/** Bằng cấp của gia sư (DTO `TutorCredential`). */
+export const credential = (overrides: Record<string, unknown> = {}) => ({
+  id: '0193a1b2-0000-7000-8000-0000000000d1',
+  kind: 'certificate',
+  title: 'IELTS 7.5',
+  issuer: 'British Council',
+  issuedYear: 2025,
+  verificationStatus: 'self_declared',
+  rejectionCode: null,
+  rejectionNote: null,
+  ...overrides,
+});
+
+/** Tình trạng xác minh danh tính (`GET /me/tutor-profile/verification`): mặc định chưa nộp lần nào. */
+export const identityVerification = (overrides: Record<string, unknown> = {}) => ({
+  latest: null,
+  requiredDocuments: ['national_id_front', 'national_id_back'],
+  canSubmit: true,
+  ...overrides,
+});
+
+/** Một yêu cầu xác minh danh tính (`latest` của `identityVerification`). */
+export const verificationRequest = (overrides: Record<string, unknown> = {}) => ({
+  id: '0193a1b2-0000-7000-8000-0000000000e1',
+  kind: 'identity',
+  status: 'pending',
+  submittedAt: '2026-11-13T13:40:00.000Z',
+  reviewDueAt: '2026-11-17T16:59:59.999Z',
+  reviewedAt: null,
+  rejectionCode: null,
+  rejectionNote: null,
+  documents: [
+    {
+      type: 'national_id_front',
+      fileName: 'cccd-truoc.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 1887437,
+    },
+    {
+      type: 'national_id_back',
+      fileName: 'cccd-sau.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 1572864,
+    },
+  ],
+  ...overrides,
+});
+
 export const apiError = (status: number, error: object) => HttpResponse.json({ error }, { status });
 
 /** Đăng nhập với các vai trò và danh mục mà các trang đọc (môn, khối, tỉnh, xã, tra khu vực). */

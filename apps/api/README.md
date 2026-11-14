@@ -192,13 +192,33 @@ Module `src/modules/tutors`, `src/modules/users` (account), `src/modules/files`,
 | `GET /catalog/areas?ids=1,2,3`                                                    | ai cũng xem  | Tra tỉnh/xã theo id (tối đa 50), kèm `level` và `parentId`           |
 
 - **Hồ sơ công khai** chỉ gồm gia sư `profile_status = 'verified'`, tài khoản `active`, chưa xóa (D5, C8); còn lại 404. Không có email, số điện thoại, họ tên thật (D16): chỉ tên hiển thị. Bằng cấp bị từ chối không hiện, đang chờ duyệt hiện như tự khai.
-- Sửa hồ sơ không đổi `profile_status` (B.4.1). DTO của gia sư có `missingForVerification`: trường bắt buộc còn thiếu trước khi nộp xác minh (họ tên, môn – khối, hình thức dạy, học phí; D34). Nộp xác minh và duyệt thuộc G3.
+- Sửa hồ sơ không đổi `profile_status` (B.4.1). DTO của gia sư có `missingForVerification`: trường bắt buộc còn thiếu trước khi nộp xác minh (họ tên, môn – khối, hình thức dạy, học phí; D34). Nộp xác minh: mục "Xác minh gia sư" bên dưới.
 - Bằng cấp đang chờ duyệt hoặc đã xác minh thì không sửa, không xóa được (409 `invalid_state_transition`). Sửa bằng cấp bị từ chối thì quay về tự khai.
-- Họ tên thật của gia sư đã xác minh danh tính bị khóa: `PATCH /me` đổi họ tên trả 422 `full_name_locked` (D34). Đổi số điện thoại thì số mới là tự khai (C12).
-- **Ảnh đại diện:** `POST /files/uploads` (`purpose: avatar`, tối đa 5 MB, JPG/PNG/WEBP, D55) ghi `files` trạng thái `pending_upload` và trả URL ký sẵn; trình duyệt PUT tệp lên kho; `PUT /me/avatar { fileId }` kiểm tra tệp đã lên kho đúng dung lượng và loại (`headObject`) rồi mới chuyển `ready`. Ảnh cũ được đánh dấu xóa và xóa khỏi kho. Endpoint tải lên hiện chỉ nhận `avatar`; mục đích khác mở ở giai đoạn của nó.
-- Chưa làm: "tùy chọn riêng tư" (chưa có quyết định cụ thể), slug trong URL hồ sơ công khai và danh sách/tìm kiếm gia sư (G4), nộp xác minh (G3). Theo dõi ở docs/ke_hoach_trien_khai.md (mục "Còn lại của G2" và "Việc chuyển từ G2").
+- Họ tên thật của gia sư đã xác minh danh tính bị khóa: `PATCH /me` đổi họ tên trả 422 `full_name_locked` (D34); trong lúc chờ duyệt cũng khóa (`locked_while_verifying`). Đổi số điện thoại thì số mới là tự khai (C12).
+- **Ảnh đại diện:** `POST /files/uploads` (`purpose: avatar`, tối đa 5 MB, JPG/PNG/WEBP, D55) ghi `files` trạng thái `pending_upload` và trả URL ký sẵn; trình duyệt PUT tệp lên kho; `PUT /me/avatar { fileId }` kiểm tra tệp đã lên kho đúng dung lượng và loại (`headObject`) rồi mới chuyển `ready`. Ảnh cũ được đánh dấu xóa và xóa khỏi kho. Endpoint tải lên nhận `avatar` (mọi người) và `verification_document`, `credential` (chỉ gia sư; bucket private, tối đa 10 MB, ảnh hoặc PDF). Vai trò được tải theo mục đích ở `UPLOAD_PURPOSE_ROLES` (`src/modules/files/files.service.ts`); mục đích khác mở ở giai đoạn của nó.
+- Chưa làm: "tùy chọn riêng tư" (chưa có quyết định cụ thể), slug trong URL hồ sơ công khai và danh sách/tìm kiếm gia sư (G4). Theo dõi ở docs/ke_hoach_trien_khai.md (mục "Còn lại của G2" và "Việc chuyển từ G2").
 
 Thử tay: [http/tutors.http](http/tutors.http).
+
+## Xác minh gia sư (G3)
+
+Module `src/modules/verification`; thiết kế ở docs/thiet_ke_co_so_du_lieu.md mục 6.1, quyết định C1, C4, D20, D26, D34; trạng thái B.4.1, B.4.2.
+
+| Endpoint                                                        | Ai     | Việc                                                                                |
+| --------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------- |
+| `GET /me/tutor-profile/verification`                            | gia sư | Yêu cầu xác minh danh tính gần nhất, giấy tờ bắt buộc, nộp được chưa                |
+| `POST /me/tutor-profile/verification`                           | gia sư | Nộp CCCD hai mặt (+ thẻ sinh viên nếu là sinh viên) và đồng ý; hồ sơ → chờ xác minh |
+| `DELETE /me/tutor-profile/verification`                         | gia sư | Hủy yêu cầu đang chờ; hồ sơ → chưa hoàn thiện, ảnh bị xóa                           |
+| `POST`, `DELETE /me/tutor-profile/credentials/:id/verification` | gia sư | Nộp 1–3 tệp của một bằng cấp / hủy yêu cầu đang chờ                                 |
+
+- Tệp tải trước bằng `POST /files/uploads` (`verification_document` cho giấy tờ danh tính, `credential` cho bằng cấp), rồi gửi `fileId`. Khi nộp, API kiểm tra tệp của đúng gia sư, đúng mục đích, đã lên kho (`headObject`), chưa gắn vào yêu cầu nào khác (`verification_documents.file_id` unique). Lỗi chỉ ra đúng ô (`documents.1.fileId`, `fileIds.0`).
+- Nộp danh tính cần hồ sơ `incomplete`, đủ trường bắt buộc (D34; thiếu: 409), đủ giấy tờ theo nghề nghiệp (C4; thiếu: 422 `documents_incomplete`, thừa thẻ sinh viên: `document_type_not_allowed`), `acceptDocumentProcessing: true` (ghi `user_consents` loại `verification_document_processing`). Hồ sơ được khóa dòng trong transaction nên hai lần nộp cùng lúc không tạo hai yêu cầu; DB còn có partial unique index một yêu cầu đang chờ cho mỗi loại / mỗi bằng cấp.
+- Hạn duyệt `review_due_at`: hết ngày làm việc thứ hai sau khi nộp, giờ Việt Nam, bỏ thứ Bảy, Chủ nhật (D26; `review-deadline.ts`).
+- Khi đang chờ duyệt: họ tên thật và nghề nghiệp bị khóa (422 `locked_while_verifying`), vì người duyệt đối chiếu chúng với giấy tờ. Sửa các trường khác vẫn được.
+- Hủy yêu cầu: ảnh không còn dùng nên đánh dấu `files` đã xóa và xóa khỏi kho ngay. Xóa một bằng cấp bị từ chối thì xóa cả lịch sử xác minh và ảnh của nó.
+- Gia sư không bao giờ nhận lại đường dẫn hay khóa lưu trữ của ảnh giấy tờ: response chỉ có loại, tên tệp, dung lượng.
+- Khác thiết kế CSDL: lý do từ chối là `rejection_code` (danh sách, dịch được) + `rejection_note` (bắt buộc khi `other`).
+- Đợt 2 (Manager duyệt, xem ảnh qua presigned URL có audit log, email kết quả, job xóa ảnh sau 30 ngày và dọn tệp tải dở) chưa làm.
 
 ## Ghi chú cho Windows
 

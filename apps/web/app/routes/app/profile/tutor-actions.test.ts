@@ -7,6 +7,8 @@ import { describe, expect, it } from 'vitest';
 import {
   accountProfile,
   apiError,
+  credential,
+  identityVerification,
   payload,
   SESSION,
   signIn,
@@ -25,6 +27,9 @@ function mockTutor(profile = tutorProfile()) {
   signIn(['tutor']);
   server.use(
     http.get(`${API}/api/v1/me/tutor-profile`, () => HttpResponse.json(profile)),
+    http.get(`${API}/api/v1/me/tutor-profile/verification`, () =>
+      HttpResponse.json(identityVerification()),
+    ),
     http.get(`${API}/api/v1/me`, () => HttpResponse.json(accountProfile({ roles: ['tutor'] }))),
   );
 }
@@ -183,6 +188,104 @@ describe('profile and verification', () => {
       ),
     );
     expect(result).toMatchObject({ saved: true, editingCredential: 'new' });
+    expect(result).toMatchObject({ verification: { canSubmit: true, latest: null } });
+  });
+
+  it('submits the uploaded ID documents with the consent and shows a notice', async () => {
+    mockTutor();
+    let body: unknown;
+    server.use(
+      http.post(`${API}/api/v1/me/tutor-profile/verification`, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json(identityVerification({ canSubmit: false }), { status: 201 });
+      }),
+    );
+    const documents = [
+      { type: 'national_id_front', fileId: '0193a1b2-0000-7000-8000-0000000000f1' },
+      { type: 'national_id_back', fileId: '0193a1b2-0000-7000-8000-0000000000f2' },
+    ];
+    const { args } = routeArgs('/app/profile', {
+      cookie: SESSION,
+      form: {
+        intent: 'identity-submit',
+        documents: JSON.stringify(documents),
+        acceptDocumentProcessing: 'true',
+      },
+    });
+    const response = (await profileAction(args)) as Response;
+    expect(response.headers.get('Location')).toBe('/app/profile?notice=submitted');
+    expect(body).toEqual({ documents, acceptDocumentProcessing: true });
+  });
+
+  it('explains a refused submission with the code of the first field', async () => {
+    mockTutor();
+    server.use(
+      http.post(`${API}/api/v1/me/tutor-profile/verification`, () =>
+        apiError(422, {
+          code: 'validation_failed',
+          message: 'Invalid',
+          details: [{ path: 'documents', code: 'documents_incomplete', message: 'x' }],
+        }),
+      ),
+    );
+    const { args } = routeArgs('/app/profile', {
+      cookie: SESSION,
+      // Không đánh dấu đồng ý, JSON hỏng: vẫn gửi để API báo lỗi.
+      form: { intent: 'identity-submit', documents: '{oops' },
+    });
+    expect(payload(await profileAction(args))).toEqual({
+      intent: 'identity-submit',
+      ok: false,
+      formError: { key: 'validation.documents_incomplete' },
+    });
+  });
+
+  it('cancels the pending identity request', async () => {
+    mockTutor();
+    let called = false;
+    server.use(
+      http.delete(`${API}/api/v1/me/tutor-profile/verification`, () => {
+        called = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { args } = routeArgs('/app/profile', {
+      cookie: SESSION,
+      form: { intent: 'identity-cancel' },
+    });
+    const response = (await profileAction(args)) as Response;
+    expect(called).toBe(true);
+    expect(response.headers.get('Location')).toBe('/app/profile?notice=cancelled');
+  });
+
+  it('sends the files of a credential for verification', async () => {
+    mockTutor();
+    let body: unknown;
+    server.use(
+      http.post(
+        `${API}/api/v1/me/tutor-profile/credentials/:id/verification`,
+        async ({ request, params }) => {
+          expect(params.id).toBe(CREDENTIAL_ID);
+          body = await request.json();
+          return HttpResponse.json(
+            credential({ id: CREDENTIAL_ID, verificationStatus: 'pending' }),
+            { status: 201 },
+          );
+        },
+      ),
+    );
+    const fileIds = ['0193a1b2-0000-7000-8000-0000000000f3'];
+    const { args } = routeArgs(`/app/profile?verify=${CREDENTIAL_ID}`, {
+      cookie: SESSION,
+      form: {
+        intent: 'credential-verify',
+        credentialId: CREDENTIAL_ID,
+        fileIds: JSON.stringify(fileIds),
+      },
+    });
+    const response = (await profileAction(args)) as Response;
+    expect(response.headers.get('Location')).toBe('/app/profile#credentials');
+    expect(body).toEqual({ fileIds });
   });
 
   it('adds a credential and closes the form', async () => {
@@ -191,17 +294,7 @@ describe('profile and verification', () => {
     server.use(
       http.post(`${API}/api/v1/me/tutor-profile/credentials`, async ({ request }) => {
         body = await request.json();
-        return HttpResponse.json(
-          {
-            id: CREDENTIAL_ID,
-            kind: 'certificate',
-            title: 'IELTS 7.5',
-            issuer: 'British Council',
-            issuedYear: 2025,
-            verificationStatus: 'self_declared',
-          },
-          { status: 201 },
-        );
+        return HttpResponse.json(credential({ id: CREDENTIAL_ID }), { status: 201 });
       }),
     );
     const { args } = routeArgs('/app/profile?credential=new', {

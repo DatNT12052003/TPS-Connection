@@ -21,6 +21,8 @@ import { UserBlock } from '../modules/users/user-block.entity.js';
 import { UserConsent } from '../modules/users/user-consent.entity.js';
 import { UserRole } from '../modules/users/user-role.entity.js';
 import { User } from '../modules/users/user.entity.js';
+import { VerificationDocument } from '../modules/verification/verification-document.entity.js';
+import { VerificationRequest } from '../modules/verification/verification-request.entity.js';
 
 export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   // Danh mục
@@ -46,4 +48,7 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   TutorServiceArea,
   TutorAvailabilitySlot,
   TutorCredential,
+  // Xác minh gia sư
+  VerificationRequest,
+  VerificationDocument,
 ];

@@ -10,6 +10,7 @@ import {
   AccountProfile,
   ApiErrorBody,
   FILE_RULES,
+  OwnIdentityVerification,
   OwnTutorProfile,
   PublicTutorProfile,
   type Role,
@@ -32,6 +33,7 @@ import type { ParentsService } from '../../src/modules/parents/parents.service.j
 import { createTutorsService } from '../../src/modules/tutors/tutors.service.js';
 import { createAccountService } from '../../src/modules/users/account.service.js';
 import { createUsersRepository } from '../../src/modules/users/users.repository.js';
+import { createVerificationService } from '../../src/modules/verification/verification.service.js';
 import { createTokenService } from '../../src/modules/auth/tokens.js';
 import { silentLogger, TEST_JWT_SECRET, TEST_ORIGIN, testEnv } from '../helpers.js';
 
@@ -117,6 +119,7 @@ beforeAll(async () => {
     };
   };
   const publicFileUrl = fakeStorage.publicUrl;
+  const files = createFilesService({ storage: fakeStorage, logger: silentLogger });
   app = createApp({
     env: testEnv,
     logger: silentLogger,
@@ -128,13 +131,9 @@ beforeAll(async () => {
     parents: {} as ParentsService,
     learners: {} as LearnersService,
     studentInvitations: {} as StudentInvitationsService,
-    tutors: createTutorsService({ dataSource: db, logger: silentLogger, publicFileUrl }),
-    account: createAccountService({
-      dataSource: db,
-      files: createFilesService({ storage: fakeStorage, logger: silentLogger }),
-      publicFileUrl,
-      logger: silentLogger,
-    }),
+    tutors: createTutorsService({ dataSource: db, files, logger: silentLogger, publicFileUrl }),
+    verification: createVerificationService({ dataSource: db, files, logger: silentLogger }),
+    account: createAccountService({ dataSource: db, files, publicFileUrl, logger: silentLogger }),
     catalog: createCatalogService({ dataSource: db }),
   });
 });
@@ -154,6 +153,8 @@ interface TestUser {
   email: string;
   phone: string;
   auth: string;
+  /** IP riêng (X-Forwarded-For): giới hạn tải tệp theo IP không dồn mọi người dùng trong test vào một. */
+  ip: string;
 }
 
 async function createUser(role: Role, name = 'Lê Hoàng Nam'): Promise<TestUser> {
@@ -167,13 +168,19 @@ async function createUser(role: Role, name = 'Lê Hoàng Nam'): Promise<TestUser
   const id = row!.id;
   await db.query(`INSERT INTO user_roles (user_id, role_code) VALUES ($1, $2)`, [id, role]);
   const { token } = tokens.signAccessToken({ userId: id, sessionFamilyId: randomUUID() });
-  return { id, email, phone, auth: `Bearer ${token}` };
+  return {
+    id,
+    email,
+    phone,
+    auth: `Bearer ${token}`,
+    ip: `10.0.${Math.floor(counter / 250)}.${(counter % 250) + 1}`,
+  };
 }
 
 const api = (user: TestUser | null) => {
   const prepare = (req: request.Test) => {
     req.set('Origin', TEST_ORIGIN);
-    return user ? req.set('Authorization', user.auth) : req;
+    return user ? req.set('Authorization', user.auth).set('X-Forwarded-For', user.ip) : req;
   };
   return {
     get: (path: string) => prepare(request(app).get(`/api/v1${path}`)),
@@ -591,5 +598,382 @@ describe('avatar', () => {
       sizeBytes: 6 * 1024 * 1024,
     });
     expect(tooBig.status).toBe(422);
+  });
+});
+
+// ---- Xác minh (G3 đợt 1) ------------------------------------------------------------------------
+
+/** Cấp URL tải giấy tờ (bucket private) và giả lập trình duyệt đã PUT tệp lên kho. */
+async function uploadDocument(
+  user: TestUser,
+  purpose: 'verification_document' | 'credential' = 'verification_document',
+  options: { upload?: boolean } = {},
+) {
+  const res = await api(user).post('/files/uploads', {
+    purpose,
+    fileName: 'giay-to.jpg',
+    contentType: 'image/jpeg',
+    sizeBytes: 4096,
+  });
+  expect(res.status).toBe(201);
+  const ticket = UploadTicketResponse.parse(res.body);
+  expect(ticket.bucket).toBe('private');
+  if (options.upload ?? true) {
+    uploaded.set(ticket.storageKey, { sizeBytes: 4096, contentType: 'image/jpeg' });
+  }
+  return ticket;
+}
+
+/** Gia sư đã điền đủ hồ sơ (chưa nộp xác minh). `occupation` quyết định có cần thẻ sinh viên. */
+async function readyTutor(occupation = 'teacher'): Promise<TestUser> {
+  const tutor = await createUser('tutor');
+  const res = await api(tutor).put('/me/tutor-profile', { ...fullProfile(), occupation });
+  expect(res.status).toBe(200);
+  return tutor;
+}
+
+async function idDocuments(tutor: TestUser) {
+  const front = await uploadDocument(tutor);
+  const back = await uploadDocument(tutor);
+  return [
+    { type: 'national_id_front', fileId: front.fileId },
+    { type: 'national_id_back', fileId: back.fileId },
+  ];
+}
+
+const profileStatusOf = async (tutor: TestUser) =>
+  OwnTutorProfile.parse((await api(tutor).get('/me/tutor-profile')).body).profileStatus;
+
+describe('identity verification', () => {
+  it('submits the ID card, moves the profile to pending and records the consent', async () => {
+    const tutor = await readyTutor();
+    const before = OwnIdentityVerification.parse(
+      (await api(tutor).get('/me/tutor-profile/verification')).body,
+    );
+    expect(before).toEqual({
+      latest: null,
+      requiredDocuments: ['national_id_front', 'national_id_back'],
+      canSubmit: true,
+    });
+
+    const documents = await idDocuments(tutor);
+    const res = await api(tutor).post('/me/tutor-profile/verification', {
+      documents,
+      acceptDocumentProcessing: true,
+    });
+    expect(res.status).toBe(201);
+    const body = OwnIdentityVerification.parse(res.body);
+    expect(body.canSubmit).toBe(false);
+    expect(body.latest).toMatchObject({ kind: 'identity', status: 'pending', reviewedAt: null });
+    expect(body.latest!.documents.map((d) => d.type)).toEqual([
+      'national_id_front',
+      'national_id_back',
+    ]);
+    expect(new Date(body.latest!.reviewDueAt).getTime()).toBeGreaterThan(Date.now());
+    // Gia sư không nhận lại đường dẫn hay khóa lưu trữ của ảnh giấy tờ.
+    expect(JSON.stringify(res.body)).not.toContain('verification_document/');
+    expect(JSON.stringify(res.body)).not.toContain('http');
+
+    expect(await profileStatusOf(tutor)).toBe('pending_verification');
+    const consents = await db.query<{ version: string }[]>(
+      `SELECT version FROM user_consents
+        WHERE user_id = $1 AND consent_type = 'verification_document_processing'`,
+      [tutor.id],
+    );
+    expect(consents).toHaveLength(1);
+    const fileStatuses = await db.query<{ status: string }[]>(
+      `SELECT f.status FROM verification_documents d JOIN files f ON f.id = d.file_id
+        WHERE d.request_id = $1`,
+      [body.latest!.id],
+    );
+    expect(fileStatuses.map((f) => f.status)).toEqual(['ready', 'ready']);
+
+    // Nộp lần nữa khi đang chờ: không được.
+    const again = await api(tutor).post('/me/tutor-profile/verification', {
+      documents: await idDocuments(tutor),
+      acceptDocumentProcessing: true,
+    });
+    expect(again.status).toBe(409);
+    expect(again.body.error.code).toBe('invalid_state_transition');
+  });
+
+  it('locks the full name and the occupation while the request is pending', async () => {
+    const tutor = await readyTutor();
+    await api(tutor).post('/me/tutor-profile/verification', {
+      documents: await idDocuments(tutor),
+      acceptDocumentProcessing: true,
+    });
+
+    const me = AccountProfile.parse((await api(tutor).get('/me')).body);
+    expect(me.fullNameLocked).toBe(true);
+    const rename = await api(tutor).patch('/me', { fullName: 'Tên Khác' });
+    expect(rename.status).toBe(422);
+    expect(rename.body.error.details[0]).toMatchObject({
+      path: 'fullName',
+      code: 'locked_while_verifying',
+    });
+
+    const occupation = await api(tutor).put('/me/tutor-profile', {
+      ...fullProfile(),
+      occupation: 'university_student',
+    });
+    expect(occupation.status).toBe(422);
+    expect(occupation.body.error.details[0]).toMatchObject({
+      path: 'occupation',
+      code: 'locked_while_verifying',
+    });
+    // Sửa trường khác vẫn được, trạng thái không đổi.
+    const edit = await api(tutor).put('/me/tutor-profile', { ...fullProfile(), bio: 'Bio mới' });
+    expect(edit.status).toBe(200);
+    expect(await profileStatusOf(tutor)).toBe('pending_verification');
+  });
+
+  it('requires the required fields, the right documents and the consent', async () => {
+    const incomplete = await createUser('tutor');
+    const notReady = await api(incomplete).post('/me/tutor-profile/verification', {
+      documents: await idDocuments(incomplete),
+      acceptDocumentProcessing: true,
+    });
+    expect(notReady.status).toBe(409);
+
+    const tutor = await readyTutor();
+    const [front, back] = await idDocuments(tutor);
+    const missingBack = await api(tutor).post('/me/tutor-profile/verification', {
+      documents: [front],
+      acceptDocumentProcessing: true,
+    });
+    expect(missingBack.status).toBe(422);
+    expect(missingBack.body.error.details[0]).toMatchObject({ code: 'documents_incomplete' });
+
+    const card = await uploadDocument(tutor);
+    const notStudent = await api(tutor).post('/me/tutor-profile/verification', {
+      documents: [front, back, { type: 'student_card', fileId: card.fileId }],
+      acceptDocumentProcessing: true,
+    });
+    expect(notStudent.status).toBe(422);
+    expect(notStudent.body.error.details[0]).toMatchObject({
+      path: 'documents.2.type',
+      code: 'document_type_not_allowed',
+    });
+
+    const noConsent = await api(tutor).post('/me/tutor-profile/verification', {
+      documents: [front, back],
+      acceptDocumentProcessing: false,
+    });
+    expect(noConsent.status).toBe(422);
+    expect(noConsent.body.error.details[0]).toMatchObject({
+      code: 'must_accept_document_processing',
+    });
+
+    const sameFile = await api(tutor).post('/me/tutor-profile/verification', {
+      documents: [front, { type: 'national_id_back', fileId: front!.fileId }],
+      acceptDocumentProcessing: true,
+    });
+    expect(sameFile.status).toBe(422);
+    expect(sameFile.body.error.details[0]).toMatchObject({ code: 'duplicate_document' });
+
+    expect(await profileStatusOf(tutor)).toBe('incomplete');
+  });
+
+  it('asks a university student for the student card as well', async () => {
+    const student = await readyTutor('university_student');
+    const status = OwnIdentityVerification.parse(
+      (await api(student).get('/me/tutor-profile/verification')).body,
+    );
+    expect(status.requiredDocuments).toEqual([
+      'national_id_front',
+      'national_id_back',
+      'student_card',
+    ]);
+    const documents = await idDocuments(student);
+    const withoutCard = await api(student).post('/me/tutor-profile/verification', {
+      documents,
+      acceptDocumentProcessing: true,
+    });
+    expect(withoutCard.status).toBe(422);
+
+    const card = await uploadDocument(student);
+    const res = await api(student).post('/me/tutor-profile/verification', {
+      documents: [...documents, { type: 'student_card', fileId: card.fileId }],
+      acceptDocumentProcessing: true,
+    });
+    expect(res.status).toBe(201);
+  });
+
+  it('refuses files that are not uploaded, belong to someone else or have another purpose', async () => {
+    const tutor = await readyTutor();
+    const other = await readyTutor();
+    const [front] = await idDocuments(tutor);
+    const notUploaded = await uploadDocument(tutor, 'verification_document', { upload: false });
+    const othersFile = await uploadDocument(other);
+    const avatar = await uploadAvatar(tutor);
+
+    for (const fileId of [notUploaded.fileId, othersFile.fileId, avatar.fileId]) {
+      const res = await api(tutor).post('/me/tutor-profile/verification', {
+        documents: [front, { type: 'national_id_back', fileId }],
+        acceptDocumentProcessing: true,
+      });
+      expect(res.status).toBe(422);
+      expect(res.body.error.details[0]).toMatchObject({
+        path: 'documents.1.fileId',
+        code: 'file_not_uploaded',
+      });
+    }
+    expect(await profileStatusOf(tutor)).toBe('incomplete');
+  });
+
+  it('cancels a pending request, deletes the images and allows a new submission', async () => {
+    const tutor = await readyTutor();
+    const documents = await idDocuments(tutor);
+    const submitted = OwnIdentityVerification.parse(
+      (
+        await api(tutor).post('/me/tutor-profile/verification', {
+          documents,
+          acceptDocumentProcessing: true,
+        })
+      ).body,
+    );
+    const keys = await db.query<{ storage_key: string }[]>(
+      `SELECT f.storage_key FROM verification_documents d JOIN files f ON f.id = d.file_id
+        WHERE d.request_id = $1`,
+      [submitted.latest!.id],
+    );
+
+    expect((await api(tutor).delete('/me/tutor-profile/verification')).status).toBe(204);
+    expect(await profileStatusOf(tutor)).toBe('incomplete');
+    for (const { storage_key } of keys) expect(deletedKeys).toContain(storage_key);
+    const after = OwnIdentityVerification.parse(
+      (await api(tutor).get('/me/tutor-profile/verification')).body,
+    );
+    expect(after.latest).toMatchObject({ status: 'cancelled' });
+    expect(after.canSubmit).toBe(true);
+    expect((await api(tutor).delete('/me/tutor-profile/verification')).status).toBe(404);
+
+    // Ảnh của yêu cầu đã hủy không dùng lại được; tải ảnh mới thì nộp được.
+    const reuse = await api(tutor).post('/me/tutor-profile/verification', {
+      documents,
+      acceptDocumentProcessing: true,
+    });
+    expect(reuse.status).toBe(422);
+    const fresh = await api(tutor).post('/me/tutor-profile/verification', {
+      documents: await idDocuments(tutor),
+      acceptDocumentProcessing: true,
+    });
+    expect(fresh.status).toBe(201);
+  });
+
+  it('is only for tutors', async () => {
+    const parent = await createUser('parent');
+    expect((await api(parent).get('/me/tutor-profile/verification')).status).toBe(403);
+    expect((await api(null).get('/me/tutor-profile/verification')).status).toBe(401);
+    const upload = await api(parent).post('/files/uploads', {
+      purpose: 'credential',
+      fileName: 'bang.pdf',
+      contentType: 'application/pdf',
+      sizeBytes: 1000,
+    });
+    expect(upload.status).toBe(422);
+    expect(upload.body.error.details[0]).toMatchObject({ code: 'file_purpose_not_allowed' });
+  });
+});
+
+describe('credential verification', () => {
+  async function tutorWithCredential() {
+    const tutor = await readyTutor();
+    const res = await api(tutor).post('/me/tutor-profile/credentials', {
+      kind: 'degree',
+      title: 'Cử nhân Sư phạm Toán',
+      issuer: 'ĐHSP Hà Nội',
+      issuedYear: 2018,
+    });
+    expect(res.status).toBe(201);
+    return { tutor, credential: TutorCredential.parse(res.body) };
+  }
+
+  it('submits a credential, locks it, and cancels back to self-declared', async () => {
+    const { tutor, credential } = await tutorWithCredential();
+    const page1 = await uploadDocument(tutor, 'credential');
+    const page2 = await uploadDocument(tutor, 'credential');
+    const path = `/me/tutor-profile/credentials/${credential.id}/verification`;
+
+    const res = await api(tutor).post(path, { fileIds: [page1.fileId, page2.fileId] });
+    expect(res.status).toBe(201);
+    expect(TutorCredential.parse(res.body)).toMatchObject({
+      verificationStatus: 'pending',
+      rejectionCode: null,
+    });
+    const docTypes = await db.query<{ document_type: string }[]>(
+      `SELECT d.document_type FROM verification_documents d
+         JOIN verification_requests r ON r.id = d.request_id WHERE r.credential_id = $1`,
+      [credential.id],
+    );
+    expect(docTypes.map((d) => d.document_type)).toEqual(['degree', 'degree']);
+
+    expect(
+      (await api(tutor).patch(`/me/tutor-profile/credentials/${credential.id}`, { title: 'X' }))
+        .status,
+    ).toBe(409);
+    const again = await api(tutor).post(path, {
+      fileIds: [(await uploadDocument(tutor, 'credential')).fileId],
+    });
+    expect(again.status).toBe(409);
+    // Xác minh bằng cấp không đổi trạng thái hồ sơ.
+    expect(await profileStatusOf(tutor)).toBe('incomplete');
+
+    expect((await api(tutor).delete(path)).status).toBe(204);
+    expect(deletedKeys).toEqual(expect.arrayContaining([page1.storageKey, page2.storageKey]));
+    const profile = OwnTutorProfile.parse((await api(tutor).get('/me/tutor-profile')).body);
+    expect(profile.credentials[0]).toMatchObject({ verificationStatus: 'self_declared' });
+    expect((await api(tutor).delete(path)).status).toBe(404);
+  });
+
+  it('refuses the credential of another tutor and files with another purpose', async () => {
+    const { tutor, credential } = await tutorWithCredential();
+    const other = await readyTutor();
+    const path = `/me/tutor-profile/credentials/${credential.id}/verification`;
+    const othersFile = await uploadDocument(other, 'credential');
+    expect((await api(other).post(path, { fileIds: [othersFile.fileId] })).status).toBe(404);
+
+    const identityFile = await uploadDocument(tutor);
+    const wrongPurpose = await api(tutor).post(path, { fileIds: [identityFile.fileId] });
+    expect(wrongPurpose.status).toBe(422);
+    expect(wrongPurpose.body.error.details[0]).toMatchObject({
+      path: 'fileIds.0',
+      code: 'file_not_uploaded',
+    });
+  });
+
+  it('shows the rejection reason and deletes the history with the credential', async () => {
+    const { tutor, credential } = await tutorWithCredential();
+    const file = await uploadDocument(tutor, 'credential');
+    const path = `/me/tutor-profile/credentials/${credential.id}/verification`;
+    expect((await api(tutor).post(path, { fileIds: [file.fileId] })).status).toBe(201);
+
+    // Manager từ chối (đợt 2 làm qua API; ở đây ghi thẳng vào database).
+    const manager = await createUser('manager');
+    await db.query(
+      `UPDATE verification_requests
+          SET status = 'rejected', reviewed_at = now(), reviewed_by = $2,
+              rejection_code = 'other', rejection_note = 'Thiếu trang 2'
+        WHERE credential_id = $1`,
+      [credential.id, manager.id],
+    );
+    await db.query(`UPDATE tutor_credentials SET verification_status = 'rejected' WHERE id = $1`, [
+      credential.id,
+    ]);
+    const profile = OwnTutorProfile.parse((await api(tutor).get('/me/tutor-profile')).body);
+    expect(profile.credentials[0]).toMatchObject({
+      verificationStatus: 'rejected',
+      rejectionCode: 'other',
+      rejectionNote: 'Thiếu trang 2',
+    });
+
+    const removed = await api(tutor).delete(`/me/tutor-profile/credentials/${credential.id}`);
+    expect(removed.status).toBe(204);
+    expect(deletedKeys).toContain(file.storageKey);
+    const left = await db.query(`SELECT 1 FROM verification_requests WHERE credential_id = $1`, [
+      credential.id,
+    ]);
+    expect(left).toHaveLength(0);
   });
 });

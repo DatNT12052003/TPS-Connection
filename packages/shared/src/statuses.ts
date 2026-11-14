@@ -25,6 +25,7 @@ export const ConsentType = z.enum([
   'privacy_policy',
   'child_data_processing',
   'marketing_email',
+  'verification_document_processing',
 ]);
 export type ConsentType = z.infer<typeof ConsentType>;
 
@@ -108,6 +109,31 @@ export type VerificationRequestKind = z.infer<typeof VerificationRequestKind>;
 /** `verification_requests.status` (B.4.2). */
 export const VerificationRequestStatus = z.enum(['pending', 'approved', 'rejected', 'cancelled']);
 export type VerificationRequestStatus = z.infer<typeof VerificationRequestStatus>;
+
+/** `verification_documents.document_type`: loại giấy tờ trong một yêu cầu xác minh (C4). */
+export const VerificationDocumentType = z.enum([
+  'national_id_front',
+  'national_id_back',
+  'student_card',
+  'degree',
+  'certificate',
+  'other',
+]);
+export type VerificationDocumentType = z.infer<typeof VerificationDocumentType>;
+
+/**
+ * `verification_requests.rejection_code`: lý do Manager từ chối, chọn từ danh sách (canvas ManagerQueue) để
+ * gia sư đọc được bằng ngôn ngữ của mình; `other` thì bắt buộc kèm ghi chú.
+ */
+export const VerificationRejectionCode = z.enum([
+  'unclear_image',
+  'name_mismatch',
+  'expired_document',
+  'invalid_document',
+  'missing_document',
+  'other',
+]);
+export type VerificationRejectionCode = z.infer<typeof VerificationRejectionCode>;
 
 /** `tutor_credentials.kind`. */
 export const CredentialKind = z.enum(['degree', 'certificate', 'student_card']);
@@ -288,6 +314,8 @@ export const LABELLED_ENUMS = {
   tutorProfileStatus: TutorProfileStatus,
   verificationRequestKind: VerificationRequestKind,
   verificationRequestStatus: VerificationRequestStatus,
+  verificationDocumentType: VerificationDocumentType,
+  verificationRejectionCode: VerificationRejectionCode,
   credentialKind: CredentialKind,
   credentialVerificationStatus: CredentialVerificationStatus,
   tutorPostStatus: TutorPostStatus,

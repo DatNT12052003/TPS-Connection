@@ -81,6 +81,13 @@ export const vi = {
     file_not_uploaded: 'Tệp chưa tải lên xong. Hãy tải lại tệp rồi thử lại.',
     file_purpose_not_allowed: 'Loại tệp này chưa được hỗ trợ ở đây.',
     password_mismatch: 'Hai mật khẩu chưa giống nhau.',
+    locked_while_verifying:
+      'Không sửa được khi hồ sơ đang chờ duyệt. Hủy yêu cầu xác minh nếu bạn cần sửa mục này.',
+    must_accept_document_processing:
+      'Bạn cần đồng ý cho TPS-Connection dùng giấy tờ này để xác minh danh tính.',
+    documents_incomplete: 'Còn thiếu giấy tờ bắt buộc. Hãy tải đủ ảnh rồi nộp lại.',
+    document_type_not_allowed: 'Loại giấy tờ này không dùng cho yêu cầu xác minh này.',
+    duplicate_document: 'Mỗi loại giấy tờ chỉ nộp một ảnh.',
   },
 
   // ---- Email gửi người dùng (API dựng nội dung theo ngôn ngữ của người nhận) ----
@@ -377,8 +384,6 @@ export const vi = {
     completeProfile: 'Hoàn thiện hồ sơ',
     editProfile: 'Sửa hồ sơ',
     step2Title: 'Bước 2 · Giấy tờ danh tính',
-    identityComingSoon:
-      'Phần nộp ảnh CCCD đang được hoàn thiện. Hãy điền đủ hồ sơ trước; chúng tôi sẽ báo bạn khi nộp được.',
     identityPending: 'Giấy tờ của bạn đang chờ duyệt, thường trong 2 ngày làm việc.',
     identityVerifiedOn: 'Danh tính đã được xác minh ngày {{date}}.',
     whyTitle: 'Vì sao cần xác minh?',
@@ -459,7 +464,7 @@ export const vi = {
   credentials: {
     title: 'Bằng cấp, chứng chỉ',
     intro:
-      'Không bắt buộc. Bằng cấp đã xác minh hiện huy hiệu trên hồ sơ. Nộp ảnh để xác minh sẽ có cùng phần nộp giấy tờ.',
+      'Không bắt buộc. Bằng cấp đã xác minh hiện huy hiệu trên hồ sơ và trong bộ lọc tìm kiếm.',
     empty: 'Chưa có bằng cấp nào.',
     add: 'Thêm bằng cấp',
     addTitle: 'Thêm bằng cấp, chứng chỉ',
@@ -474,6 +479,42 @@ export const vi = {
     issuerPlaceholder: 'Ví dụ: British Council',
     issuedYear: 'Năm cấp',
     save: 'Lưu bằng cấp',
+  },
+  verification: {
+    identityIntro: 'Bắt buộc. Ảnh rõ nét, đủ bốn góc, không bị lóa.',
+    fillFirst: 'Điền đủ thông tin bắt buộc ở bước 1, rồi nộp giấy tờ danh tính tại đây.',
+    documentHint: 'JPG, PNG, WEBP hoặc PDF, tối đa 10 MB',
+    studentCardHint: 'Bắt buộc với sinh viên. JPG, PNG, WEBP hoặc PDF, tối đa 10 MB',
+    choose: 'Chọn ảnh',
+    replace: 'Thay ảnh',
+    uploading: 'Đang tải lên…',
+    uploadFailed: 'Chưa tải được tệp lên. Kiểm tra kết nối mạng rồi thử lại.',
+    consent:
+      'Tôi đồng ý cho TPS-Connection dùng giấy tờ này để xác minh danh tính. Ảnh được lưu riêng tư và xóa 30 ngày sau khi duyệt.',
+    missingConsent: 'đồng ý dùng giấy tờ',
+    missing: 'Còn thiếu: {{items}}',
+    ready: 'Đã đủ giấy tờ',
+    submit: 'Nộp xác minh',
+    submitted:
+      'Đã nộp giấy tờ. Người kiểm duyệt sẽ xem trong 2 ngày làm việc; kết quả hiện tại trang này.',
+    pendingDue: 'Giấy tờ của bạn đang chờ duyệt. Hạn duyệt: hết ngày {{date}}.',
+    submittedDocs: 'Giấy tờ đã nộp',
+    cancel: 'Hủy yêu cầu xác minh',
+    confirmCancel:
+      'Hủy yêu cầu xác minh? Ảnh đã nộp sẽ bị xóa; bạn sửa hồ sơ rồi nộp lại được ngay.',
+    cancelled: 'Đã hủy yêu cầu xác minh. Ảnh đã nộp đã được xóa.',
+    rejectedTitle: 'Lần nộp trước chưa được duyệt',
+    rejectedReason: 'Lý do: {{reason}}',
+    resubmitHint: 'Sửa theo lý do trên rồi tải ảnh mới để nộp lại.',
+    lockedWhileReviewing: 'Đang chờ duyệt xác minh. Hủy yêu cầu xác minh nếu bạn cần sửa mục này.',
+    credentialSubmit: 'Nộp để xác minh',
+    credentialFilesLabel:
+      'Tải ảnh hoặc bản PDF của bằng, tối đa {{max}} tệp (ví dụ mặt trước và mặt sau).',
+    credentialPage: 'Tệp {{n}}',
+    addPage: 'Thêm tệp',
+    credentialSend: 'Gửi xác minh',
+    credentialCancel: 'Hủy xác minh',
+    credentialConfirmCancel: 'Hủy yêu cầu xác minh “{{title}}”? Ảnh đã nộp sẽ bị xóa.',
   },
   tutorHome: {
     public: 'Hồ sơ đang hiển thị công khai',
@@ -648,6 +689,7 @@ export const vi = {
     privacy_policy: 'Chính sách bảo vệ dữ liệu cá nhân',
     child_data_processing: 'Đồng ý xử lý dữ liệu của con',
     marketing_email: 'Nhận email giới thiệu, khuyến mãi',
+    verification_document_processing: 'Đồng ý dùng giấy tờ tùy thân để xác minh',
   },
   guardianRelationship: {
     father: 'Bố',
@@ -699,6 +741,22 @@ export const vi = {
     approved: 'Đã duyệt',
     rejected: 'Bị từ chối',
     cancelled: 'Đã hủy',
+  },
+  verificationDocumentType: {
+    national_id_front: 'CCCD mặt trước',
+    national_id_back: 'CCCD mặt sau',
+    student_card: 'Thẻ sinh viên',
+    degree: 'Bằng cấp',
+    certificate: 'Chứng chỉ',
+    other: 'Giấy tờ khác',
+  },
+  verificationRejectionCode: {
+    unclear_image: 'Ảnh mờ, bị lóa hoặc thiếu góc',
+    name_mismatch: 'Họ tên không khớp với giấy tờ',
+    expired_document: 'Giấy tờ đã hết hạn',
+    invalid_document: 'Giấy tờ không hợp lệ',
+    missing_document: 'Thiếu giấy tờ cần thiết',
+    other: 'Lý do khác',
   },
   credentialKind: {
     degree: 'Bằng cấp',

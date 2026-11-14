@@ -1,5 +1,5 @@
 // Hồ sơ gia sư (G2 phần 5, §3.2, B.4.1). Gia sư sửa hồ sơ của chính mình; sửa trường tự khai không đổi
-// trạng thái hồ sơ. Nộp xác minh và đổi trạng thái thuộc G3. Hồ sơ công khai chỉ gồm gia sư đã xác minh danh
+// trạng thái hồ sơ. Nộp xác minh và đổi trạng thái ở modules/verification (G3). Hồ sơ công khai chỉ gồm gia sư đã xác minh danh
 // tính và đang hoạt động; không có email, số điện thoại, họ tên thật (D16). Không phụ thuộc Express.
 import {
   type CreateTutorCredentialRequest,
@@ -11,14 +11,18 @@ import {
   type TutorRequiredField,
   type UpdateTutorCredentialRequest,
   type UpdateTutorProfileRequest,
+  type VerificationRejectionCode,
 } from '@tps/shared';
 import type { DataSource } from 'typeorm';
-import { conflict, invalidStateTransition, notFound } from '../../lib/app-error.js';
+import { AppError, conflict, invalidStateTransition, notFound } from '../../lib/app-error.js';
 import type { Logger } from '../../lib/logger.js';
 import { assertCatalogRefs } from '../catalog/catalog-checks.js';
+import type { FilesService } from '../files/files.service.js';
+import type { StoredFile } from '../files/stored-file.entity.js';
 import { createUsersRepository } from '../users/users.repository.js';
 import type { TutorCredential } from './tutor-credential.entity.js';
 import type { TutorProfile } from './tutor-profile.entity.js';
+import { createVerificationRepository } from '../verification/verification.repository.js';
 import { createTutorsRepository, type TutorProfileItems } from './tutors.repository.js';
 
 function teachingModeOf(profile: TutorProfile): TeachingMode | null {
@@ -54,17 +58,26 @@ function profileFields(profile: TutorProfile, items: TutorProfileItems) {
   };
 }
 
-const toCredentialDto = (c: TutorCredential): TutorCredentialDto => ({
-  id: c.id,
-  kind: c.kind,
-  title: c.title,
-  issuer: c.issuer,
-  issuedYear: c.issuedYear,
-  verificationStatus: c.verificationStatus,
-});
+/** Bằng cấp cho chính gia sư; `rejection` là lần bị từ chối gần nhất (chỉ hiện khi đang `rejected`). */
+export function toCredentialDto(
+  c: TutorCredential,
+  rejection?: { code: VerificationRejectionCode; note: string | null },
+): TutorCredentialDto {
+  const rejected = c.verificationStatus === 'rejected' && rejection;
+  return {
+    id: c.id,
+    kind: c.kind,
+    title: c.title,
+    issuer: c.issuer,
+    issuedYear: c.issuedYear,
+    verificationStatus: c.verificationStatus,
+    rejectionCode: rejected ? rejection.code : null,
+    rejectionNote: rejected ? rejection.note : null,
+  };
+}
 
 /** Trường bắt buộc còn thiếu để nộp xác minh danh tính (D34). */
-function missingForVerification(
+export function missingForVerification(
   profile: TutorProfile,
   items: TutorProfileItems,
   fullName: string | null,
@@ -83,11 +96,12 @@ const isLocked = (c: TutorCredential) =>
 
 export function createTutorsService(deps: {
   dataSource: DataSource;
+  files: FilesService;
   logger: Logger;
   /** URL công khai của tệp ở bucket public (storage.publicUrl). */
   publicFileUrl: (storageKey: string) => string;
 }) {
-  const { dataSource, logger } = deps;
+  const { dataSource, files, logger } = deps;
   const repo = () => createTutorsRepository(dataSource.manager);
 
   async function getOwn(userId: string): Promise<OwnTutorProfile> {
@@ -98,12 +112,17 @@ export function createTutorsService(deps: {
       tutors.listCredentials(userId),
       createUsersRepository(dataSource.manager).findById(userId),
     ]);
+    const rejections = await createVerificationRepository(
+      dataSource.manager,
+    ).latestCredentialRejections(
+      credentials.filter((c) => c.verificationStatus === 'rejected').map((c) => c.id),
+    );
     return {
       ...profileFields(profile, items),
       userId,
       profileStatus: profile.profileStatus,
       identityVerifiedAt: profile.identityVerifiedAt?.toISOString() ?? null,
-      credentials: credentials.map(toCredentialDto),
+      credentials: credentials.map((c) => toCredentialDto(c, rejections.get(c.id))),
       missingForVerification: missingForVerification(profile, items, user?.fullName ?? null),
       updatedAt: profile.updatedAt.toISOString(),
     };
@@ -121,7 +140,16 @@ export function createTutorsService(deps: {
       await dataSource.transaction(async (manager) => {
         const tutors = createTutorsRepository(manager);
         await tutors.ensureProfile(userId);
-        await tutors.findProfile(userId, { lock: true });
+        const current = await tutors.findProfile(userId, { lock: true });
+        // Nghề nghiệp quyết định giấy tờ phải nộp (C4): không đổi được khi đang chờ duyệt.
+        if (
+          current?.profileStatus === 'pending_verification' &&
+          current.occupation !== input.occupation
+        ) {
+          throw new AppError('validation_failed', 'Occupation is locked while under review', [
+            { path: 'occupation', code: 'locked_while_verifying', message: 'Occupation is locked' },
+          ]);
+        }
         const mode = input.teachingMode;
         await tutors.updateProfile(userId, {
           headline: input.headline,
@@ -197,14 +225,26 @@ export function createTutorsService(deps: {
       return toCredentialDto(updated);
     },
 
+    /** Xóa bằng cấp tự khai hoặc bị từ chối, kèm lịch sử xác minh và ảnh giấy tờ cũ của nó. */
     async removeCredential(userId: string, credentialId: string): Promise<void> {
-      const tutors = repo();
-      const credential = await tutors.findCredential(userId, credentialId);
-      if (!credential) throw notFound('Credential');
-      if (isLocked(credential)) {
-        throw invalidStateTransition('Credential is pending review or verified');
-      }
-      await tutors.deleteCredential(credentialId);
+      const deleted = await dataSource.transaction(async (manager) => {
+        const tutors = createTutorsRepository(manager);
+        const credential = await tutors.findCredential(userId, credentialId, { lock: true });
+        if (!credential) throw notFound('Credential');
+        if (isLocked(credential)) {
+          throw invalidStateTransition('Credential is pending review or verified');
+        }
+        const fileIds =
+          await createVerificationRepository(manager).deleteForCredential(credentialId);
+        await tutors.deleteCredential(credentialId);
+        const marked: StoredFile[] = [];
+        for (const fileId of fileIds) {
+          const file = await files.markDeleted(manager, fileId);
+          if (file) marked.push(file);
+        }
+        return marked;
+      });
+      await Promise.all(deleted.map((file) => files.purgeObject(file)));
     },
 
     /**

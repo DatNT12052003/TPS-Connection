@@ -23,7 +23,8 @@ export function createAccountController(service: AccountService) {
   };
 
   const createUpload: RequestHandler<unknown, unknown, UploadRequest> = async (req, res) => {
-    res.status(201).json(await service.createUpload(requireAuth(req).user.id, req.body));
+    const { user } = requireAuth(req);
+    res.status(201).json(await service.createUpload({ id: user.id, roles: user.roles }, req.body));
   };
 
   return { get, update, setAvatar, removeAvatar, createUpload };

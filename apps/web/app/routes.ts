@@ -26,6 +26,8 @@ export default [
     // Gia sư: hồ sơ và xác minh, bằng cấp; sửa hồ sơ.
     route('profile', 'routes/app/profile/index.tsx'),
     route('profile/edit', 'routes/app/profile/edit.tsx'),
+    // Xin URL tải giấy tờ xác minh (chỉ action, trả JSON).
+    route('profile/documents/ticket', 'routes/app/profile/document-ticket.ts'),
     // Tài khoản và cài đặt (mọi vai trò); đổi ảnh đại diện (chỉ action, trả JSON).
     route('account', 'routes/app/account.tsx'),
     route('account/avatar', 'routes/app/account-avatar.ts'),

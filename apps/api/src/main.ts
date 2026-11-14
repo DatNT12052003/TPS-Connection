@@ -19,6 +19,7 @@ import { createParentsService } from './modules/parents/parents.service.js';
 import { createCatalogService } from './modules/catalog/catalog.service.js';
 import { createFilesService } from './modules/files/files.service.js';
 import { createTutorsService } from './modules/tutors/tutors.service.js';
+import { createVerificationService } from './modules/verification/verification.service.js';
 import { createAccountService } from './modules/users/account.service.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
@@ -118,13 +119,12 @@ async function main() {
 
   // Hồ sơ gia sư, thông tin cá nhân, ảnh đại diện, danh mục (G2).
   const publicFileUrl = (storageKey: string) => storage.publicUrl(storageKey);
-  const tutors = createTutorsService({ dataSource, logger, publicFileUrl });
-  const account = createAccountService({
-    dataSource,
-    files: createFilesService({ storage, logger }),
-    publicFileUrl,
-    logger,
-  });
+  const files = createFilesService({ storage, logger });
+  const tutors = createTutorsService({ dataSource, files, logger, publicFileUrl });
+  const account = createAccountService({ dataSource, files, publicFileUrl, logger });
+
+  // Xác minh gia sư (G3).
+  const verification = createVerificationService({ dataSource, files, logger });
   const catalog = createCatalogService({ dataSource });
 
   const app = createApp({
@@ -138,6 +138,7 @@ async function main() {
     learners,
     studentInvitations,
     tutors,
+    verification,
     account,
     catalog,
   });

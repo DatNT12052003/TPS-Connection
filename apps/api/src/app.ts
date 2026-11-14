@@ -28,6 +28,9 @@ import type { CatalogService } from './modules/catalog/catalog.service.js';
 import { createTutorsController } from './modules/tutors/tutors.controller.js';
 import { ownTutorProfileRouter, publicTutorsRouter } from './modules/tutors/tutors.router.js';
 import type { TutorsService } from './modules/tutors/tutors.service.js';
+import { createVerificationController } from './modules/verification/verification.controller.js';
+import { ownVerificationRouter } from './modules/verification/verification.router.js';
+import type { VerificationService } from './modules/verification/verification.service.js';
 import { createAccountController } from './modules/users/account.controller.js';
 import { accountRouter, filesRouter } from './modules/users/account.router.js';
 import type { AccountService } from './modules/users/account.service.js';
@@ -44,6 +47,7 @@ export interface AppDeps {
   learners: LearnersService;
   studentInvitations: StudentInvitationsService;
   tutors: TutorsService;
+  verification: VerificationService;
   account: AccountService;
   catalog: CatalogService;
 }
@@ -101,6 +105,11 @@ export function createApp(deps: AppDeps): Express {
   api.use('/learners', learnersRouter(learnersController, deps.rateLimiter, authenticate()));
   api.use('/student-invitations', studentInvitationsRouter(learnersController, deps.rateLimiter));
   const tutorsController = createTutorsController(deps.tutors);
+  // Trước router hồ sơ gia sư: router đó `router.use(authenticate, …)` cho mọi đường dẫn bên dưới.
+  api.use(
+    '/me/tutor-profile',
+    ownVerificationRouter(createVerificationController(deps.verification), authenticate()),
+  );
   api.use('/me/tutor-profile', ownTutorProfileRouter(tutorsController, authenticate()));
   api.use('/tutors', publicTutorsRouter(tutorsController));
   const accountController = createAccountController(deps.account);

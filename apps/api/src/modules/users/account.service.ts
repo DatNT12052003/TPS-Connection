@@ -1,7 +1,7 @@
 // Thông tin cá nhân của người đang đăng nhập (G2 phần 5): tên hiển thị, họ tên thật, số điện thoại tự khai
 // (C12), ngôn ngữ, ảnh đại diện. Gia sư đã xác minh danh tính thì họ tên thật bị khóa (D34).
 // Không phụ thuộc Express.
-import type { AccountProfile, UpdateAccountRequest, UploadRequest } from '@tps/shared';
+import type { AccountProfile, Role, UpdateAccountRequest, UploadRequest } from '@tps/shared';
 import type { DataSource } from 'typeorm';
 import { AppError } from '../../lib/app-error.js';
 import type { Logger } from '../../lib/logger.js';
@@ -20,14 +20,15 @@ export function createAccountService(deps: {
 }) {
   const { dataSource, files, logger } = deps;
 
-  /** Họ tên thật bị khóa khi người dùng là gia sư đã xác minh danh tính. */
-  async function isFullNameLocked(userId: string): Promise<boolean> {
-    return dataSource
-      .getRepository(TutorProfile)
-      .createQueryBuilder('p')
-      .where('p.userId = :userId', { userId })
-      .andWhere('p.identityVerifiedAt IS NOT NULL')
-      .getExists();
+  /**
+   * Họ tên thật bị khóa khi gia sư đã xác minh danh tính (D34), và trong lúc hồ sơ đang chờ duyệt (người duyệt
+   * đối chiếu họ tên với CCCD; muốn sửa thì hủy yêu cầu xác minh trước).
+   */
+  async function fullNameLock(userId: string): Promise<'verified' | 'pending' | null> {
+    const profile = await dataSource.getRepository(TutorProfile).findOneBy({ userId });
+    if (!profile) return null;
+    if (profile.identityVerifiedAt) return 'verified';
+    return profile.profileStatus === 'pending_verification' ? 'pending' : null;
   }
 
   async function get(userId: string): Promise<AccountProfile> {
@@ -42,7 +43,7 @@ export function createAccountService(deps: {
       email: user.email ?? '',
       displayName: user.displayName,
       fullName: user.fullName,
-      fullNameLocked: await isFullNameLocked(userId),
+      fullNameLocked: (await fullNameLock(userId)) !== null,
       phone: user.phone,
       phoneVerified: user.phoneVerifiedAt !== null,
       locale: user.locale,
@@ -76,9 +77,12 @@ export function createAccountService(deps: {
       const users = dataSource.getRepository(User);
       if (input.fullName !== undefined) {
         const current = await users.findOneBy({ id: userId });
-        if (current && current.fullName !== input.fullName && (await isFullNameLocked(userId))) {
-          throw new AppError('validation_failed', 'Full name is locked after verification', [
-            { path: 'fullName', code: 'full_name_locked', message: 'Full name is locked' },
+        const lock =
+          current && current.fullName !== input.fullName ? await fullNameLock(userId) : null;
+        if (lock) {
+          const code = lock === 'verified' ? 'full_name_locked' : 'locked_while_verifying';
+          throw new AppError('validation_failed', 'Full name is locked', [
+            { path: 'fullName', code, message: 'Full name is locked' },
           ]);
         }
       }
@@ -92,8 +96,8 @@ export function createAccountService(deps: {
       return get(userId);
     },
 
-    async createUpload(userId: string, input: UploadRequest) {
-      return files.createUpload(dataSource.manager, userId, input);
+    async createUpload(owner: { id: string; roles: readonly Role[] }, input: UploadRequest) {
+      return files.createUpload(dataSource.manager, owner, input);
     },
 
     async setAvatar(userId: string, fileId: string): Promise<AccountProfile> {

@@ -83,6 +83,13 @@ export const en: Messages = {
     file_not_uploaded: 'The file has not finished uploading. Upload it again and retry.',
     file_purpose_not_allowed: 'This kind of file is not supported here.',
     password_mismatch: 'The two passwords do not match.',
+    locked_while_verifying:
+      'This cannot be changed while your profile is under review. Cancel the verification request if you need to change it.',
+    must_accept_document_processing:
+      'You need to let TPS-Connection use these documents to verify your identity.',
+    documents_incomplete: 'Some required documents are missing. Upload them all and submit again.',
+    document_type_not_allowed: 'This kind of document is not used for this verification request.',
+    duplicate_document: 'Upload only one image for each kind of document.',
   },
 
   emailCommon: {
@@ -376,8 +383,6 @@ export const en: Messages = {
     completeProfile: 'Complete your profile',
     editProfile: 'Edit profile',
     step2Title: 'Step 2 · Identity documents',
-    identityComingSoon:
-      'Uploading your ID card is coming soon. Complete your profile first; we will let you know when you can submit.',
     identityPending: 'Your documents are waiting for review, usually within 2 working days.',
     identityVerifiedOn: 'Your identity was verified on {{date}}.',
     whyTitle: 'Why verify?',
@@ -458,8 +463,7 @@ export const en: Messages = {
   },
   credentials: {
     title: 'Degrees and certificates',
-    intro:
-      'Optional. Verified degrees show a badge on your profile. Uploading proof for verification comes with ID submission.',
+    intro: 'Optional. Verified degrees show a badge on your profile and in search filters.',
     empty: 'No degrees yet.',
     add: 'Add a degree',
     addTitle: 'Add a degree or certificate',
@@ -474,6 +478,44 @@ export const en: Messages = {
     issuerPlaceholder: 'For example: British Council',
     issuedYear: 'Year issued',
     save: 'Save degree',
+  },
+  verification: {
+    identityIntro: 'Required. Clear photos with all four corners visible and no glare.',
+    fillFirst: 'Fill in the required details in step 1, then submit your ID here.',
+    documentHint: 'JPG, PNG, WEBP or PDF, up to 10 MB',
+    studentCardHint: 'Required for university students. JPG, PNG, WEBP or PDF, up to 10 MB',
+    choose: 'Choose a file',
+    replace: 'Replace',
+    uploading: 'Uploading…',
+    uploadFailed: 'The file could not be uploaded. Check your connection and try again.',
+    consent:
+      'I allow TPS-Connection to use these documents to verify my identity. The images are stored privately and deleted 30 days after review.',
+    missingConsent: 'consent to use the documents',
+    missing: 'Still missing: {{items}}',
+    ready: 'All documents added',
+    submit: 'Submit for verification',
+    submitted:
+      'Your documents have been submitted. A moderator will review them within 2 working days; the result appears on this page.',
+    pendingDue: 'Your documents are waiting for review. Review due by the end of {{date}}.',
+    submittedDocs: 'Submitted documents',
+    cancel: 'Cancel the verification request',
+    confirmCancel:
+      'Cancel the verification request? The submitted images will be deleted; you can edit your profile and submit again right away.',
+    cancelled: 'The verification request has been cancelled and the images deleted.',
+    rejectedTitle: 'Your last submission was not approved',
+    rejectedReason: 'Reason: {{reason}}',
+    resubmitHint: 'Fix the issue above, then upload new images to submit again.',
+    lockedWhileReviewing:
+      'Your verification is under review. Cancel the request if you need to change this.',
+    credentialSubmit: 'Submit for verification',
+    credentialFilesLabel:
+      'Upload photos or a PDF of the document, up to {{max}} files (for example front and back).',
+    credentialPage: 'File {{n}}',
+    addPage: 'Add a file',
+    credentialSend: 'Send for verification',
+    credentialCancel: 'Cancel verification',
+    credentialConfirmCancel:
+      'Cancel the verification request for “{{title}}”? The images will be deleted.',
   },
   tutorHome: {
     public: 'Your profile is public',
@@ -651,6 +693,7 @@ export const en: Messages = {
     privacy_policy: 'Personal data protection policy',
     child_data_processing: "Consent to process my child's data",
     marketing_email: 'Product news and offers by email',
+    verification_document_processing: 'Consent to use my ID documents for verification',
   },
   guardianRelationship: {
     father: 'Father',
@@ -702,6 +745,22 @@ export const en: Messages = {
     approved: 'Approved',
     rejected: 'Rejected',
     cancelled: 'Cancelled',
+  },
+  verificationDocumentType: {
+    national_id_front: 'ID card (front)',
+    national_id_back: 'ID card (back)',
+    student_card: 'Student card',
+    degree: 'Degree',
+    certificate: 'Certificate',
+    other: 'Other document',
+  },
+  verificationRejectionCode: {
+    unclear_image: 'The image is blurry, glared or cut off',
+    name_mismatch: 'The name does not match the document',
+    expired_document: 'The document has expired',
+    invalid_document: 'The document is not valid',
+    missing_document: 'A required document is missing',
+    other: 'Other reason',
   },
   credentialKind: {
     degree: 'Degree',

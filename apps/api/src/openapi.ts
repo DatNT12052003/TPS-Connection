@@ -1,5 +1,8 @@
 // Tài liệu OpenAPI sinh từ chính các Zod schema trong @tps/shared. Thêm endpoint: khai báo path ở đây.
 import {
+  OwnIdentityVerification,
+  SubmitCredentialVerificationRequest,
+  SubmitIdentityVerificationRequest,
   AccountProfile,
   CatalogArea,
   CatalogGradeLevel,
@@ -409,7 +412,8 @@ export function createOpenApiDocument() {
       '/api/v1/files/uploads': {
         post: {
           tags: ['account'],
-          summary: 'Cấp URL để trình duyệt PUT tệp thẳng lên kho (hiện chỉ purpose = avatar)',
+          summary:
+            'Cấp URL để trình duyệt PUT tệp thẳng lên kho (avatar: mọi người; verification_document, credential: chỉ gia sư)',
           security,
           requestBody: json(UploadRequest),
           responses: {
@@ -478,6 +482,73 @@ export function createOpenApiDocument() {
             ...roleErrors,
             404: error('not_found'),
             409: error('invalid_state_transition: đang chờ duyệt hoặc đã xác minh'),
+          },
+        },
+      },
+      '/api/v1/me/tutor-profile/verification': {
+        get: {
+          tags: ['verification'],
+          summary:
+            'Tình trạng xác minh danh tính của chính gia sư (yêu cầu gần nhất, giấy tờ bắt buộc)',
+          security,
+          responses: {
+            200: { description: 'OK', ...json(OwnIdentityVerification) },
+            ...roleErrors,
+          },
+        },
+        post: {
+          tags: ['verification'],
+          summary:
+            'Nộp giấy tờ danh tính (tệp tải trước qua POST /files/uploads, purpose verification_document); hồ sơ chuyển chờ xác minh',
+          security,
+          requestBody: json(SubmitIdentityVerificationRequest),
+          responses: {
+            201: { description: 'Đã nộp', ...json(OwnIdentityVerification) },
+            ...roleErrors,
+            409: error(
+              'invalid_state_transition: hồ sơ thiếu trường bắt buộc, đang chờ duyệt hoặc đã xác minh',
+            ),
+            422: error(
+              'validation_failed: thiếu giấy tờ, sai loại, tệp chưa tải xong, chưa đồng ý',
+            ),
+          },
+        },
+        delete: {
+          tags: ['verification'],
+          summary: 'Hủy yêu cầu xác minh danh tính đang chờ (ảnh bị xóa); hồ sơ về chưa hoàn thiện',
+          security,
+          responses: {
+            204: { description: 'Đã hủy' },
+            ...roleErrors,
+            404: error('not_found: không có yêu cầu đang chờ'),
+          },
+        },
+      },
+      '/api/v1/me/tutor-profile/credentials/{credentialId}/verification': {
+        post: {
+          tags: ['verification'],
+          summary:
+            'Nộp 1–3 tệp của một bằng cấp để xác minh (purpose credential); bằng cấp chuyển chờ xác minh',
+          security,
+          requestParams: { path: CredentialIdParams },
+          requestBody: json(SubmitCredentialVerificationRequest),
+          responses: {
+            201: { description: 'Đã nộp', ...json(TutorCredential) },
+            ...roleErrors,
+            404: error('not_found'),
+            409: error('invalid_state_transition: đang chờ duyệt hoặc đã xác minh'),
+            422: error('validation_failed: tệp chưa tải xong, sai mục đích, trùng'),
+          },
+        },
+        delete: {
+          tags: ['verification'],
+          summary: 'Hủy yêu cầu xác minh bằng cấp đang chờ (ảnh bị xóa); bằng cấp về tự khai',
+          security,
+          requestParams: { path: CredentialIdParams },
+          responses: {
+            204: { description: 'Đã hủy' },
+            ...roleErrors,
+            404: error('not_found: không có yêu cầu đang chờ'),
           },
         },
       },
