@@ -39,4 +39,12 @@ export type AuditAction =
   | 'verification.document_viewed'
   | 'verification.approved'
   | 'verification.rejected'
-  | 'verification.documents_purged';
+  | 'verification.documents_purged'
+  | 'account.locked'
+  | 'account.unlocked'
+  | 'role.granted'
+  | 'role.revoked'
+  | 'catalog.subject_created'
+  | 'catalog.subject_updated'
+  | 'catalog.grade_level_created'
+  | 'catalog.grade_level_updated';

@@ -204,7 +204,12 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
   - Số yêu cầu đang chờ cạnh mục "Duyệt xác minh" trên thanh điều hướng (canvas ghi "Duyệt xác minh · 6"): trang hàng chờ có số theo loại; số trên thanh điều hướng cần gọi API ở mọi trang quản trị, làm khi có thêm hàng chờ báo cáo, tranh chấp (G8).
   - Thông báo trong app khi có kết quả: chưa có bảng thông báo (G5); hiện có email và kết quả hiện ở trang hồ sơ.
   - Thu hồi xác minh (B.4.1 `verified` → `incomplete`) là kết quả của vụ việc kiểm duyệt: làm ở G8.
-- Đợt 3, Admin: tài khoản (tìm, khóa/mở khóa, gán Manager), danh mục (canvas AdminAccounts, AdminCatalog), test điều kiện hoàn thành.
+- ~~Đợt 3, Admin~~: **xong ngày 2026-11-14**. Tài khoản `/admin/accounts` (canvas AdminAccounts): tìm theo tên không dấu hoặc email, lọc vai trò, trạng thái (kể cả đã xóa); khóa kèm lý do (đăng xuất khỏi mọi thiết bị ngay), mở khóa; thêm Manager theo email (email mới thì tạo tài khoản không mật khẩu, người đó đặt mật khẩu bằng "Quên mật khẩu"), gỡ Manager. Danh mục `/admin/catalog` (canvas AdminCatalog): môn học và khối lớp, thêm, sửa tên hai ngôn ngữ, thứ tự, bật/tắt, số gia sư dạy. `/admin` chuyển tới màn chính theo vai trò. Mọi thay đổi ghi nhật ký kiểm toán. Test điều kiện hoàn thành ở `describe('G3 completion')` (`apps/api/test/integration/tutors.int.test.ts`). Đã chạy thử với API, PostgreSQL, Redis, Mailpit thật. Khác canvas, chưa làm:
+  - Vai trò Admin không cấp, gỡ qua giao diện (chỉ bằng `npm run users:staff`), và Admin không khóa được Admin khác: tránh một Admin tự ý tước quyền Admin khác. Cần quyết định nếu muốn khác.
+  - Không xóa mục danh mục (chỉ tắt): mục đã có dữ liệu không xóa được, mục chưa dùng tắt là đủ.
+  - Tỉnh và xã/phường: nạp từ bộ dữ liệu hành chính chính thức (`db:seed:areas`), không sửa tay trên giao diện.
+  - "Lý do báo cáo" và "Cấu hình hệ thống" (hạn xác nhận buổi, hạn tự hủy yêu cầu…): làm ở G8 cùng báo cáo vi phạm; các mốc hiện là hằng số trong code theo decision log. Mục "Khiếu nại quyết định" và "Nhật ký kiểm toán" (xem nhật ký trên giao diện) cũng ở G8.
+  - Điều kiện "gia sư chưa được duyệt không đăng được bài, không hiện trong tìm kiếm": phần hồ sơ công khai đã có test; bài đăng và tìm kiếm có ở G4 và phải giữ đúng điều kiện này (test ở G4).
 
 **Hoàn thành khi:** gia sư chưa được duyệt danh tính không thể đăng bài và không xuất hiện trong kết quả tìm kiếm công khai; Manager không có quyền của Admin và ngược lại.
 
@@ -227,6 +232,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
   - Slug cho URL hồ sơ gia sư `/tutors/<slug>` _(D56)_. API hiện dùng id: `GET /api/v1/tutors/:tutorId`.
   - Danh sách và tìm kiếm gia sư dùng cùng điều kiện hiển thị công khai với `GET /tutors/:tutorId`: đã xác minh, tài khoản `active`, chưa xóa. Không trả email, số điện thoại, họ tên thật (đã có test ở `tutors.int.test.ts`; thêm test tương tự cho danh sách).
 
+- **Việc chuyển từ G3:** test điều kiện hoàn thành của G3 cho phần mới: gia sư chưa được duyệt danh tính không đăng được bài tuyển học sinh (403) và không hiện trong kết quả tìm kiếm; tài khoản bị khóa hoặc hạn chế không hiện công khai. Bộ lọc tìm kiếm chỉ dùng môn, khối đang bật (Admin tắt được ở `/admin/catalog`).
 - **Việc chuyển từ G2 (trang chủ công khai):** trang `/` hiện là khung đơn giản từ G1 (khối giới thiệu, ba thẻ tin cậy). Làm đúng canvas Main / MainMobile khi có tìm kiếm: ô tìm gia sư theo môn, lớp, khu vực; gia sư nổi bật; bài tuyển học sinh mới.
 
 **Đầu ra:** trang tìm gia sư, chi tiết gia sư, chi tiết bài đăng, quản lý bài đăng của gia sư và phụ huynh.
@@ -312,6 +318,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Kiểm thử end-to-end** bằng Playwright cho các luồng §14.1, §14.2, §14.3.
 - **Hiệu năng:** kiểm tra truy vấn tìm kiếm và danh sách bằng dữ liệu mẫu lớn; bổ sung index thiếu.
 - **Hạ tầng** (§7.1 tài liệu công nghệ): server đặt tại Việt Nam, Caddy + HTTPS, tên miền, tường lửa, backup PostgreSQL và SeaweedFS hằng ngày có mã hóa, thử khôi phục, Sentry.
+- **Việc chuyển từ G3:** khóa ngoại `account_sanctions.case_id → moderation_cases` (bảng vụ việc tạo ở G8); hạn chế tài khoản (`restricted`) và thu hồi xác minh (B.4.1 `verified` → `incomplete`) là kết quả của vụ việc; trang "Lý do báo cáo", "Cấu hình hệ thống" (các mốc thời gian hiện là hằng số theo decision log), "Khiếu nại quyết định" và xem "Nhật ký kiểm toán" trên giao diện Admin (canvas AdminCatalog, Appeals); số việc đang chờ cạnh các mục điều hướng của Manager.
 - **Việc chuyển từ G2 (triển khai web):** server web gọi API thay trình duyệt và chuyển tiếp header `X-Forwarded-For`. Khi chạy thật: chỉ cho web nhận request qua Caddy (Caddy ghi đè `X-Forwarded-For` bằng IP thật, không giữ giá trị trình duyệt gửi), và đặt `TRUST_PROXY` của API tin địa chỉ của server web. Nếu không, rate limit theo IP của API hoặc chỉ thấy IP của web (mọi người dùng chung một giới hạn), hoặc người dùng giả được IP. Đặt `COOKIE_DOMAIN` là tên miền gốc và `COOKIE_SECURE=true` (D57). Kiểm tra trong review bảo mật ở trên.
 - **Pháp lý và nội dung:** điều khoản sử dụng, chính sách quyền riêng tư (đã qua luật sư), hướng dẫn sử dụng cơ bản hai ngôn ngữ.
 
@@ -408,4 +415,5 @@ Các việc bên ngoài, không chặn việc viết code nhưng có hạn chót
 1. ~~Bắt đầu G1 (nền móng kỹ thuật) và G1b (thiết kế giao diện) song song~~: **xong ngày 2026-11-13**.
 2. ~~Chốt giới hạn dung lượng tệp và ngôn ngữ của đường dẫn trang~~: **xong ngày 2026-11-13** (D55, D56).
 3. ~~Bắt đầu G2 (tài khoản, phân quyền và hồ sơ)~~: **xong ngày 2026-11-14**.
-4. G3 (xác minh gia sư và trang quản trị cơ bản): đang làm, xem mục "Tiến độ" của G3.
+4. ~~G3 (xác minh gia sư và trang quản trị cơ bản)~~: **xong ngày 2026-11-14**.
+5. Bắt đầu G4 (bài đăng và tìm kiếm).

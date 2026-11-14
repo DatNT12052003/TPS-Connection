@@ -29,7 +29,7 @@ app/
   routes.ts              khai báo route
   routes/public/         khu công khai (SSR cho SEO): trang chủ, /status, 404
   routes/app/            khu người dùng: tổng quan theo vai trò; account (cài đặt, mọi vai trò) + account/avatar (chỉ action, JSON);
-                         phụ huynh: children/new, children/:id, children/:id/invite; gia sư: profile (hồ sơ và xác minh, nộp giấy tờ), profile/edit, profile/documents/ticket (xin URL tải giấy tờ, JSON); admin/verifications (hàng chờ, layout) + admin/verifications/:requestId (màn duyệt, Manager)
+                         phụ huynh: children/new, children/:id, children/:id/invite; gia sư: profile (hồ sơ và xác minh, nộp giấy tờ), profile/edit, profile/documents/ticket (xin URL tải giấy tờ, JSON); admin/verifications (hàng chờ, layout) + admin/verifications/:requestId (màn duyệt, Manager); admin/accounts (danh sách, layout) + admin/accounts/:userId, admin/catalog (Admin); /admin chuyển theo vai trò
   routes/admin/          khu Manager / Admin
   routes/auth/           /login, /register, /verify-email, /forgot-password, /student-invitation; /logout (chỉ action)
   routes/catalog/        GET /catalog/provinces/:id/communes (chỉ dữ liệu, cho ô chọn xã)

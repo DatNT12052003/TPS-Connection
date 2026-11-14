@@ -6,6 +6,7 @@ export * from './schemas/auth.js';
 export * from './schemas/profiles.js';
 export * from './schemas/tutors.js';
 export * from './schemas/verification.js';
+export * from './schemas/admin.js';
 export * from './schemas/account.js';
 export * from './schemas/catalog.js';
 export * from './files.js';

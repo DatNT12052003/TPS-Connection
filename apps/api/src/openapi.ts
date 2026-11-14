@@ -1,5 +1,18 @@
 // Tài liệu OpenAPI sinh từ chính các Zod schema trong @tps/shared. Thêm endpoint: khai báo path ở đây.
 import {
+  AccountIdParams,
+  AdminAccountDetail,
+  AdminAccountList,
+  AdminAccountsQuery,
+  AdminGradeLevel,
+  AdminSubject,
+  CatalogItemIdParams,
+  CreateGradeLevelRequest,
+  CreateSubjectRequest,
+  GrantManagerRequest,
+  LockAccountRequest,
+  UpdateGradeLevelRequest,
+  UpdateSubjectRequest,
   DocumentViewUrl,
   RejectVerificationRequest,
   VerificationDocumentParams,
@@ -641,6 +654,161 @@ export function createOpenApiDocument() {
             404: error('not_found'),
             409: error('invalid_state_transition: yêu cầu đã được xử lý'),
             422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/admin/accounts': {
+        get: {
+          tags: ['admin'],
+          summary: 'Tìm tài khoản theo tên (không dấu), email, vai trò, trạng thái',
+          security,
+          requestParams: { query: AdminAccountsQuery },
+          responses: {
+            200: { description: 'OK', ...json(AdminAccountList) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+          },
+        },
+      },
+      '/api/v1/admin/accounts/{userId}': {
+        get: {
+          tags: ['admin'],
+          summary: 'Chi tiết tài khoản, lần khóa đang hiệu lực',
+          security,
+          requestParams: { path: AccountIdParams },
+          responses: {
+            200: { description: 'OK', ...json(AdminAccountDetail) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
+          },
+        },
+      },
+      '/api/v1/admin/accounts/{userId}/lock': {
+        post: {
+          tags: ['admin'],
+          summary: 'Khóa tài khoản kèm lý do; thu hồi mọi phiên; không khóa chính mình hay Admin',
+          security,
+          requestParams: { path: AccountIdParams },
+          requestBody: json(LockAccountRequest),
+          responses: {
+            200: { description: 'OK', ...json(AdminAccountDetail) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
+            409: error('conflict: đã khóa hoặc đã xóa'),
+          },
+        },
+      },
+      '/api/v1/admin/accounts/{userId}/unlock': {
+        post: {
+          tags: ['admin'],
+          summary: 'Mở khóa tài khoản',
+          security,
+          requestParams: { path: AccountIdParams },
+          responses: {
+            200: { description: 'OK', ...json(AdminAccountDetail) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
+            409: error('conflict: chưa bị khóa'),
+          },
+        },
+      },
+      '/api/v1/admin/managers': {
+        post: {
+          tags: ['admin'],
+          summary:
+            'Gán vai trò Manager theo email; email mới thì tạo tài khoản không mật khẩu (cần họ tên)',
+          security,
+          requestBody: json(GrantManagerRequest),
+          responses: {
+            200: { description: 'Gán cho tài khoản có sẵn', ...json(AdminAccountDetail) },
+            201: { description: 'Tạo tài khoản mới', ...json(AdminAccountDetail) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            409: error('conflict: đã là Manager'),
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/admin/accounts/{userId}/roles/manager': {
+        delete: {
+          tags: ['admin'],
+          summary: 'Gỡ vai trò Manager',
+          security,
+          requestParams: { path: AccountIdParams },
+          responses: {
+            200: { description: 'OK', ...json(AdminAccountDetail) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
+          },
+        },
+      },
+      '/api/v1/admin/catalog/subjects': {
+        get: {
+          tags: ['admin'],
+          summary: 'Môn học (cả môn đã tắt), kèm số gia sư dạy',
+          security,
+          responses: {
+            200: { description: 'OK', ...json(z.object({ items: z.array(AdminSubject) })) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+          },
+        },
+        post: {
+          tags: ['admin'],
+          summary: 'Thêm môn học',
+          security,
+          requestBody: json(CreateSubjectRequest),
+          responses: {
+            201: { description: 'OK', ...json(AdminSubject) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            422: error('validation_failed: mã sai dạng hoặc đã có'),
+          },
+        },
+      },
+      '/api/v1/admin/catalog/subjects/{id}': {
+        patch: {
+          tags: ['admin'],
+          summary: 'Sửa tên, thứ tự, bật/tắt môn học',
+          security,
+          requestParams: { path: CatalogItemIdParams },
+          requestBody: json(UpdateSubjectRequest),
+          responses: {
+            200: { description: 'OK', ...json(AdminSubject) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
+          },
+        },
+      },
+      '/api/v1/admin/catalog/grade-levels': {
+        get: {
+          tags: ['admin'],
+          summary: 'Khối lớp (cả khối đã tắt), kèm số gia sư dạy',
+          security,
+          responses: {
+            200: { description: 'OK', ...json(z.object({ items: z.array(AdminGradeLevel) })) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+          },
+        },
+        post: {
+          tags: ['admin'],
+          summary: 'Thêm khối lớp',
+          security,
+          requestBody: json(CreateGradeLevelRequest),
+          responses: {
+            201: { description: 'OK', ...json(AdminGradeLevel) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            422: error('validation_failed: mã sai dạng hoặc đã có'),
+          },
+        },
+      },
+      '/api/v1/admin/catalog/grade-levels/{id}': {
+        patch: {
+          tags: ['admin'],
+          summary: 'Sửa tên, thứ tự, bật/tắt khối lớp',
+          security,
+          requestParams: { path: CatalogItemIdParams },
+          requestBody: json(UpdateGradeLevelRequest),
+          responses: {
+            200: { description: 'OK', ...json(AdminGradeLevel) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
           },
         },
       },

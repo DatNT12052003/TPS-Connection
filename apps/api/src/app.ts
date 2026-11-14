@@ -34,6 +34,10 @@ import type { VerificationService } from './modules/verification/verification.se
 import { createVerificationReviewController } from './modules/verification/verification-review.controller.js';
 import { verificationReviewRouter } from './modules/verification/verification-review.router.js';
 import type { VerificationReviewService } from './modules/verification/verification-review.service.js';
+import type { AdminAccountsService } from './modules/admin/admin-accounts.service.js';
+import type { AdminCatalogService } from './modules/admin/admin-catalog.service.js';
+import { createAdminController } from './modules/admin/admin.controller.js';
+import { adminRouter } from './modules/admin/admin.router.js';
 import { createAccountController } from './modules/users/account.controller.js';
 import { accountRouter, filesRouter } from './modules/users/account.router.js';
 import type { AccountService } from './modules/users/account.service.js';
@@ -52,6 +56,8 @@ export interface AppDeps {
   tutors: TutorsService;
   verification: VerificationService;
   verificationReview: VerificationReviewService;
+  adminAccounts: AdminAccountsService;
+  adminCatalog: AdminCatalogService;
   account: AccountService;
   catalog: CatalogService;
 }
@@ -119,6 +125,13 @@ export function createApp(deps: AppDeps): Express {
     '/admin/verification-requests',
     verificationReviewRouter(
       createVerificationReviewController(deps.verificationReview),
+      authenticate(),
+    ),
+  );
+  api.use(
+    '/admin',
+    adminRouter(
+      createAdminController({ accounts: deps.adminAccounts, catalog: deps.adminCatalog }),
       authenticate(),
     ),
   );

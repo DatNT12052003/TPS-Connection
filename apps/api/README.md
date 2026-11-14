@@ -234,6 +234,25 @@ Module `src/modules/verification`; thiết kế ở docs/thiet_ke_co_so_du_lieu.
 - `audit_logs` (`src/modules/audit`): chỉ ghi thêm, trigger chặn UPDATE/DELETE/TRUNCATE. Hành động: `verification.document_viewed`, `.approved`, `.rejected`, `.documents_purged` (vai trò `system`). `metadata` chỉ có id, mã, loại.
 - **Job định kỳ** (`src/jobs/maintenance.ts`, hàng đợi `maintenance`, lập lịch bằng `upsertJobScheduler` khi `WORKERS_ENABLED`, giờ Việt Nam): 03:00 xóa ảnh giấy tờ đã tới hạn (xóa trên kho trước, thành công mới đánh dấu và ghi `documents_purged_at`; lỗi thì hôm sau thử lại), 03:30 dọn tệp `pending_upload` quá 24 giờ. Logic ở `src/modules/files/files-maintenance.service.ts`.
 
+## Quản trị của Admin (G3)
+
+Module `src/modules/admin`; quyết định C1, B.9.3. Chỉ vai trò `admin` (Manager không vào được; Admin không vào được khu duyệt xác minh).
+
+| Endpoint                                                                 | Việc                                                                            |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| `GET /admin/accounts?q=&role=&status=&page=`                             | Tìm theo tên không dấu hoặc email (pg_trgm), vai trò, trạng thái hoặc `deleted` |
+| `GET /admin/accounts/:userId`                                            | Chi tiết, lần khóa đang hiệu lực, `canLock`                                     |
+| `POST /admin/accounts/:userId/lock { reason }`, `/unlock`                | Khóa (thu hồi mọi phiên) / mở khóa                                              |
+| `POST /admin/managers { email, fullName? }`                              | Gán Manager; email mới thì tạo tài khoản không mật khẩu (201)                   |
+| `DELETE /admin/accounts/:userId/roles/manager`                           | Gỡ Manager                                                                      |
+| `GET`, `POST /admin/catalog/subjects`, `PATCH …/:id` (và `grade-levels`) | Môn học, khối lớp: thêm, sửa tên, thứ tự, bật/tắt; số gia sư dạy                |
+
+- Khóa: `users.status = 'locked'` + một dòng `account_sanctions` (lý do, người khóa) + thu hồi mọi phiên (`account_locked`); `authenticate` chặn tài khoản bị khóa ở mỗi request nên access token còn hạn cũng hết dùng được. Không khóa chính mình, không khóa Admin (403). Mỗi tài khoản một lần khóa đang hiệu lực (partial unique index).
+- Vai trò Admin chỉ cấp, gỡ bằng `npm run users:staff`; qua API chỉ gán, gỡ Manager (ghi `granted_by`, `revoked_by`).
+- Danh mục không xóa (mục đã có dữ liệu chỉ tắt); mã không đổi sau khi tạo (422 `invalid_catalog_code`, `catalog_code_taken`). Tỉnh, xã nạp bằng `db:seed:areas`, không sửa qua API.
+- Mọi thay đổi ghi `audit_logs` (`account.locked`, `account.unlocked`, `role.granted`, `role.revoked`, `catalog.*`) trong cùng transaction.
+- Điều kiện hoàn thành G3: `describe('G3 completion')` trong `test/integration/tutors.int.test.ts`.
+
 ## Ghi chú cho Windows
 
 Test tích hợp cần Docker Desktop đang chạy. Một số bản Docker Desktop không mở pipe `//./pipe/docker_engine` mà Testcontainers cần; khi đó `test/global-setup.ts` tự mở pipe tạm, chuyển tiếp sang endpoint của Docker context hiện tại, và đóng lại khi test xong.

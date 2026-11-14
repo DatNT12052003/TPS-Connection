@@ -116,6 +116,22 @@ export const verificationRequest = (overrides: Record<string, unknown> = {}) => 
   ...overrides,
 });
 
+/** Tài khoản trong khu Admin (`AdminAccountDetail`). */
+export const accountDetail = (overrides: Record<string, unknown> = {}) => ({
+  id: '0193a1b2-0000-7000-8000-000000000009',
+  displayName: 'Hoàng Văn E',
+  fullName: 'Hoàng Văn E',
+  email: 'e.hoang@example.com',
+  roles: ['tutor'],
+  status: 'active',
+  deleted: false,
+  createdAt: '2026-10-02T03:00:00.000Z',
+  emailVerified: true,
+  lock: null,
+  canLock: true,
+  ...overrides,
+});
+
 export const apiError = (status: number, error: object) => HttpResponse.json({ error }, { status });
 
 /** Đăng nhập với các vai trò và danh mục mà các trang đọc (môn, khối, tỉnh, xã, tra khu vực). */

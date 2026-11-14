@@ -42,6 +42,12 @@ export default [
       index('routes/admin/verifications/index.tsx'),
       route(':requestId', 'routes/admin/verifications/detail.tsx'),
     ]),
+    // Admin: tài khoản (danh sách là layout của chi tiết) và danh mục.
+    route('accounts', 'routes/admin/accounts/list.tsx', [
+      index('routes/admin/accounts/index.tsx'),
+      route(':userId', 'routes/admin/accounts/detail.tsx'),
+    ]),
+    route('catalog', 'routes/admin/catalog/index.tsx'),
     route('*', 'routes/admin/not-found.tsx'),
   ]),
 

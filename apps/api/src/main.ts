@@ -22,6 +22,8 @@ import { createTutorsService } from './modules/tutors/tutors.service.js';
 import { createVerificationService } from './modules/verification/verification.service.js';
 import { createVerificationReviewService } from './modules/verification/verification-review.service.js';
 import { createFilesMaintenanceService } from './modules/files/files-maintenance.service.js';
+import { createAdminAccountsService } from './modules/admin/admin-accounts.service.js';
+import { createAdminCatalogService } from './modules/admin/admin-catalog.service.js';
 import { createAccountService } from './modules/users/account.service.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
@@ -157,6 +159,8 @@ async function main() {
     tutors,
     verification,
     verificationReview,
+    adminAccounts: createAdminAccountsService({ dataSource, logger }),
+    adminCatalog: createAdminCatalogService({ dataSource, logger }),
     account,
     catalog,
   });

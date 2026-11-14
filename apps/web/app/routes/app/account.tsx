@@ -8,6 +8,7 @@
 // Mỗi form gửi `intent` riêng; kết quả action mang theo intent để hiện thông báo đúng thẻ.
 import { AccountProfile, ActiveSession, ParentProfile } from '@tps/shared';
 import { Laptop, LogOut } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { data, Form, Link, useNavigation } from 'react-router';
 import { z } from 'zod';
@@ -218,24 +219,31 @@ export default function AccountPage({ loaderData, actionData }: Route.ComponentP
       : null;
   const { account, sessions, area } = loaderData;
   const sections = SECTIONS.filter((section) => section.id !== 'area' || area);
+  const [activeSection, setActiveSection] = useActiveSection(sections.map((s) => s.id));
 
   return (
     <PageContainer>
-      <h1 className="text-h1">{t('account.title')}</h1>
+      {/* Tiêu đề chỉ cho trình đọc màn hình; trên màn hình menu bên trái đã đủ rõ. */}
+      <h1 className="sr-only">{t('account.title')}</h1>
       <div className="grid items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
         <nav
           aria-label={t('account.sections')}
           className="sticky top-24 hidden flex-col gap-0.5 rounded-lg border border-border bg-surface p-2 lg:flex"
         >
-          {sections.map((section) => (
-            <a
-              key={section.id}
-              href={`#${section.id}`}
-              className="flex min-h-control-md items-center rounded-md px-3 font-semibold text-foreground hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-ring"
-            >
-              {t(section.label)}
-            </a>
-          ))}
+          {sections.map((section) => {
+            const active = section.id === activeSection;
+            return (
+              <a
+                key={section.id}
+                href={`#${section.id}`}
+                aria-current={active ? 'location' : undefined}
+                onClick={() => setActiveSection(section.id)}
+                className="flex min-h-control-md items-center rounded-md px-3 font-semibold text-foreground hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-ring aria-[current=location]:bg-primary-subtle aria-[current=location]:text-primary-subtle-foreground"
+              >
+                {t(section.label)}
+              </a>
+            );
+          })}
         </nav>
 
         <div className="flex min-w-0 flex-col gap-6">
@@ -272,6 +280,57 @@ export default function AccountPage({ loaderData, actionData }: Route.ComponentP
       </div>
     </PageContainer>
   );
+}
+
+/** Khoảng cách từ đỉnh màn hình (dưới thanh điều hướng) mà thẻ chạm tới thì coi là đang xem. */
+const SCROLL_SPY_OFFSET = 120;
+
+/**
+ * Mục đang xem trên menu bên trái: theo ô đang được focus (Tab hoặc bấm vào) và theo vị trí cuộn.
+ * Focus thắng cuộn: khi focus nằm trong một thẻ thì thẻ đó được đánh dấu.
+ */
+function useActiveSection(ids: string[]) {
+  const [active, setActive] = useState(ids[0] ?? '');
+  const key = ids.join(',');
+
+  useEffect(() => {
+    const list = key.split(',');
+    const sectionOf = (node: EventTarget | null) =>
+      node instanceof Node
+        ? list.find((id) => document.getElementById(id)?.contains(node))
+        : undefined;
+
+    const onFocusIn = (event: FocusEvent) => {
+      const id = sectionOf(event.target);
+      if (id) setActive(id);
+    };
+
+    const onScroll = () => {
+      // Đang gõ trong một thẻ thì giữ thẻ đó, không để cuộn đổi mục.
+      if (sectionOf(document.activeElement)) return;
+      const atBottom =
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
+      if (atBottom) {
+        setActive(list[list.length - 1] ?? '');
+        return;
+      }
+      let current = list[0] ?? '';
+      for (const id of list) {
+        const top = document.getElementById(id)?.getBoundingClientRect().top;
+        if (top !== undefined && top <= SCROLL_SPY_OFFSET) current = id;
+      }
+      setActive(current);
+    };
+
+    document.addEventListener('focusin', onFocusIn);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [key]);
+
+  return [active, setActive] as const;
 }
 
 type ResultOf<I extends ActionResult['intent']> = Extract<ActionResult, { intent: I }>;

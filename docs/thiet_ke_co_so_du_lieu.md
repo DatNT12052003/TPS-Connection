@@ -1181,6 +1181,10 @@ CREATE TABLE account_sanctions (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX account_sanctions_user_idx ON account_sanctions (user_id) WHERE lifted_at IS NULL;
+-- G3: mỗi tài khoản một lần khóa đang hiệu lực. case_id chưa có khóa ngoại (thêm ở G8 cùng moderation_cases).
+CREATE UNIQUE INDEX account_sanctions_active_lock_uq ON account_sanctions (user_id) WHERE type = 'lock' AND lifted_at IS NULL;
+-- G3: Admin tìm tài khoản theo tên không dấu hoặc email.
+CREATE INDEX users_search_trgm_idx ON users USING gin ((immutable_unaccent(lower(display_name || ' ' || coalesce(full_name, '') || ' ' || coalesce(email, '')))) gin_trgm_ops);
 
 CREATE TABLE audit_logs (                              -- chỉ ghi thêm, không sửa
   id             bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

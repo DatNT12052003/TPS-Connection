@@ -8,6 +8,10 @@ import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import {
   AccountProfile,
+  AdminAccountDetail,
+  AdminAccountList,
+  AdminGradeLevel,
+  AdminSubject,
   ApiErrorBody,
   DocumentViewUrl,
   FILE_RULES,
@@ -40,6 +44,8 @@ import { createVerificationService } from '../../src/modules/verification/verifi
 import { createVerificationReviewService } from '../../src/modules/verification/verification-review.service.js';
 import { createFilesMaintenanceService } from '../../src/modules/files/files-maintenance.service.js';
 import type { EmailMessage } from '../../src/lib/email/email-sender.js';
+import { createAdminAccountsService } from '../../src/modules/admin/admin-accounts.service.js';
+import { createAdminCatalogService } from '../../src/modules/admin/admin-catalog.service.js';
 import { createTokenService } from '../../src/modules/auth/tokens.js';
 import { silentLogger, TEST_JWT_SECRET, TEST_ORIGIN, testEnv } from '../helpers.js';
 
@@ -153,6 +159,8 @@ beforeAll(async () => {
       webUrl: 'http://web.test',
       logger: silentLogger,
     }),
+    adminAccounts: createAdminAccountsService({ dataSource: db, logger: silentLogger }),
+    adminCatalog: createAdminCatalogService({ dataSource: db, logger: silentLogger }),
     account: createAccountService({ dataSource: db, files, publicFileUrl, logger: silentLogger }),
     catalog: createCatalogService({ dataSource: db }),
   });
@@ -1296,5 +1304,263 @@ describe('file maintenance jobs', () => {
       [fresh.fileId]: 'pending_upload',
     });
     expect(deletedKeys).toContain(stale.storageKey);
+  });
+});
+
+// ---- Quản trị của Admin (G3 đợt 3) -------------------------------------------------------------
+
+describe('admin accounts', () => {
+  it('finds accounts by name without accents or by email, and filters by role and status', async () => {
+    const admin = await createUser('admin', 'Quản Trị Viên');
+    const tutor = await createUser('tutor', 'Phạm Thị Hương Giang');
+    const parent = await createUser('parent', 'Phạm Thị Hương Giang');
+
+    const byName = AdminAccountList.parse(
+      (await api(admin).get('/admin/accounts?q=huong giang')).body,
+    );
+    expect(byName.items.map((i) => i.id)).toEqual(expect.arrayContaining([tutor.id, parent.id]));
+
+    const byRole = AdminAccountList.parse(
+      (await api(admin).get('/admin/accounts?q=huong%20giang&role=tutor')).body,
+    );
+    expect(byRole.items.map((i) => i.id)).toContain(tutor.id);
+    expect(byRole.items.map((i) => i.id)).not.toContain(parent.id);
+    expect(byRole.items.find((i) => i.id === tutor.id)).toMatchObject({
+      roles: ['tutor'],
+      status: 'active',
+      deleted: false,
+    });
+
+    const byEmail = AdminAccountList.parse(
+      (await api(admin).get(`/admin/accounts?q=${encodeURIComponent(tutor.email)}`)).body,
+    );
+    expect(byEmail.items.map((i) => i.id)).toEqual([tutor.id]);
+    // "%" là ký tự thường, không phải "mọi thứ".
+    expect(AdminAccountList.parse((await api(admin).get('/admin/accounts?q=%25')).body).total).toBe(
+      0,
+    );
+
+    await db.query(`UPDATE users SET deleted_at = now() WHERE id = $1`, [parent.id]);
+    const deleted = AdminAccountList.parse(
+      (await api(admin).get('/admin/accounts?q=huong giang&status=deleted')).body,
+    );
+    expect(deleted.items.map((i) => i.id)).toEqual([parent.id]);
+  });
+
+  it('locks an account with a reason, signs it out, and unlocks it', async () => {
+    const admin = await createUser('admin', 'Quản Trị Viên');
+    const tutor = await createUser('tutor');
+    expect((await api(tutor).get('/me')).status).toBe(200);
+
+    const noReason = await api(admin).post(`/admin/accounts/${tutor.id}/lock`, { reason: ' ' });
+    expect(noReason.status).toBe(422);
+
+    const res = await api(admin).post(`/admin/accounts/${tutor.id}/lock`, {
+      reason: 'Báo cáo vi phạm lần 2',
+    });
+    expect(res.status).toBe(200);
+    expect(AdminAccountDetail.parse(res.body)).toMatchObject({
+      status: 'locked',
+      lock: { reason: 'Báo cáo vi phạm lần 2', lockedByName: 'Quản Trị Viên' },
+    });
+    // Tài khoản bị khóa không dùng được API nữa, kể cả với access token còn hạn.
+    const blocked = await api(tutor).get('/me');
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.error.code).toBe('account_locked');
+    expect(
+      (await api(admin).post(`/admin/accounts/${tutor.id}/lock`, { reason: 'x' })).status,
+    ).toBe(409);
+
+    const unlocked = await api(admin).post(`/admin/accounts/${tutor.id}/unlock`);
+    expect(AdminAccountDetail.parse(unlocked.body)).toMatchObject({ status: 'active', lock: null });
+    expect((await api(tutor).get('/me')).status).toBe(200);
+    expect((await api(admin).post(`/admin/accounts/${tutor.id}/unlock`)).status).toBe(409);
+
+    const audit = await db.query<{ action: string; actor_role: string }[]>(
+      `SELECT action, actor_role FROM audit_logs WHERE entity_type = 'user' AND entity_id = $1 ORDER BY id`,
+      [tutor.id],
+    );
+    expect(audit).toEqual([
+      { action: 'account.locked', actor_role: 'admin' },
+      { action: 'account.unlocked', actor_role: 'admin' },
+    ]);
+    const [sanction] = await db.query<{ type: string; lifted: boolean }[]>(
+      `SELECT type, lifted_at IS NOT NULL AS lifted FROM account_sanctions WHERE user_id = $1`,
+      [tutor.id],
+    );
+    expect(sanction).toEqual({ type: 'lock', lifted: true });
+  });
+
+  it('does not lock its own account or another admin', async () => {
+    const admin = await createUser('admin');
+    const other = await createUser('admin');
+    const self = await api(admin).post(`/admin/accounts/${admin.id}/lock`, { reason: 'x' });
+    expect(self.status).toBe(403);
+    const otherAdmin = await api(admin).post(`/admin/accounts/${other.id}/lock`, { reason: 'x' });
+    expect(otherAdmin.status).toBe(403);
+    const detail = AdminAccountDetail.parse(
+      (await api(admin).get(`/admin/accounts/${other.id}`)).body,
+    );
+    expect(detail.canLock).toBe(false);
+  });
+
+  it('grants and revokes the manager role, creating a passwordless account when needed', async () => {
+    const admin = await createUser('admin');
+    const parent = await createUser('parent');
+
+    const granted = await api(admin).post('/admin/managers', { email: parent.email });
+    expect(granted.status).toBe(200);
+    expect(AdminAccountDetail.parse(granted.body).roles).toEqual(['manager', 'parent']);
+    // Vai trò có hiệu lực ngay ở request sau.
+    expect((await api(parent).get('/admin/verification-requests')).status).toBe(200);
+    expect((await api(admin).post('/admin/managers', { email: parent.email })).status).toBe(409);
+
+    const email = uniqueEmail('newmanager');
+    const noName = await api(admin).post('/admin/managers', { email });
+    expect(noName.status).toBe(422);
+    expect(noName.body.error.details[0]).toMatchObject({ path: 'fullName', code: 'required' });
+    const created = await api(admin).post('/admin/managers', { email, fullName: 'Trần Hà' });
+    expect(created.status).toBe(201);
+    expect(AdminAccountDetail.parse(created.body)).toMatchObject({
+      email,
+      roles: ['manager'],
+      emailVerified: false,
+    });
+    const [row] = await db.query<{ has_password: boolean; granted_by: string }[]>(
+      `SELECT u.password_hash IS NOT NULL AS has_password, r.granted_by FROM users u
+         JOIN user_roles r ON r.user_id = u.id AND r.role_code = 'manager' WHERE u.email = $1`,
+      [email],
+    );
+    expect(row).toEqual({ has_password: false, granted_by: admin.id });
+
+    const revoked = await api(admin).delete(`/admin/accounts/${parent.id}/roles/manager`);
+    expect(AdminAccountDetail.parse(revoked.body).roles).toEqual(['parent']);
+    expect((await api(parent).get('/admin/verification-requests')).status).toBe(403);
+    expect((await api(admin).delete(`/admin/accounts/${parent.id}/roles/manager`)).status).toBe(
+      404,
+    );
+  });
+});
+
+describe('admin catalog', () => {
+  it('adds a subject that appears in the public catalog, and hides it when turned off', async () => {
+    const admin = await createUser('admin');
+    const code = `nang_khieu_${Date.now() % 100000}`;
+    const res = await api(admin).post('/admin/catalog/subjects', {
+      code,
+      nameVi: 'Năng khiếu',
+      nameEn: 'Talent classes',
+    });
+    expect(res.status).toBe(201);
+    const subject = AdminSubject.parse(res.body);
+    expect(subject).toMatchObject({ code, isActive: true, tutorCount: 0 });
+    const publicList = async () =>
+      ((await api(null).get('/catalog/subjects')).body as { items: { id: number }[] }).items.map(
+        (s) => s.id,
+      );
+    expect(await publicList()).toContain(subject.id);
+
+    const duplicate = await api(admin).post('/admin/catalog/subjects', {
+      code,
+      nameVi: 'Khác',
+      nameEn: 'Other',
+    });
+    expect(duplicate.status).toBe(422);
+    expect(duplicate.body.error.details[0]).toMatchObject({
+      path: 'code',
+      code: 'catalog_code_taken',
+    });
+    const badCode = await api(admin).post('/admin/catalog/subjects', {
+      code: 'Tin học',
+      nameVi: 'Tin học',
+      nameEn: 'IT',
+    });
+    expect(badCode.body.error.details[0]).toMatchObject({ code: 'invalid_catalog_code' });
+
+    const off = await api(admin).patch(`/admin/catalog/subjects/${subject.id}`, {
+      isActive: false,
+    });
+    expect(AdminSubject.parse(off.body)).toMatchObject({ isActive: false, nameVi: 'Năng khiếu' });
+    expect(await publicList()).not.toContain(subject.id);
+    // Trang quản trị vẫn thấy môn đã tắt.
+    const all = (await api(admin).get('/admin/catalog/subjects')).body as { items: AdminSubject[] };
+    expect(all.items.map((s) => s.id)).toContain(subject.id);
+    expect(
+      (await api(admin).patch('/admin/catalog/subjects/999999', { isActive: false })).status,
+    ).toBe(404);
+  });
+
+  it('counts tutors per subject and adds grade levels with a stage', async () => {
+    const admin = await createUser('admin');
+    await readyTutor();
+    const subjects = (await api(admin).get('/admin/catalog/subjects')).body as {
+      items: AdminSubject[];
+    };
+    expect(subjects.items.find((s) => s.id === ids.math)!.tutorCount).toBeGreaterThanOrEqual(1);
+
+    const code = `lop_nang_cao_${Date.now() % 100000}`;
+    const res = await api(admin).post('/admin/catalog/grade-levels', {
+      code,
+      stage: 'other',
+      nameVi: 'Lớp nâng cao',
+      nameEn: 'Advanced class',
+    });
+    expect(res.status).toBe(201);
+    expect(AdminGradeLevel.parse(res.body)).toMatchObject({ code, stage: 'other', isActive: true });
+    const renamed = await api(admin).patch(
+      `/admin/catalog/grade-levels/${(res.body as AdminGradeLevel).id}`,
+      { nameEn: 'Advanced' },
+    );
+    expect(AdminGradeLevel.parse(renamed.body).nameEn).toBe('Advanced');
+    const audit = await db.query<{ action: string }[]>(
+      `SELECT action FROM audit_logs WHERE entity_type = 'grade_level' AND entity_id = $1 ORDER BY id`,
+      [String((res.body as AdminGradeLevel).id)],
+    );
+    expect(audit.map((a) => a.action)).toEqual([
+      'catalog.grade_level_created',
+      'catalog.grade_level_updated',
+    ]);
+  });
+});
+
+// Điều kiện hoàn thành G3: gia sư chưa được duyệt danh tính không xuất hiện công khai (bài đăng và tìm kiếm
+// làm ở G4, cùng điều kiện này); Manager không có quyền của Admin và ngược lại.
+describe('G3 completion', () => {
+  it('keeps tutors without approved identity out of public view until a manager approves them', async () => {
+    const manager = await createUser('manager');
+    const { tutor, requestId } = await submittedTutor();
+    expect((await api(null).get(`/tutors/${tutor.id}`)).status).toBe(404);
+    await api(manager).post(`${ADMIN_API}/${requestId}/approve`);
+    expect((await api(null).get(`/tutors/${tutor.id}`)).status).toBe(200);
+  });
+
+  it('separates manager and admin powers', async () => {
+    const manager = await createUser('manager');
+    const admin = await createUser('admin');
+    const target = await createUser('parent');
+    const { requestId } = await submittedTutor();
+
+    // Manager không làm được việc của Admin.
+    for (const res of [
+      await api(manager).get('/admin/accounts'),
+      await api(manager).post(`/admin/accounts/${target.id}/lock`, { reason: 'x' }),
+      await api(manager).post('/admin/managers', { email: target.email }),
+      await api(manager).get('/admin/catalog/subjects'),
+      await api(manager).post('/admin/catalog/subjects', { code: 'abc', nameVi: 'A', nameEn: 'A' }),
+    ]) {
+      expect(res.status).toBe(403);
+    }
+    // Admin không làm được việc của Manager.
+    for (const res of [
+      await api(admin).get(ADMIN_API),
+      await api(admin).get(`${ADMIN_API}/${requestId}`),
+      await api(admin).post(`${ADMIN_API}/${requestId}/approve`),
+      await api(admin).post(`${ADMIN_API}/${requestId}/reject`, { rejectionCode: 'unclear_image' }),
+    ]) {
+      expect(res.status).toBe(403);
+    }
+    // Người dùng thường không vào được khu nào.
+    expect((await api(target).get('/admin/accounts')).status).toBe(403);
+    expect((await api(target).get(ADMIN_API)).status).toBe(403);
   });
 });

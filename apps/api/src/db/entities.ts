@@ -18,6 +18,7 @@ import {
 } from '../modules/tutors/tutor-profile-items.entity.js';
 import { TutorProfile } from '../modules/tutors/tutor-profile.entity.js';
 import { Role } from '../modules/users/role.entity.js';
+import { AccountSanction } from '../modules/users/account-sanction.entity.js';
 import { UserBlock } from '../modules/users/user-block.entity.js';
 import { UserConsent } from '../modules/users/user-consent.entity.js';
 import { UserRole } from '../modules/users/user-role.entity.js';
@@ -36,6 +37,7 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   UserRole,
   UserConsent,
   UserBlock,
+  AccountSanction,
   AuthSession,
   StoredFile,
   // Hồ sơ phụ huynh và người học
