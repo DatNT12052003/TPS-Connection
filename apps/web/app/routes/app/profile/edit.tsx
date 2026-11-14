@@ -139,6 +139,8 @@ export default function TutorProfileEditPage({ loaderData, actionData }: Route.C
   const areas = failure?.areas ?? loaderData.areas;
   const [mode, setMode] = useState(values.teachingMode);
   const missing = new Set(profile.missingForVerification);
+  // Đang chờ duyệt: họ tên và nghề nghiệp khóa (người duyệt đối chiếu với giấy tờ); API cũng từ chối.
+  const underReview = profile.profileStatus === 'pending_verification';
   const required = (field: (typeof profile.missingForVerification)[number]) =>
     missing.has(field) ? (
       <Badge variant="warning">{t('tutorProfile.neededForVerification')}</Badge>
@@ -195,7 +197,11 @@ export default function TutorProfileEditPage({ loaderData, actionData }: Route.C
               {account.fullNameLocked ? (
                 <TextField
                   label={t('account.fullName')}
-                  hint={t('account.fullNameLocked')}
+                  hint={
+                    underReview
+                      ? t('verification.lockedWhileReviewing')
+                      : t('account.fullNameLocked')
+                  }
                   value={account.fullName ?? ''}
                   readOnly
                   disabled
@@ -219,10 +225,13 @@ export default function TutorProfileEditPage({ loaderData, actionData }: Route.C
                 defaultValue={values.headline}
                 error={tr(errors.headline)}
               />
+              {underReview && <input type="hidden" name="occupation" value={values.occupation} />}
               <SelectField
-                name="occupation"
+                name={underReview ? undefined : 'occupation'}
                 label={t('tutorProfile.occupation')}
                 defaultValue={values.occupation}
+                disabled={underReview}
+                hint={underReview ? t('verification.lockedWhileReviewing') : undefined}
                 error={tr(errors.occupation)}
               >
                 <option value="">{t('location.choose')}</option>

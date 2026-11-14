@@ -26,6 +26,8 @@ export default [
     // Gia sư: hồ sơ và xác minh, bằng cấp; sửa hồ sơ.
     route('profile', 'routes/app/profile/index.tsx'),
     route('profile/edit', 'routes/app/profile/edit.tsx'),
+    // Xin URL tải giấy tờ xác minh (chỉ action, trả JSON).
+    route('profile/documents/ticket', 'routes/app/profile/document-ticket.ts'),
     // Tài khoản và cài đặt (mọi vai trò); đổi ảnh đại diện (chỉ action, trả JSON).
     route('account', 'routes/app/account.tsx'),
     route('account/avatar', 'routes/app/account-avatar.ts'),
@@ -35,6 +37,17 @@ export default [
   // Khu Manager / Admin.
   route('admin', 'routes/admin/layout.tsx', [
     index('routes/admin/home.tsx'),
+    // Manager: hàng chờ xác minh (layout) và màn duyệt một yêu cầu.
+    route('verifications', 'routes/admin/verifications/queue.tsx', [
+      index('routes/admin/verifications/index.tsx'),
+      route(':requestId', 'routes/admin/verifications/detail.tsx'),
+    ]),
+    // Admin: tài khoản (danh sách là layout của chi tiết) và danh mục.
+    route('accounts', 'routes/admin/accounts/list.tsx', [
+      index('routes/admin/accounts/index.tsx'),
+      route(':userId', 'routes/admin/accounts/detail.tsx'),
+    ]),
+    route('catalog', 'routes/admin/catalog/index.tsx'),
     route('*', 'routes/admin/not-found.tsx'),
   ]),
 

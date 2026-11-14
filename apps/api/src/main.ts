@@ -19,6 +19,11 @@ import { createParentsService } from './modules/parents/parents.service.js';
 import { createCatalogService } from './modules/catalog/catalog.service.js';
 import { createFilesService } from './modules/files/files.service.js';
 import { createTutorsService } from './modules/tutors/tutors.service.js';
+import { createVerificationService } from './modules/verification/verification.service.js';
+import { createVerificationReviewService } from './modules/verification/verification-review.service.js';
+import { createFilesMaintenanceService } from './modules/files/files-maintenance.service.js';
+import { createAdminAccountsService } from './modules/admin/admin-accounts.service.js';
+import { createAdminCatalogService } from './modules/admin/admin-catalog.service.js';
 import { createAccountService } from './modules/users/account.service.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
@@ -74,12 +79,20 @@ async function main() {
       .catch((err: unknown) => logger.warn({ err }, 'Không đặt được CORS cho bucket lưu tệp'));
   }
   const emailSender = createSmtpEmailSender(env);
+  const filesMaintenance = createFilesMaintenanceService({ dataSource, storage, logger });
   const jobs = createJobs({
     redisUrl: env.REDIS_URL,
     emailSender,
     logger,
     workersEnabled: env.WORKERS_ENABLED,
+    maintenance: {
+      'purge-verification-documents': () => filesMaintenance.purgeVerificationDocuments(),
+      'cleanup-stale-uploads': () => filesMaintenance.cleanupStaleUploads(),
+    },
   });
+  jobs
+    .startSchedules()
+    .catch((err: unknown) => logger.warn({ err }, 'Không đặt được lịch job dọn dữ liệu'));
 
   const health = createHealthService({
     logger,
@@ -118,11 +131,17 @@ async function main() {
 
   // Hồ sơ gia sư, thông tin cá nhân, ảnh đại diện, danh mục (G2).
   const publicFileUrl = (storageKey: string) => storage.publicUrl(storageKey);
-  const tutors = createTutorsService({ dataSource, logger, publicFileUrl });
-  const account = createAccountService({
+  const files = createFilesService({ storage, logger });
+  const tutors = createTutorsService({ dataSource, files, logger, publicFileUrl });
+  const account = createAccountService({ dataSource, files, publicFileUrl, logger });
+
+  // Xác minh gia sư (G3).
+  const verification = createVerificationService({ dataSource, files, logger });
+  const verificationReview = createVerificationReviewService({
     dataSource,
-    files: createFilesService({ storage, logger }),
-    publicFileUrl,
+    storage,
+    sendEmail: (message) => jobs.enqueueEmail(message),
+    webUrl: env.WEB_URL,
     logger,
   });
   const catalog = createCatalogService({ dataSource });
@@ -138,6 +157,10 @@ async function main() {
     learners,
     studentInvitations,
     tutors,
+    verification,
+    verificationReview,
+    adminAccounts: createAdminAccountsService({ dataSource, logger }),
+    adminCatalog: createAdminCatalogService({ dataSource, logger }),
     account,
     catalog,
   });

@@ -1,5 +1,6 @@
 // Danh sách entity TypeORM. Thêm entity mới vào đây.
 // Quy ước: mọi @Column ghi rõ `type` (không dựa vào emitDecoratorMetadata, xem tsconfig.json).
+import { AuditLog } from '../modules/audit/audit-log.entity.js';
 import { AuthSession } from '../modules/auth/auth-session.entity.js';
 import { AdministrativeArea } from '../modules/catalog/administrative-area.entity.js';
 import { GradeLevel } from '../modules/catalog/grade-level.entity.js';
@@ -17,10 +18,13 @@ import {
 } from '../modules/tutors/tutor-profile-items.entity.js';
 import { TutorProfile } from '../modules/tutors/tutor-profile.entity.js';
 import { Role } from '../modules/users/role.entity.js';
+import { AccountSanction } from '../modules/users/account-sanction.entity.js';
 import { UserBlock } from '../modules/users/user-block.entity.js';
 import { UserConsent } from '../modules/users/user-consent.entity.js';
 import { UserRole } from '../modules/users/user-role.entity.js';
 import { User } from '../modules/users/user.entity.js';
+import { VerificationDocument } from '../modules/verification/verification-document.entity.js';
+import { VerificationRequest } from '../modules/verification/verification-request.entity.js';
 
 export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   // Danh mục
@@ -33,6 +37,7 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   UserRole,
   UserConsent,
   UserBlock,
+  AccountSanction,
   AuthSession,
   StoredFile,
   // Hồ sơ phụ huynh và người học
@@ -46,4 +51,9 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   TutorServiceArea,
   TutorAvailabilitySlot,
   TutorCredential,
+  // Xác minh gia sư
+  VerificationRequest,
+  VerificationDocument,
+  // Nhật ký kiểm toán
+  AuditLog,
 ];

@@ -486,12 +486,17 @@ CREATE TABLE verification_requests (
   review_due_at        timestamptz NOT NULL,          -- submitted + 2 ngày làm việc (C4)
   reviewed_by          uuid REFERENCES users(id),     -- Manager
   reviewed_at          timestamptz,
-  rejection_reason     text,
+  rejection_code       text CHECK (rejection_code IN ('unclear_image','name_mismatch','expired_document',
+                                                     'invalid_document','missing_document','other')),
+  rejection_note       text,                          -- bắt buộc khi rejection_code = 'other'
+  cancelled_at         timestamptz,                   -- gia sư hủy
   documents_purge_at   timestamptz,                   -- reviewed_at + 30 ngày nếu approved (C4)
   documents_purged_at  timestamptz,
   CHECK ((kind = 'credential') = (credential_id IS NOT NULL)),
-  CHECK (status <> 'rejected' OR rejection_reason IS NOT NULL),
-  CHECK ((status IN ('approved','rejected')) = (reviewed_at IS NOT NULL))
+  CHECK ((status = 'rejected') = (rejection_code IS NOT NULL)),
+  CHECK (rejection_code IS DISTINCT FROM 'other' OR coalesce(length(btrim(rejection_note)), 0) > 0),
+  CHECK ((status IN ('approved','rejected')) = (reviewed_at IS NOT NULL AND reviewed_by IS NOT NULL)),
+  CHECK ((status = 'cancelled') = (cancelled_at IS NOT NULL))
   -- + timestamps
 );
 -- Mỗi gia sư chỉ có một yêu cầu đang chờ cho mỗi loại / mỗi bằng cấp.
@@ -511,6 +516,8 @@ CREATE TABLE verification_documents (
 );
 CREATE INDEX verification_documents_request_idx ON verification_documents (request_id);
 ```
+
+Ghi chú khi làm G3 (migration `CreateVerification`): lý do từ chối tách thành `rejection_code` (chọn từ danh sách, dịch được cho gia sư) và `rejection_note` (ghi chú tự do) thay cho một cột `rejection_reason`; `verification_documents.file_id` unique (một tệp chỉ thuộc một yêu cầu; nộp lại phải tải ảnh mới); tệp `purpose = 'credential'` cũng bắt buộc ở bucket private; `user_consents` thêm loại `verification_document_processing` (đồng ý dùng giấy tờ để xác minh, ghi khi nộp). Gia sư hủy yêu cầu thì ảnh xóa ngay. Trong lúc chờ duyệt, họ tên thật và nghề nghiệp bị khóa (người duyệt đối chiếu với giấy tờ). Ảnh của yêu cầu bị từ chối cũng xóa sau 30 ngày như yêu cầu được duyệt (không còn dùng vào việc gì). `audit_logs` có thêm CHECK `actor_role IN ('manager','admin','system')` và trigger chặn UPDATE/DELETE/TRUNCATE (ngoài việc hạn chế quyền của user ứng dụng khi triển khai thật).
 
 Khi duyệt yêu cầu `identity`, service cập nhật trong **một transaction**: `verification_requests.status`, `tutor_profiles.identity_verified_at`, `profile_status`, và đặt `files.purge_after` cho các giấy tờ. Khi duyệt yêu cầu `credential` có `kind = 'degree'`, đặt lại `has_verified_degree`. Mọi lần Manager mở giấy tờ ghi vào `audit_logs` _(C1)_.
 
@@ -1174,6 +1181,10 @@ CREATE TABLE account_sanctions (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX account_sanctions_user_idx ON account_sanctions (user_id) WHERE lifted_at IS NULL;
+-- G3: mỗi tài khoản một lần khóa đang hiệu lực. case_id chưa có khóa ngoại (thêm ở G8 cùng moderation_cases).
+CREATE UNIQUE INDEX account_sanctions_active_lock_uq ON account_sanctions (user_id) WHERE type = 'lock' AND lifted_at IS NULL;
+-- G3: Admin tìm tài khoản theo tên không dấu hoặc email.
+CREATE INDEX users_search_trgm_idx ON users USING gin ((immutable_unaccent(lower(display_name || ' ' || coalesce(full_name, '') || ' ' || coalesce(email, '')))) gin_trgm_ops);
 
 CREATE TABLE audit_logs (                              -- chỉ ghi thêm, không sửa
   id             bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

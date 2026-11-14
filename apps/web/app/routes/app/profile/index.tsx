@@ -1,9 +1,16 @@
 // /app/profile: Hồ sơ và xác minh của gia sư (canvas Verification).
 //   - Trạng thái hồ sơ và bốn bước tới khi hiển thị công khai (D5, D34).
 //   - Bước 1: các trường bắt buộc còn thiếu (`missingForVerification`), nút sửa hồ sơ.
-//   - Bước 2: nộp giấy tờ danh tính: làm ở G3 (trang chỉ báo trước).
-//   - Bằng cấp, chứng chỉ tự khai: thêm, sửa, xóa (intent `credential-save`, `credential-delete`).
-import { OwnTutorProfile, TutorCredential, type TutorRequiredField } from '@tps/shared';
+//   - Bước 2: nộp giấy tờ danh tính, hủy yêu cầu đang chờ (G3; intent `identity-submit`, `identity-cancel`).
+//   - Bằng cấp, chứng chỉ tự khai: thêm, sửa, xóa (intent `credential-save`, `credential-delete`); nộp ảnh
+//     để xác minh, hủy yêu cầu (intent `credential-verify`, `credential-verify-cancel`).
+import {
+  isValidationCode,
+  OwnIdentityVerification,
+  OwnTutorProfile,
+  TutorCredential,
+  type TutorRequiredField,
+} from '@tps/shared';
 import { Check, Clock, Lock, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,13 +21,16 @@ import {
   type CredentialFailure,
   CredentialsCard,
 } from '~/components/tutor/credentials-card';
+import {
+  type IdentityFailure,
+  IdentityVerificationCard,
+} from '~/components/tutor/identity-verification-card';
 import { Alert } from '~/components/ui/alert';
 import { Badge, type BadgeProps } from '~/components/ui/badge';
 import { buttonVariants } from '~/components/ui/button';
 import { Card } from '~/components/ui/card';
 import { ApiError } from '~/lib/api';
-import { fieldErrorsFrom, formErrorFrom, formText } from '~/lib/form';
-import { formatDate } from '~/lib/format';
+import { fieldErrorsFrom, formErrorFrom, formText, type Message } from '~/lib/form';
 import { messagesFromMatches } from '~/lib/meta';
 import { PATHS } from '~/lib/navigation';
 import { getServerApi } from '~/lib/server-api.server';
@@ -35,15 +45,39 @@ export function meta({ matches }: Route.MetaArgs) {
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   await requireUser(request, context, { roles: ['tutor'] });
-  const profile = await getServerApi(context).call('/api/v1/me/tutor-profile', {
-    schema: OwnTutorProfile,
-  });
+  const api = getServerApi(context);
+  const [profile, verification] = await Promise.all([
+    api.call('/api/v1/me/tutor-profile', { schema: OwnTutorProfile }),
+    api.call('/api/v1/me/tutor-profile/verification', { schema: OwnIdentityVerification }),
+  ]);
   const url = new URL(request.url);
   return {
     profile,
+    verification,
     saved: url.searchParams.get('saved') === '1',
+    notice: url.searchParams.get('notice'),
     editingCredential: url.searchParams.get('credential'),
+    verifyingCredential: url.searchParams.get('verify'),
   };
+}
+
+/** Lỗi 4xx của API thành một thông điệp: mã lỗi của ô đầu tiên nếu có (giấy tờ thiếu, tệp chưa tải xong…). */
+function messageOf(error: ApiError): Message {
+  const code = error.details[0]?.code;
+  return code && isValidationCode(code) ? { key: `validation.${code}` } : formErrorFrom(error);
+}
+
+const isClientError = (error: unknown): error is ApiError =>
+  error instanceof ApiError && error.status > 0 && error.status < 500;
+
+/** JSON trong một ô ẩn của form; sai dạng thì mảng rỗng (API báo thiếu giấy tờ). */
+function jsonArray(form: FormData, name: string): unknown[] {
+  try {
+    const value: unknown = JSON.parse(formText(form, name));
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -54,6 +88,52 @@ export async function action({ request, context }: Route.ActionArgs) {
   const credentialId = formText(form, 'credentialId');
   const base = '/api/v1/me/tutor-profile/credentials';
   const done = redirect(`${PATHS.tutorProfile}#credentials`);
+
+  if (intent === 'identity-submit' || intent === 'identity-cancel') {
+    try {
+      if (intent === 'identity-submit') {
+        await api.call('/api/v1/me/tutor-profile/verification', {
+          method: 'POST',
+          body: {
+            documents: jsonArray(form, 'documents'),
+            acceptDocumentProcessing: formText(form, 'acceptDocumentProcessing') === 'true',
+          },
+          schema: OwnIdentityVerification,
+        });
+      } else {
+        await api.call('/api/v1/me/tutor-profile/verification', { method: 'DELETE' });
+      }
+      const notice = intent === 'identity-submit' ? 'submitted' : 'cancelled';
+      return redirect(`${PATHS.tutorProfile}?notice=${notice}`);
+    } catch (error) {
+      if (!isClientError(error)) throw error;
+      return data<IdentityFailure>({ intent, ok: false, formError: messageOf(error) });
+    }
+  }
+
+  if (intent === 'credential-verify' || intent === 'credential-verify-cancel') {
+    const path = `${base}/${encodeURIComponent(credentialId)}/verification`;
+    try {
+      if (intent === 'credential-verify') {
+        await api.call(path, {
+          method: 'POST',
+          body: { fileIds: jsonArray(form, 'fileIds') },
+          schema: TutorCredential,
+        });
+      } else {
+        await api.call(path, { method: 'DELETE' });
+      }
+      return done;
+    } catch (error) {
+      if (!isClientError(error)) throw error;
+      return data<CredentialFailure>({
+        intent,
+        ok: false,
+        fieldErrors: {},
+        formError: messageOf(error),
+      });
+    }
+  }
 
   if (intent === 'credential-delete') {
     try {
@@ -123,8 +203,15 @@ const REQUIRED_LABEL: Record<
 type StepState = 'done' | 'now' | 'later';
 
 export default function TutorProfilePage({ loaderData, actionData }: Route.ComponentProps) {
-  const { t, i18n } = useTranslation();
-  const { profile, saved, editingCredential } = loaderData;
+  const { t } = useTranslation();
+  const { profile, verification, saved, notice, editingCredential, verifyingCredential } =
+    loaderData;
+  const identityFailure =
+    actionData?.intent === 'identity-submit' || actionData?.intent === 'identity-cancel'
+      ? actionData
+      : undefined;
+  const credentialFailure =
+    actionData && !identityFailure ? (actionData as CredentialFailure) : undefined;
   const missing = profile.missingForVerification;
   const status = profile.profileStatus;
   const filled = missing.length === 0;
@@ -157,6 +244,16 @@ export default function TutorProfilePage({ loaderData, actionData }: Route.Compo
       {saved && (
         <Alert variant="success" role="status">
           {t('tutorProfile.saved')}
+        </Alert>
+      )}
+      {notice === 'submitted' && (
+        <Alert variant="success" role="status">
+          {t('verification.submitted')}
+        </Alert>
+      )}
+      {notice === 'cancelled' && (
+        <Alert variant="info" role="status">
+          {t('verification.cancelled')}
         </Alert>
       )}
 
@@ -237,25 +334,18 @@ export default function TutorProfilePage({ loaderData, actionData }: Route.Compo
             </Link>
           </Card>
 
-          <Card className="gap-3 sm:p-6">
-            <h2 className="text-h2">{t('tutorProfile.step2Title')}</h2>
-            {profile.identityVerifiedAt ? (
-              <Alert variant="success">
-                {t('tutorProfile.identityVerifiedOn', {
-                  date: formatDate(profile.identityVerifiedAt, i18n.language),
-                })}
-              </Alert>
-            ) : status === 'pending_verification' ? (
-              <Alert variant="info">{t('tutorProfile.identityPending')}</Alert>
-            ) : (
-              <Alert variant="info">{t('tutorProfile.identityComingSoon')}</Alert>
-            )}
-          </Card>
+          <IdentityVerificationCard
+            verification={verification}
+            identityVerifiedAt={profile.identityVerifiedAt}
+            filled={filled}
+            failure={identityFailure}
+          />
 
           <CredentialsCard
             credentials={profile.credentials}
             editing={editingCredential}
-            failure={actionData ?? undefined}
+            verifying={verifyingCredential}
+            failure={credentialFailure}
           />
         </div>
 

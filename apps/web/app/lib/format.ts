@@ -26,3 +26,13 @@ export function formatDateTime(value: string, language: string): string {
     timeZone: TIME_ZONE,
   }).format(new Date(value));
 }
+
+/** Dung lượng tệp dạng "1,8 MB" / "350 KB". */
+export function formatFileSize(bytes: number, language: string): string {
+  const mb = bytes / (1024 * 1024);
+  const [value, unit] = mb >= 1 ? [mb, 'MB'] : [Math.max(1, Math.round(bytes / 1024)), 'KB'];
+  const number = new Intl.NumberFormat(intlLocale(language), { maximumFractionDigits: 1 }).format(
+    value,
+  );
+  return `${number} ${unit}`;
+}

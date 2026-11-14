@@ -208,6 +208,10 @@ describe('email through the BullMQ queue (Mailpit)', () => {
       emailSender: sender,
       logger: silentLogger,
       workersEnabled: true,
+      maintenance: {
+        'purge-verification-documents': async () => 0,
+        'cleanup-stale-uploads': async () => 0,
+      },
     });
   });
 

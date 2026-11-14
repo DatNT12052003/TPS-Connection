@@ -2,12 +2,20 @@ import type { Queue, Worker } from 'bullmq';
 import type { EmailMessage, EmailSender } from '../lib/email/email-sender.js';
 import type { Logger } from '../lib/logger.js';
 import { createEmailWorker } from './email.worker.js';
+import {
+  createMaintenanceQueue,
+  createMaintenanceWorker,
+  type MaintenanceTasks,
+  scheduleMaintenance,
+} from './maintenance.js';
 import { bullConnection, createEmailQueue, type EmailJobData } from './queues.js';
 
 export interface Jobs {
   /** Xếp email vào hàng đợi; trả về ngay, worker gửi sau (có thử lại). */
   enqueueEmail(message: EmailMessage): Promise<{ jobId: string }>;
   emailQueue: Queue<EmailJobData>;
+  /** Đặt lịch các job dọn dữ liệu (chỉ khi có worker). Gọi một lần lúc khởi động. */
+  startSchedules(): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -20,11 +28,21 @@ export function createJobs(options: {
   emailSender: EmailSender;
   logger: Logger;
   workersEnabled: boolean;
+  /** Việc dọn dữ liệu định kỳ; worker chạy chúng khi `workersEnabled`. */
+  maintenance: MaintenanceTasks;
 }): Jobs {
   const connection = bullConnection(options.redisUrl);
   const emailQueue = createEmailQueue(connection);
+  const maintenanceQueue = createMaintenanceQueue(connection);
   const workers: Worker[] = options.workersEnabled
-    ? [createEmailWorker({ connection, sender: options.emailSender, logger: options.logger })]
+    ? [
+        createEmailWorker({ connection, sender: options.emailSender, logger: options.logger }),
+        createMaintenanceWorker({
+          connection,
+          tasks: options.maintenance,
+          logger: options.logger,
+        }),
+      ]
     : [];
 
   return {
@@ -34,10 +52,13 @@ export function createJobs(options: {
       if (!job.id) throw new Error('BullMQ did not return a job id');
       return { jobId: job.id };
     },
+    async startSchedules() {
+      if (options.workersEnabled) await scheduleMaintenance(maintenanceQueue);
+    },
     async close() {
       // Worker đóng trước: chờ job đang chạy xong, không nhận job mới.
       await Promise.allSettled(workers.map((worker) => worker.close()));
-      await emailQueue.close();
+      await Promise.allSettled([emailQueue.close(), maintenanceQueue.close()]);
     },
   };
 }

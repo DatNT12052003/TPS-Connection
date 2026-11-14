@@ -1,5 +1,28 @@
 // Tài liệu OpenAPI sinh từ chính các Zod schema trong @tps/shared. Thêm endpoint: khai báo path ở đây.
 import {
+  AccountIdParams,
+  AdminAccountDetail,
+  AdminAccountList,
+  AdminAccountsQuery,
+  AdminGradeLevel,
+  AdminSubject,
+  CatalogItemIdParams,
+  CreateGradeLevelRequest,
+  CreateSubjectRequest,
+  GrantManagerRequest,
+  LockAccountRequest,
+  UpdateGradeLevelRequest,
+  UpdateSubjectRequest,
+  DocumentViewUrl,
+  RejectVerificationRequest,
+  VerificationDocumentParams,
+  VerificationQueue,
+  VerificationQueueQuery,
+  VerificationRequestDetail,
+  VerificationRequestIdParams,
+  OwnIdentityVerification,
+  SubmitCredentialVerificationRequest,
+  SubmitIdentityVerificationRequest,
   AccountProfile,
   CatalogArea,
   CatalogGradeLevel,
@@ -409,7 +432,8 @@ export function createOpenApiDocument() {
       '/api/v1/files/uploads': {
         post: {
           tags: ['account'],
-          summary: 'Cấp URL để trình duyệt PUT tệp thẳng lên kho (hiện chỉ purpose = avatar)',
+          summary:
+            'Cấp URL để trình duyệt PUT tệp thẳng lên kho (avatar: mọi người; verification_document, credential: chỉ gia sư)',
           security,
           requestBody: json(UploadRequest),
           responses: {
@@ -478,6 +502,313 @@ export function createOpenApiDocument() {
             ...roleErrors,
             404: error('not_found'),
             409: error('invalid_state_transition: đang chờ duyệt hoặc đã xác minh'),
+          },
+        },
+      },
+      '/api/v1/me/tutor-profile/verification': {
+        get: {
+          tags: ['verification'],
+          summary:
+            'Tình trạng xác minh danh tính của chính gia sư (yêu cầu gần nhất, giấy tờ bắt buộc)',
+          security,
+          responses: {
+            200: { description: 'OK', ...json(OwnIdentityVerification) },
+            ...roleErrors,
+          },
+        },
+        post: {
+          tags: ['verification'],
+          summary:
+            'Nộp giấy tờ danh tính (tệp tải trước qua POST /files/uploads, purpose verification_document); hồ sơ chuyển chờ xác minh',
+          security,
+          requestBody: json(SubmitIdentityVerificationRequest),
+          responses: {
+            201: { description: 'Đã nộp', ...json(OwnIdentityVerification) },
+            ...roleErrors,
+            409: error(
+              'invalid_state_transition: hồ sơ thiếu trường bắt buộc, đang chờ duyệt hoặc đã xác minh',
+            ),
+            422: error(
+              'validation_failed: thiếu giấy tờ, sai loại, tệp chưa tải xong, chưa đồng ý',
+            ),
+          },
+        },
+        delete: {
+          tags: ['verification'],
+          summary: 'Hủy yêu cầu xác minh danh tính đang chờ (ảnh bị xóa); hồ sơ về chưa hoàn thiện',
+          security,
+          responses: {
+            204: { description: 'Đã hủy' },
+            ...roleErrors,
+            404: error('not_found: không có yêu cầu đang chờ'),
+          },
+        },
+      },
+      '/api/v1/me/tutor-profile/credentials/{credentialId}/verification': {
+        post: {
+          tags: ['verification'],
+          summary:
+            'Nộp 1–3 tệp của một bằng cấp để xác minh (purpose credential); bằng cấp chuyển chờ xác minh',
+          security,
+          requestParams: { path: CredentialIdParams },
+          requestBody: json(SubmitCredentialVerificationRequest),
+          responses: {
+            201: { description: 'Đã nộp', ...json(TutorCredential) },
+            ...roleErrors,
+            404: error('not_found'),
+            409: error('invalid_state_transition: đang chờ duyệt hoặc đã xác minh'),
+            422: error('validation_failed: tệp chưa tải xong, sai mục đích, trùng'),
+          },
+        },
+        delete: {
+          tags: ['verification'],
+          summary: 'Hủy yêu cầu xác minh bằng cấp đang chờ (ảnh bị xóa); bằng cấp về tự khai',
+          security,
+          requestParams: { path: CredentialIdParams },
+          responses: {
+            204: { description: 'Đã hủy' },
+            ...roleErrors,
+            404: error('not_found: không có yêu cầu đang chờ'),
+          },
+        },
+      },
+      '/api/v1/admin/verification-requests': {
+        get: {
+          tags: ['verification'],
+          summary: 'Hàng chờ xác minh (Manager): yêu cầu đang chờ, sắp theo hạn duyệt',
+          security,
+          requestParams: { query: VerificationQueueQuery },
+          responses: {
+            200: { description: 'OK', ...json(VerificationQueue) },
+            ...{
+              401: error('unauthenticated'),
+              403: error('forbidden: không phải Manager, hoặc hồ sơ của chính mình'),
+            },
+          },
+        },
+      },
+      '/api/v1/admin/verification-requests/{requestId}': {
+        get: {
+          tags: ['verification'],
+          summary: 'Màn duyệt một yêu cầu (không có URL ảnh)',
+          security,
+          requestParams: { path: VerificationRequestIdParams },
+          responses: {
+            200: { description: 'OK', ...json(VerificationRequestDetail) },
+            ...{
+              401: error('unauthenticated'),
+              403: error('forbidden: không phải Manager, hoặc hồ sơ của chính mình'),
+            },
+            404: error('not_found'),
+          },
+        },
+      },
+      '/api/v1/admin/verification-requests/{requestId}/documents/{documentId}/view': {
+        post: {
+          tags: ['verification'],
+          summary:
+            'URL xem một giấy tờ, sống 2 phút; ghi nhật ký kiểm toán; chỉ khi yêu cầu đang chờ',
+          security,
+          requestParams: { path: VerificationDocumentParams },
+          responses: {
+            200: { description: 'OK (Cache-Control: no-store)', ...json(DocumentViewUrl) },
+            ...{
+              401: error('unauthenticated'),
+              403: error('forbidden: không phải Manager, hoặc hồ sơ của chính mình'),
+            },
+            404: error('not_found'),
+            409: error('invalid_state_transition: yêu cầu đã được xử lý'),
+          },
+        },
+      },
+      '/api/v1/admin/verification-requests/{requestId}/approve': {
+        post: {
+          tags: ['verification'],
+          summary: 'Duyệt; ảnh giấy tờ xóa sau 30 ngày; email kết quả cho gia sư',
+          security,
+          requestParams: { path: VerificationRequestIdParams },
+          responses: {
+            200: { description: 'OK', ...json(VerificationRequestDetail) },
+            ...{
+              401: error('unauthenticated'),
+              403: error('forbidden: không phải Manager, hoặc hồ sơ của chính mình'),
+            },
+            404: error('not_found'),
+            409: error('invalid_state_transition: yêu cầu đã được xử lý'),
+          },
+        },
+      },
+      '/api/v1/admin/verification-requests/{requestId}/reject': {
+        post: {
+          tags: ['verification'],
+          summary: 'Từ chối kèm lý do (lý do "other" bắt buộc ghi chú); email kết quả cho gia sư',
+          security,
+          requestParams: { path: VerificationRequestIdParams },
+          requestBody: json(RejectVerificationRequest),
+          responses: {
+            200: { description: 'OK', ...json(VerificationRequestDetail) },
+            ...{
+              401: error('unauthenticated'),
+              403: error('forbidden: không phải Manager, hoặc hồ sơ của chính mình'),
+            },
+            404: error('not_found'),
+            409: error('invalid_state_transition: yêu cầu đã được xử lý'),
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/admin/accounts': {
+        get: {
+          tags: ['admin'],
+          summary: 'Tìm tài khoản theo tên (không dấu), email, vai trò, trạng thái',
+          security,
+          requestParams: { query: AdminAccountsQuery },
+          responses: {
+            200: { description: 'OK', ...json(AdminAccountList) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+          },
+        },
+      },
+      '/api/v1/admin/accounts/{userId}': {
+        get: {
+          tags: ['admin'],
+          summary: 'Chi tiết tài khoản, lần khóa đang hiệu lực',
+          security,
+          requestParams: { path: AccountIdParams },
+          responses: {
+            200: { description: 'OK', ...json(AdminAccountDetail) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
+          },
+        },
+      },
+      '/api/v1/admin/accounts/{userId}/lock': {
+        post: {
+          tags: ['admin'],
+          summary: 'Khóa tài khoản kèm lý do; thu hồi mọi phiên; không khóa chính mình hay Admin',
+          security,
+          requestParams: { path: AccountIdParams },
+          requestBody: json(LockAccountRequest),
+          responses: {
+            200: { description: 'OK', ...json(AdminAccountDetail) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
+            409: error('conflict: đã khóa hoặc đã xóa'),
+          },
+        },
+      },
+      '/api/v1/admin/accounts/{userId}/unlock': {
+        post: {
+          tags: ['admin'],
+          summary: 'Mở khóa tài khoản',
+          security,
+          requestParams: { path: AccountIdParams },
+          responses: {
+            200: { description: 'OK', ...json(AdminAccountDetail) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
+            409: error('conflict: chưa bị khóa'),
+          },
+        },
+      },
+      '/api/v1/admin/managers': {
+        post: {
+          tags: ['admin'],
+          summary:
+            'Gán vai trò Manager theo email; email mới thì tạo tài khoản không mật khẩu (cần họ tên)',
+          security,
+          requestBody: json(GrantManagerRequest),
+          responses: {
+            200: { description: 'Gán cho tài khoản có sẵn', ...json(AdminAccountDetail) },
+            201: { description: 'Tạo tài khoản mới', ...json(AdminAccountDetail) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            409: error('conflict: đã là Manager'),
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/admin/accounts/{userId}/roles/manager': {
+        delete: {
+          tags: ['admin'],
+          summary: 'Gỡ vai trò Manager',
+          security,
+          requestParams: { path: AccountIdParams },
+          responses: {
+            200: { description: 'OK', ...json(AdminAccountDetail) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
+          },
+        },
+      },
+      '/api/v1/admin/catalog/subjects': {
+        get: {
+          tags: ['admin'],
+          summary: 'Môn học (cả môn đã tắt), kèm số gia sư dạy',
+          security,
+          responses: {
+            200: { description: 'OK', ...json(z.object({ items: z.array(AdminSubject) })) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+          },
+        },
+        post: {
+          tags: ['admin'],
+          summary: 'Thêm môn học',
+          security,
+          requestBody: json(CreateSubjectRequest),
+          responses: {
+            201: { description: 'OK', ...json(AdminSubject) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            422: error('validation_failed: mã sai dạng hoặc đã có'),
+          },
+        },
+      },
+      '/api/v1/admin/catalog/subjects/{id}': {
+        patch: {
+          tags: ['admin'],
+          summary: 'Sửa tên, thứ tự, bật/tắt môn học',
+          security,
+          requestParams: { path: CatalogItemIdParams },
+          requestBody: json(UpdateSubjectRequest),
+          responses: {
+            200: { description: 'OK', ...json(AdminSubject) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
+          },
+        },
+      },
+      '/api/v1/admin/catalog/grade-levels': {
+        get: {
+          tags: ['admin'],
+          summary: 'Khối lớp (cả khối đã tắt), kèm số gia sư dạy',
+          security,
+          responses: {
+            200: { description: 'OK', ...json(z.object({ items: z.array(AdminGradeLevel) })) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+          },
+        },
+        post: {
+          tags: ['admin'],
+          summary: 'Thêm khối lớp',
+          security,
+          requestBody: json(CreateGradeLevelRequest),
+          responses: {
+            201: { description: 'OK', ...json(AdminGradeLevel) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            422: error('validation_failed: mã sai dạng hoặc đã có'),
+          },
+        },
+      },
+      '/api/v1/admin/catalog/grade-levels/{id}': {
+        patch: {
+          tags: ['admin'],
+          summary: 'Sửa tên, thứ tự, bật/tắt khối lớp',
+          security,
+          requestParams: { path: CatalogItemIdParams },
+          requestBody: json(UpdateGradeLevelRequest),
+          responses: {
+            200: { description: 'OK', ...json(AdminGradeLevel) },
+            ...{ 401: error('unauthenticated'), 403: error('forbidden: không phải Admin') },
+            404: error('not_found'),
           },
         },
       },

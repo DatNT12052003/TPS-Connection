@@ -25,6 +25,10 @@ import type { CatalogService } from '../../src/modules/catalog/catalog.service.j
 import type { TutorsService } from '../../src/modules/tutors/tutors.service.js';
 import type { AccountService } from '../../src/modules/users/account.service.js';
 import { silentLogger, TEST_JWT_SECRET, TEST_ORIGIN, testEnv } from '../helpers.js';
+import type { VerificationService } from '../../src/modules/verification/verification.service.js';
+import type { VerificationReviewService } from '../../src/modules/verification/verification-review.service.js';
+import type { AdminAccountsService } from '../../src/modules/admin/admin-accounts.service.js';
+import type { AdminCatalogService } from '../../src/modules/admin/admin-catalog.service.js';
 
 jest.setTimeout(180_000);
 
@@ -76,6 +80,10 @@ beforeAll(async () => {
     learners: {} as LearnersService,
     studentInvitations: {} as StudentInvitationsService,
     tutors: {} as TutorsService,
+    verification: {} as VerificationService,
+    verificationReview: {} as VerificationReviewService,
+    adminAccounts: {} as AdminAccountsService,
+    adminCatalog: {} as AdminCatalogService,
     account: {} as AccountService,
     catalog: {} as CatalogService,
   });

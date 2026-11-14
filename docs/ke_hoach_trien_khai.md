@@ -189,13 +189,27 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Quản trị (Admin):** danh sách và tìm kiếm tài khoản, khóa/mở khóa, gán vai trò Manager, quản lý danh mục môn, khối lớp, khu vực.
 - **Nhật ký kiểm toán (audit log):** ghi mọi thao tác của Manager và Admin, nhất là mỗi lần xem giấy tờ tùy thân.
 - **Việc chuyển từ G2:**
-  - Nộp xác minh chuyển hồ sơ `incomplete` → `pending_verification` (B.4.1). Chỉ cho nộp khi `missingForVerification` của `GET /me/tutor-profile` rỗng (D34).
-  - Mở endpoint tải tệp `POST /files/uploads` cho `verification_document` và `credential` (hiện chỉ nhận `avatar`, xem `UPLOADABLE_PURPOSES` trong `apps/api/src/modules/files/files.service.ts`).
+  - ~~Nộp xác minh chuyển hồ sơ `incomplete` → `pending_verification` (B.4.1), chỉ khi `missingForVerification` rỗng (D34)~~: **xong ở đợt 1**.
+  - ~~Mở endpoint tải tệp `POST /files/uploads` cho `verification_document` và `credential`~~: **xong ở đợt 1** (chỉ gia sư).
   - Duyệt bằng cấp thì cập nhật `tutor_credentials.verification_status` và `tutor_profiles.has_verified_degree` (D20). API đã khóa sửa, xóa bằng cấp đang chờ duyệt hoặc đã xác minh.
   - Job dọn bản ghi `files` còn `pending_upload` quá 24 giờ và xóa tệp tương ứng trên kho (thiết kế CSDL mục 13). Ảnh đại diện đã tạo được bản ghi loại này từ G2.
-- Thông báo email và trong app khi hồ sơ được duyệt hoặc bị từ chối (dùng bảng thông báo tối giản; hoàn thiện ở giai đoạn 5).
+- Thông báo khi hồ sơ được duyệt hoặc bị từ chối: email **xong ở đợt 2**; thông báo trong app làm ở G5 cùng bảng thông báo (G5 đã có loại "kết quả xác minh"), không làm bảng tạm ở G3.
 
 **Đầu ra:** luồng xác minh đầy đủ trên web; trang `/admin` cho Manager và Admin.
+
+**Tiến độ:** làm theo ba đợt.
+
+- ~~Đợt 1, gia sư nộp xác minh~~: **xong ngày 2026-11-14**. Bảng `verification_requests`, `verification_documents`; gia sư tải ảnh CCCD hai mặt (thêm thẻ sinh viên nếu là sinh viên) lên kho riêng tư, đồng ý dùng giấy tờ, nộp; hồ sơ chuyển "chờ xác minh", hạn duyệt 2 ngày làm việc (D26); hủy yêu cầu đang chờ (ảnh xóa ngay); nộp 1–3 tệp để xác minh từng bằng cấp, hủy; hiện lý do từ chối. Web: bước 2 ở `/app/profile` theo canvas Verification. Trong lúc chờ duyệt, họ tên thật và nghề nghiệp bị khóa (người duyệt đối chiếu với giấy tờ; muốn sửa thì hủy yêu cầu). Lý do từ chối là danh sách có sẵn (canvas ManagerQueue) cộng ghi chú.
+- ~~Đợt 2, Manager duyệt~~: **xong ngày 2026-11-14**. Hàng chờ `/admin/verifications` và màn duyệt (canvas ManagerQueue): lọc theo loại, hạn xử lý (quá hạn, còn dưới 24 giờ), lần nộp thứ mấy, lần nộp trước; xem ảnh qua URL ký sẵn sống 2 phút, chỉ khi yêu cầu đang chờ, mỗi lần xem ghi `audit_logs` (chỉ ghi thêm, trigger chặn sửa xóa); duyệt / từ chối kèm lý do (hồ sơ công khai ngay khi duyệt danh tính; duyệt bằng loại "Bằng cấp" bật huy hiệu); email kết quả theo ngôn ngữ của gia sư; job hằng ngày xóa ảnh 30 ngày sau quyết định và dọn tệp tải dở quá 24 giờ. Manager kiêm gia sư không duyệt hồ sơ của chính mình. Chỉ vai trò Manager vào được (Admin không duyệt, C1). Đã chạy thử với API, PostgreSQL, Redis, SeaweedFS, Mailpit thật. Khác canvas, chưa làm:
+  - Số yêu cầu đang chờ cạnh mục "Duyệt xác minh" trên thanh điều hướng (canvas ghi "Duyệt xác minh · 6"): trang hàng chờ có số theo loại; số trên thanh điều hướng cần gọi API ở mọi trang quản trị, làm khi có thêm hàng chờ báo cáo, tranh chấp (G8).
+  - Thông báo trong app khi có kết quả: chưa có bảng thông báo (G5); hiện có email và kết quả hiện ở trang hồ sơ.
+  - Thu hồi xác minh (B.4.1 `verified` → `incomplete`) là kết quả của vụ việc kiểm duyệt: làm ở G8.
+- ~~Đợt 3, Admin~~: **xong ngày 2026-11-14**. Tài khoản `/admin/accounts` (canvas AdminAccounts): tìm theo tên không dấu hoặc email, lọc vai trò, trạng thái (kể cả đã xóa); khóa kèm lý do (đăng xuất khỏi mọi thiết bị ngay), mở khóa; thêm Manager theo email (email mới thì tạo tài khoản không mật khẩu, người đó đặt mật khẩu bằng "Quên mật khẩu"), gỡ Manager. Danh mục `/admin/catalog` (canvas AdminCatalog): môn học và khối lớp, thêm, sửa tên hai ngôn ngữ, thứ tự, bật/tắt, số gia sư dạy. `/admin` chuyển tới màn chính theo vai trò. Mọi thay đổi ghi nhật ký kiểm toán. Test điều kiện hoàn thành ở `describe('G3 completion')` (`apps/api/test/integration/tutors.int.test.ts`). Đã chạy thử với API, PostgreSQL, Redis, Mailpit thật. Khác canvas, chưa làm:
+  - Vai trò Admin không cấp, gỡ qua giao diện (chỉ bằng `npm run users:staff`), và Admin không khóa được Admin khác: tránh một Admin tự ý tước quyền Admin khác. Cần quyết định nếu muốn khác.
+  - Không xóa mục danh mục (chỉ tắt): mục đã có dữ liệu không xóa được, mục chưa dùng tắt là đủ.
+  - Tỉnh và xã/phường: nạp từ bộ dữ liệu hành chính chính thức (`db:seed:areas`), không sửa tay trên giao diện.
+  - "Lý do báo cáo" và "Cấu hình hệ thống" (hạn xác nhận buổi, hạn tự hủy yêu cầu…): làm ở G8 cùng báo cáo vi phạm; các mốc hiện là hằng số trong code theo decision log. Mục "Khiếu nại quyết định" và "Nhật ký kiểm toán" (xem nhật ký trên giao diện) cũng ở G8.
+  - Điều kiện "gia sư chưa được duyệt không đăng được bài, không hiện trong tìm kiếm": phần hồ sơ công khai đã có test; bài đăng và tìm kiếm có ở G4 và phải giữ đúng điều kiện này (test ở G4).
 
 **Hoàn thành khi:** gia sư chưa được duyệt danh tính không thể đăng bài và không xuất hiện trong kết quả tìm kiếm công khai; Manager không có quyền của Admin và ngược lại.
 
@@ -218,6 +232,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
   - Slug cho URL hồ sơ gia sư `/tutors/<slug>` _(D56)_. API hiện dùng id: `GET /api/v1/tutors/:tutorId`.
   - Danh sách và tìm kiếm gia sư dùng cùng điều kiện hiển thị công khai với `GET /tutors/:tutorId`: đã xác minh, tài khoản `active`, chưa xóa. Không trả email, số điện thoại, họ tên thật (đã có test ở `tutors.int.test.ts`; thêm test tương tự cho danh sách).
 
+- **Việc chuyển từ G3:** test điều kiện hoàn thành của G3 cho phần mới: gia sư chưa được duyệt danh tính không đăng được bài tuyển học sinh (403) và không hiện trong kết quả tìm kiếm; tài khoản bị khóa hoặc hạn chế không hiện công khai. Bộ lọc tìm kiếm chỉ dùng môn, khối đang bật (Admin tắt được ở `/admin/catalog`).
 - **Việc chuyển từ G2 (trang chủ công khai):** trang `/` hiện là khung đơn giản từ G1 (khối giới thiệu, ba thẻ tin cậy). Làm đúng canvas Main / MainMobile khi có tìm kiếm: ô tìm gia sư theo môn, lớp, khu vực; gia sư nổi bật; bài tuyển học sinh mới.
 
 **Đầu ra:** trang tìm gia sư, chi tiết gia sư, chi tiết bài đăng, quản lý bài đăng của gia sư và phụ huynh.
@@ -303,6 +318,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Kiểm thử end-to-end** bằng Playwright cho các luồng §14.1, §14.2, §14.3.
 - **Hiệu năng:** kiểm tra truy vấn tìm kiếm và danh sách bằng dữ liệu mẫu lớn; bổ sung index thiếu.
 - **Hạ tầng** (§7.1 tài liệu công nghệ): server đặt tại Việt Nam, Caddy + HTTPS, tên miền, tường lửa, backup PostgreSQL và SeaweedFS hằng ngày có mã hóa, thử khôi phục, Sentry.
+- **Việc chuyển từ G3:** khóa ngoại `account_sanctions.case_id → moderation_cases` (bảng vụ việc tạo ở G8); hạn chế tài khoản (`restricted`) và thu hồi xác minh (B.4.1 `verified` → `incomplete`) là kết quả của vụ việc; trang "Lý do báo cáo", "Cấu hình hệ thống" (các mốc thời gian hiện là hằng số theo decision log), "Khiếu nại quyết định" và xem "Nhật ký kiểm toán" trên giao diện Admin (canvas AdminCatalog, Appeals); số việc đang chờ cạnh các mục điều hướng của Manager.
 - **Việc chuyển từ G2 (triển khai web):** server web gọi API thay trình duyệt và chuyển tiếp header `X-Forwarded-For`. Khi chạy thật: chỉ cho web nhận request qua Caddy (Caddy ghi đè `X-Forwarded-For` bằng IP thật, không giữ giá trị trình duyệt gửi), và đặt `TRUST_PROXY` của API tin địa chỉ của server web. Nếu không, rate limit theo IP của API hoặc chỉ thấy IP của web (mọi người dùng chung một giới hạn), hoặc người dùng giả được IP. Đặt `COOKIE_DOMAIN` là tên miền gốc và `COOKIE_SECURE=true` (D57). Kiểm tra trong review bảo mật ở trên.
 - **Pháp lý và nội dung:** điều khoản sử dụng, chính sách quyền riêng tư (đã qua luật sư), hướng dẫn sử dụng cơ bản hai ngôn ngữ.
 
@@ -398,4 +414,6 @@ Các việc bên ngoài, không chặn việc viết code nhưng có hạn chót
 
 1. ~~Bắt đầu G1 (nền móng kỹ thuật) và G1b (thiết kế giao diện) song song~~: **xong ngày 2026-11-13**.
 2. ~~Chốt giới hạn dung lượng tệp và ngôn ngữ của đường dẫn trang~~: **xong ngày 2026-11-13** (D55, D56).
-3. Bắt đầu G2 (tài khoản, phân quyền và hồ sơ).
+3. ~~Bắt đầu G2 (tài khoản, phân quyền và hồ sơ)~~: **xong ngày 2026-11-14**.
+4. ~~G3 (xác minh gia sư và trang quản trị cơ bản)~~: **xong ngày 2026-11-14**.
+5. Bắt đầu G4 (bài đăng và tìm kiếm).

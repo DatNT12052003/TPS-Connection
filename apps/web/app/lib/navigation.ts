@@ -60,6 +60,8 @@ export const PATHS = {
   tutorProfileEdit: '/app/profile/edit',
   /** Route chỉ có action: hai bước phía server của việc đổi ảnh đại diện. */
   accountAvatar: '/app/account/avatar',
+  /** Route chỉ có action: xin URL tải giấy tờ xác minh lên kho riêng tư. */
+  documentTicket: '/app/profile/documents/ticket',
   admin: '/admin',
   notifications: '/app/notifications',
 } as const;

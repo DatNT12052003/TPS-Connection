@@ -2,7 +2,12 @@
 // URL; API ghi metadata (`files`, trạng thái `pending_upload`), rồi khi tệp được dùng (ví dụ đặt làm ảnh
 // đại diện) thì kiểm tra tệp đã thật sự lên kho, đúng loại, đúng dung lượng, mới chuyển `ready`.
 // Không phụ thuộc Express.
-import { type FilePurpose, type UploadRequest, type UploadTicketResponse } from '@tps/shared';
+import {
+  type FilePurpose,
+  type Role,
+  type UploadRequest,
+  type UploadTicketResponse,
+} from '@tps/shared';
 import { type EntityManager, IsNull } from 'typeorm';
 import { AppError } from '../../lib/app-error.js';
 import type { Logger } from '../../lib/logger.js';
@@ -10,10 +15,20 @@ import type { Storage } from '../../lib/storage.js';
 import { StoredFile } from './stored-file.entity.js';
 
 /**
- * Mục đích được tải lên qua endpoint chung ở giai đoạn hiện tại. Mục đích khác (giấy tờ xác minh, tệp tin
- * nhắn, bài tập) mở ở giai đoạn của nó, vì cần kiểm tra quyền theo nghiệp vụ.
+ * Mục đích được tải lên qua endpoint chung, và vai trò được tải (`'any'`: mọi người đã đăng nhập). Giấy tờ
+ * xác minh và bằng cấp chỉ gia sư tải (G3). Mục đích khác (tệp tin nhắn, bài tập) mở ở giai đoạn của nó.
  */
-export const UPLOADABLE_PURPOSES: readonly FilePurpose[] = ['avatar'];
+export const UPLOAD_PURPOSE_ROLES: Partial<Record<FilePurpose, 'any' | readonly Role[]>> = {
+  avatar: 'any',
+  verification_document: ['tutor'],
+  credential: ['tutor'],
+};
+
+function canUpload(purpose: FilePurpose, roles: readonly Role[]): boolean {
+  const allowed = UPLOAD_PURPOSE_ROLES[purpose];
+  if (!allowed) return false;
+  return allowed === 'any' || roles.some((role) => allowed.includes(role));
+}
 
 const fileNotUploaded = () =>
   new AppError('validation_failed', 'File is not uploaded', [
@@ -30,10 +45,11 @@ export function createFilesService(deps: {
     /** Cấp URL tải lên và ghi bản ghi `files` chờ tải. */
     async createUpload(
       manager: EntityManager,
-      ownerId: string,
+      owner: { id: string; roles: readonly Role[] },
       input: UploadRequest,
     ): Promise<UploadTicketResponse> {
-      if (!UPLOADABLE_PURPOSES.includes(input.purpose)) {
+      const ownerId = owner.id;
+      if (!canUpload(input.purpose, owner.roles)) {
         throw new AppError('validation_failed', 'Purpose not allowed', [
           { path: 'purpose', code: 'file_purpose_not_allowed', message: 'Purpose not allowed' },
         ]);

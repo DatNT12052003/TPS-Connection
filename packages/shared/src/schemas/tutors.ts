@@ -9,6 +9,7 @@ import {
   TeachingMode,
   TutorOccupation,
   TutorProfileStatus,
+  VerificationRejectionCode,
 } from '../statuses.js';
 import { Id, optionalText } from './common.js';
 
@@ -185,6 +186,9 @@ export const TutorCredential = z.object({
   issuer: z.string().nullable(),
   issuedYear: z.int().nullable(),
   verificationStatus: CredentialVerificationStatus,
+  /** Lý do của lần từ chối gần nhất khi `verificationStatus = rejected`; còn lại null. */
+  rejectionCode: VerificationRejectionCode.nullable(),
+  rejectionNote: z.string().nullable(),
 });
 export type TutorCredential = z.infer<typeof TutorCredential>;
 
