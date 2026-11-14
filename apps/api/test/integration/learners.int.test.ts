@@ -35,6 +35,7 @@ import type { TutorsService } from '../../src/modules/tutors/tutors.service.js';
 import type { AccountService } from '../../src/modules/users/account.service.js';
 import { silentLogger, TEST_JWT_SECRET, TEST_ORIGIN, testEnv } from '../helpers.js';
 import type { VerificationService } from '../../src/modules/verification/verification.service.js';
+import type { VerificationReviewService } from '../../src/modules/verification/verification-review.service.js';
 
 jest.setTimeout(180_000);
 
@@ -117,6 +118,7 @@ beforeAll(async () => {
     // Hồ sơ gia sư, tài khoản, danh mục: test riêng ở tutors.int.test.ts.
     tutors: {} as TutorsService,
     verification: {} as VerificationService,
+    verificationReview: {} as VerificationReviewService,
     account: {} as AccountService,
     catalog: {} as CatalogService,
   });

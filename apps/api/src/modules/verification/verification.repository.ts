@@ -1,4 +1,5 @@
 import type {
+  FileStatus,
   VerificationDocumentType,
   VerificationRejectionCode,
   VerificationRequestKind,
@@ -10,8 +11,10 @@ import { VerificationRequest } from './verification-request.entity.js';
 
 /** Giấy tờ kèm metadata của tệp (không có khóa lưu trữ: chỉ người duyệt mới mở được ảnh). */
 export interface DocumentWithFile {
+  documentId: string;
   requestId: string;
   documentType: VerificationDocumentType;
+  fileStatus: FileStatus;
   fileId: string;
   fileName: string | null;
   mimeType: string;
@@ -84,8 +87,10 @@ export function createVerificationRepository(manager: EntityManager) {
       const rows = await documents
         .createQueryBuilder('d')
         .innerJoin(StoredFile, 'f', 'f.id = d.file_id')
-        .select('d.request_id', 'requestId')
+        .select('d.id', 'documentId')
+        .addSelect('d.request_id', 'requestId')
         .addSelect('d.document_type', 'documentType')
+        .addSelect('f.status', 'fileStatus')
         .addSelect('d.file_id', 'fileId')
         .addSelect('f.original_name', 'fileName')
         .addSelect('f.mime_type', 'mimeType')
@@ -95,6 +100,26 @@ export function createVerificationRepository(manager: EntityManager) {
         .addOrderBy('d.id', 'ASC')
         .getRawMany<DocumentWithFile>();
       return rows.map((r) => ({ ...r, sizeBytes: Number(r.sizeBytes) }));
+    },
+
+    /** Tệp của một giấy tờ thuộc đúng yêu cầu này (không tìm theo id giấy tờ trần). */
+    async documentFile(
+      requestId: string,
+      documentId: string,
+    ): Promise<{ documentType: VerificationDocumentType; file: StoredFile } | null> {
+      const doc = await documents.findOneBy({ id: documentId, requestId });
+      if (!doc) return null;
+      const file = await manager.getRepository(StoredFile).findOneBy({ id: doc.fileId });
+      return file ? { documentType: doc.documentType, file } : null;
+    },
+
+    /** Đặt lịch xóa tệp giấy tờ của một yêu cầu (`files.purge_after`, C4). */
+    async schedulePurge(requestId: string, at: Date): Promise<void> {
+      await manager.query(
+        `UPDATE files SET purge_after = $2
+          WHERE id IN (SELECT file_id FROM verification_documents WHERE request_id = $1)`,
+        [requestId, at],
+      );
     },
 
     /** Những tệp trong danh sách đã gắn vào một yêu cầu xác minh nào đó. */

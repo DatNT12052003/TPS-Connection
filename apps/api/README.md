@@ -218,7 +218,21 @@ Module `src/modules/verification`; thiết kế ở docs/thiet_ke_co_so_du_lieu.
 - Hủy yêu cầu: ảnh không còn dùng nên đánh dấu `files` đã xóa và xóa khỏi kho ngay. Xóa một bằng cấp bị từ chối thì xóa cả lịch sử xác minh và ảnh của nó.
 - Gia sư không bao giờ nhận lại đường dẫn hay khóa lưu trữ của ảnh giấy tờ: response chỉ có loại, tên tệp, dung lượng.
 - Khác thiết kế CSDL: lý do từ chối là `rejection_code` (danh sách, dịch được) + `rejection_note` (bắt buộc khi `other`).
-- Đợt 2 (Manager duyệt, xem ảnh qua presigned URL có audit log, email kết quả, job xóa ảnh sau 30 ngày và dọn tệp tải dở) chưa làm.
+
+**Manager duyệt** (đợt 2; chỉ vai trò `manager`, Admin không duyệt, C1):
+
+| Endpoint                                                           | Việc                                                                          |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `GET /admin/verification-requests?kind=&page=`                     | Hàng chờ (đang chờ), sắp theo hạn duyệt, đếm theo loại, lần nộp thứ mấy       |
+| `GET /admin/verification-requests/:id`                             | Màn duyệt: thông tin tự khai, bằng cấp, giấy tờ (không có URL), lần nộp trước |
+| `POST /admin/verification-requests/:id/documents/:documentId/view` | URL xem ảnh sống 2 phút (`no-store`); ghi `audit_logs`; chỉ khi đang chờ      |
+| `POST /admin/verification-requests/:id/approve`, `/reject`         | Duyệt / từ chối (`rejectionCode`, `rejectionNote` bắt buộc khi `other`)       |
+
+- Duyệt danh tính: hồ sơ `verified`, ghi `identity_verified_at` (hồ sơ công khai ngay). Duyệt bằng cấp: `verified`; loại `degree` bật `has_verified_degree` (D20). Từ chối danh tính: hồ sơ về `incomplete`; từ chối bằng cấp: `rejected`.
+- Mọi quyết định đặt `documents_purge_at` và `files.purge_after` = lúc duyệt + 30 ngày (C4; ảnh của yêu cầu bị từ chối cũng xóa theo cùng mốc). Quyết định, nhật ký và lịch xóa nằm trong một transaction; email kết quả xếp hàng sau khi commit (lỗi chỉ ghi log).
+- Thứ tự khóa giống phía gia sư (hồ sơ hoặc bằng cấp, rồi yêu cầu) để không deadlock. Manager kiêm gia sư không xem, không duyệt yêu cầu của chính mình (403; `isOwnRequest` trong màn duyệt).
+- `audit_logs` (`src/modules/audit`): chỉ ghi thêm, trigger chặn UPDATE/DELETE/TRUNCATE. Hành động: `verification.document_viewed`, `.approved`, `.rejected`, `.documents_purged` (vai trò `system`). `metadata` chỉ có id, mã, loại.
+- **Job định kỳ** (`src/jobs/maintenance.ts`, hàng đợi `maintenance`, lập lịch bằng `upsertJobScheduler` khi `WORKERS_ENABLED`, giờ Việt Nam): 03:00 xóa ảnh giấy tờ đã tới hạn (xóa trên kho trước, thành công mới đánh dấu và ghi `documents_purged_at`; lỗi thì hôm sau thử lại), 03:30 dọn tệp `pending_upload` quá 24 giờ. Logic ở `src/modules/files/files-maintenance.service.ts`.
 
 ## Ghi chú cho Windows
 

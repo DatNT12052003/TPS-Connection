@@ -1,5 +1,6 @@
 // Danh sách entity TypeORM. Thêm entity mới vào đây.
 // Quy ước: mọi @Column ghi rõ `type` (không dựa vào emitDecoratorMetadata, xem tsconfig.json).
+import { AuditLog } from '../modules/audit/audit-log.entity.js';
 import { AuthSession } from '../modules/auth/auth-session.entity.js';
 import { AdministrativeArea } from '../modules/catalog/administrative-area.entity.js';
 import { GradeLevel } from '../modules/catalog/grade-level.entity.js';
@@ -51,4 +52,6 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   // Xác minh gia sư
   VerificationRequest,
   VerificationDocument,
+  // Nhật ký kiểm toán
+  AuditLog,
 ];

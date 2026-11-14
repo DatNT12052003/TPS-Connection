@@ -37,6 +37,11 @@ export default [
   // Khu Manager / Admin.
   route('admin', 'routes/admin/layout.tsx', [
     index('routes/admin/home.tsx'),
+    // Manager: hàng chờ xác minh (layout) và màn duyệt một yêu cầu.
+    route('verifications', 'routes/admin/verifications/queue.tsx', [
+      index('routes/admin/verifications/index.tsx'),
+      route(':requestId', 'routes/admin/verifications/detail.tsx'),
+    ]),
     route('*', 'routes/admin/not-found.tsx'),
   ]),
 

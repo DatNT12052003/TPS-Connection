@@ -2,11 +2,11 @@
 
 Chép nguyên văn, không sửa, từ [vietnamese-provinces-database](https://github.com/ThangLeQuoc/vietnamese-provinces-database), bản phát hành **v5.2.0** (ngày 21/09/2026, theo Nghị quyết 39/2026/QH16 và 388/NQ-UBTVQH16). Giấy phép MIT, xem `LICENSE`.
 
-| Tệp | Đường dẫn gốc trong bản phát hành |
-| --- | --------------------------------- |
+| Tệp                                      | Đường dẫn gốc trong bản phát hành                                                      |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- |
 | `full_json_generated_data_vn_units.json` | `json/full_json_generated_data_vn_units.json` (34 tỉnh/thành, 3.321 xã/phường/đặc khu) |
-| `vn_provinces_metadata.json` | `json/vn_provinces_metadata.json` (phiên bản, văn bản mới nhất) |
-| `LICENSE` | `LICENSE` |
+| `vn_provinces_metadata.json`             | `json/vn_provinces_metadata.json` (phiên bản, văn bản mới nhất)                        |
+| `LICENSE`                                | `LICENSE`                                                                              |
 
 Nạp vào bảng `administrative_areas`: `npm run db:seed:areas -w @tps/api` (thêm `-- --dry-run` để chỉ xem khác biệt).
 

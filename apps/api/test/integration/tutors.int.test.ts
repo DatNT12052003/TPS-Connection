@@ -9,6 +9,7 @@ import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testconta
 import {
   AccountProfile,
   ApiErrorBody,
+  DocumentViewUrl,
   FILE_RULES,
   OwnIdentityVerification,
   OwnTutorProfile,
@@ -16,6 +17,8 @@ import {
   type Role,
   TutorCredential,
   UploadTicketResponse,
+  VerificationQueue,
+  VerificationRequestDetail,
 } from '@tps/shared';
 import type { Express } from 'express';
 import request from 'supertest';
@@ -34,6 +37,9 @@ import { createTutorsService } from '../../src/modules/tutors/tutors.service.js'
 import { createAccountService } from '../../src/modules/users/account.service.js';
 import { createUsersRepository } from '../../src/modules/users/users.repository.js';
 import { createVerificationService } from '../../src/modules/verification/verification.service.js';
+import { createVerificationReviewService } from '../../src/modules/verification/verification-review.service.js';
+import { createFilesMaintenanceService } from '../../src/modules/files/files-maintenance.service.js';
+import type { EmailMessage } from '../../src/lib/email/email-sender.js';
 import { createTokenService } from '../../src/modules/auth/tokens.js';
 import { silentLogger, TEST_JWT_SECRET, TEST_ORIGIN, testEnv } from '../helpers.js';
 
@@ -49,10 +55,15 @@ const tokens = createTokenService({ secret: TEST_JWT_SECRET });
 /** Kho lưu tệp giả: "tải lên" bằng `uploaded.set(key, ...)`. */
 const uploaded = new Map<string, { sizeBytes: number; contentType: string }>();
 const deletedKeys: string[] = [];
+/** Email kết quả xác minh được "gửi" (xếp hàng). */
+const sentEmails: EmailMessage[] = [];
 const fakeStorage: Pick<
   Storage,
-  'createUploadTicket' | 'headObject' | 'deleteObject' | 'publicUrl'
+  'createUploadTicket' | 'headObject' | 'deleteObject' | 'publicUrl' | 'createDownloadUrl'
 > = {
+  async createDownloadUrl(bucket, storageKey, options) {
+    return `http://storage.test/${bucket}/${storageKey}?expires=${options?.expiresInSeconds}`;
+  },
   async createUploadTicket(input) {
     const storageKey = buildStorageKey(input.purpose, input.ownerId, input.contentType);
     return {
@@ -133,6 +144,15 @@ beforeAll(async () => {
     studentInvitations: {} as StudentInvitationsService,
     tutors: createTutorsService({ dataSource: db, files, logger: silentLogger, publicFileUrl }),
     verification: createVerificationService({ dataSource: db, files, logger: silentLogger }),
+    verificationReview: createVerificationReviewService({
+      dataSource: db,
+      storage: fakeStorage,
+      sendEmail: async (message) => {
+        sentEmails.push(message);
+      },
+      webUrl: 'http://web.test',
+      logger: silentLogger,
+    }),
     account: createAccountService({ dataSource: db, files, publicFileUrl, logger: silentLogger }),
     catalog: createCatalogService({ dataSource: db }),
   });
@@ -975,5 +995,306 @@ describe('credential verification', () => {
       credential.id,
     ]);
     expect(left).toHaveLength(0);
+  });
+});
+
+// ---- Duyệt xác minh, phía Manager (G3 đợt 2) ------------------------------------------------------
+
+const ADMIN_API = '/admin/verification-requests';
+
+/** Gia sư đã nộp xác minh danh tính; trả gia sư và id yêu cầu. */
+async function submittedTutor(occupation = 'teacher') {
+  const tutor = await readyTutor(occupation);
+  const res = await api(tutor).post('/me/tutor-profile/verification', {
+    documents: await idDocuments(tutor),
+    acceptDocumentProcessing: true,
+  });
+  expect(res.status).toBe(201);
+  return { tutor, requestId: OwnIdentityVerification.parse(res.body).latest!.id };
+}
+
+const auditRows = (entityId: string) =>
+  db.query<
+    {
+      action: string;
+      actor_user_id: string | null;
+      actor_role: string;
+      ip_address: string | null;
+    }[]
+  >(
+    `SELECT action, actor_user_id, actor_role, host(ip_address) AS ip_address FROM audit_logs
+      WHERE entity_type = 'verification_request' AND entity_id = $1 ORDER BY id`,
+    [entityId],
+  );
+
+describe('verification review (manager)', () => {
+  it('lists the queue, shows the request without image links and logs each document view', async () => {
+    const manager = await createUser('manager');
+    const { tutor, requestId } = await submittedTutor();
+
+    const queue = VerificationQueue.parse(
+      (await api(manager).get(`${ADMIN_API}?kind=identity`)).body,
+    );
+    const item = queue.items.find((i) => i.id === requestId);
+    expect(item).toMatchObject({ kind: 'identity', tutorId: tutor.id, attempt: 1 });
+    expect(item!.tutorName).toBe('Lê Hoàng Nam');
+    expect(queue.counts.identity).toBeGreaterThanOrEqual(1);
+    // Sắp theo hạn duyệt.
+    const dues = queue.items.map((i) => i.reviewDueAt);
+    expect([...dues].sort()).toEqual(dues);
+
+    const detailRes = await api(manager).get(`${ADMIN_API}/${requestId}`);
+    expect(detailRes.status).toBe(200);
+    const detail = VerificationRequestDetail.parse(detailRes.body);
+    expect(detail.documents.map((d) => d.type)).toEqual(['national_id_front', 'national_id_back']);
+    expect(detail.isOwnRequest).toBe(false);
+    expect(JSON.stringify(detailRes.body)).not.toContain('http');
+    // Xem màn duyệt không phải xem ảnh: chưa có dòng nhật ký.
+    expect(await auditRows(requestId)).toEqual([]);
+
+    const view = await api(manager).post(
+      `${ADMIN_API}/${requestId}/documents/${detail.documents[0]!.id}/view`,
+    );
+    expect(view.status).toBe(200);
+    expect(view.headers['cache-control']).toBe('no-store');
+    expect(DocumentViewUrl.parse(view.body).url).toContain('expires=120');
+    expect(await auditRows(requestId)).toEqual([
+      {
+        action: 'verification.document_viewed',
+        actor_user_id: manager.id,
+        actor_role: 'manager',
+        ip_address: manager.ip,
+      },
+    ]);
+
+    // Giấy tờ của yêu cầu khác: không xem được qua yêu cầu này.
+    const other = await submittedTutor();
+    const otherDetail = VerificationRequestDetail.parse(
+      (await api(manager).get(`${ADMIN_API}/${other.requestId}`)).body,
+    );
+    const mixed = await api(manager).post(
+      `${ADMIN_API}/${requestId}/documents/${otherDetail.documents[0]!.id}/view`,
+    );
+    expect(mixed.status).toBe(404);
+  });
+
+  it('approves an identity: profile verified and public, images scheduled for deletion, email sent', async () => {
+    const manager = await createUser('manager');
+    const { tutor, requestId } = await submittedTutor();
+    const detail = VerificationRequestDetail.parse(
+      (await api(manager).get(`${ADMIN_API}/${requestId}`)).body,
+    );
+
+    const res = await api(manager).post(`${ADMIN_API}/${requestId}/approve`);
+    expect(res.status).toBe(200);
+    expect(VerificationRequestDetail.parse(res.body)).toMatchObject({ status: 'approved' });
+
+    const profile = OwnTutorProfile.parse((await api(tutor).get('/me/tutor-profile')).body);
+    expect(profile.profileStatus).toBe('verified');
+    expect(profile.identityVerifiedAt).not.toBeNull();
+    expect((await api(null).get(`/tutors/${tutor.id}`)).status).toBe(200);
+
+    const [row] = await db.query<{ days: number; files_scheduled: number }[]>(
+      `SELECT round(extract(epoch FROM documents_purge_at - reviewed_at) / 86400)::int AS days,
+              (SELECT count(*)::int FROM verification_documents d JOIN files f ON f.id = d.file_id
+                WHERE d.request_id = r.id AND f.purge_after = r.documents_purge_at) AS files_scheduled
+         FROM verification_requests r WHERE id = $1`,
+      [requestId],
+    );
+    expect(row).toEqual({ days: 30, files_scheduled: 2 });
+
+    const email = sentEmails.find((m) => m.to === tutor.email);
+    expect(email?.subject).toBe('Danh tính của bạn đã được xác minh');
+    expect(email?.text).toContain('http://web.test/app/profile');
+    expect((await auditRows(requestId)).map((r) => r.action)).toEqual(['verification.approved']);
+
+    // Đã quyết định: không duyệt lại, không xem ảnh nữa.
+    expect((await api(manager).post(`${ADMIN_API}/${requestId}/approve`)).status).toBe(409);
+    const view = await api(manager).post(
+      `${ADMIN_API}/${requestId}/documents/${detail.documents[0]!.id}/view`,
+    );
+    expect(view.status).toBe(409);
+  });
+
+  it('rejects with a reason: the tutor sees it, resubmits, and the history keeps both', async () => {
+    const manager = await createUser('manager');
+    const { tutor, requestId } = await submittedTutor();
+
+    const noNote = await api(manager).post(`${ADMIN_API}/${requestId}/reject`, {
+      rejectionCode: 'other',
+    });
+    expect(noNote.status).toBe(422);
+    expect(noNote.body.error.details[0]).toMatchObject({ path: 'rejectionNote', code: 'required' });
+
+    const res = await api(manager).post(`${ADMIN_API}/${requestId}/reject`, {
+      rejectionCode: 'unclear_image',
+      rejectionNote: 'Ảnh mặt sau bị lóa.',
+    });
+    expect(res.status).toBe(200);
+
+    const own = OwnIdentityVerification.parse(
+      (await api(tutor).get('/me/tutor-profile/verification')).body,
+    );
+    expect(own.latest).toMatchObject({
+      status: 'rejected',
+      rejectionCode: 'unclear_image',
+      rejectionNote: 'Ảnh mặt sau bị lóa.',
+    });
+    expect(own.canSubmit).toBe(true);
+    expect(await profileStatusOf(tutor)).toBe('incomplete');
+    const email = sentEmails.find((m) => m.to === tutor.email);
+    expect(email?.subject).toBe('Giấy tờ xác minh danh tính chưa được duyệt');
+    expect(email?.text).toContain('Lý do: Ảnh mờ, bị lóa hoặc thiếu góc');
+    expect(email?.text).toContain('Ảnh mặt sau bị lóa.');
+
+    const again = await api(tutor).post('/me/tutor-profile/verification', {
+      documents: await idDocuments(tutor),
+      acceptDocumentProcessing: true,
+    });
+    const secondId = OwnIdentityVerification.parse(again.body).latest!.id;
+    const second = VerificationRequestDetail.parse(
+      (await api(manager).get(`${ADMIN_API}/${secondId}`)).body,
+    );
+    expect(second.attempt).toBe(2);
+    expect(second.history).toEqual([
+      expect.objectContaining({
+        id: requestId,
+        status: 'rejected',
+        rejectionCode: 'unclear_image',
+      }),
+    ]);
+  });
+
+  it('approves a degree: the credential is verified and the profile gets the badge', async () => {
+    const manager = await createUser('manager');
+    const tutor = await readyTutor();
+    const added = await api(tutor).post('/me/tutor-profile/credentials', {
+      kind: 'degree',
+      title: 'Cử nhân Sư phạm Toán',
+    });
+    const credential = TutorCredential.parse(added.body);
+    const file = await uploadDocument(tutor, 'credential');
+    await api(tutor).post(`/me/tutor-profile/credentials/${credential.id}/verification`, {
+      fileIds: [file.fileId],
+    });
+    const queue = VerificationQueue.parse(
+      (await api(manager).get(`${ADMIN_API}?kind=credential`)).body,
+    );
+    const item = queue.items.find((i) => i.tutorId === tutor.id);
+    expect(item).toMatchObject({
+      credentialTitle: 'Cử nhân Sư phạm Toán',
+      credentialKind: 'degree',
+    });
+
+    expect((await api(manager).post(`${ADMIN_API}/${item!.id}/approve`)).status).toBe(200);
+    const profile = OwnTutorProfile.parse((await api(tutor).get('/me/tutor-profile')).body);
+    expect(profile.hasVerifiedDegree).toBe(true);
+    expect(profile.credentials[0]).toMatchObject({ verificationStatus: 'verified' });
+    // Bằng cấp không đổi trạng thái hồ sơ.
+    expect(profile.profileStatus).toBe('incomplete');
+  });
+
+  it('is only for managers, and a manager cannot review their own request', async () => {
+    const { requestId } = await submittedTutor();
+    const admin = await createUser('admin');
+    const tutor = await createUser('tutor');
+    for (const user of [admin, tutor]) {
+      expect((await api(user).get(ADMIN_API)).status).toBe(403);
+      expect((await api(user).post(`${ADMIN_API}/${requestId}/approve`)).status).toBe(403);
+    }
+    expect((await api(null).get(ADMIN_API)).status).toBe(401);
+
+    // Manager kiêm gia sư.
+    const { tutor: managerTutor, requestId: ownId } = await submittedTutor();
+    await db.query(`INSERT INTO user_roles (user_id, role_code) VALUES ($1, 'manager')`, [
+      managerTutor.id,
+    ]);
+    const own = VerificationRequestDetail.parse(
+      (await api(managerTutor).get(`${ADMIN_API}/${ownId}`)).body,
+    );
+    expect(own.isOwnRequest).toBe(true);
+    expect((await api(managerTutor).post(`${ADMIN_API}/${ownId}/approve`)).status).toBe(403);
+    const view = await api(managerTutor).post(
+      `${ADMIN_API}/${ownId}/documents/${own.documents[0]!.id}/view`,
+    );
+    expect(view.status).toBe(403);
+    expect(await auditRows(ownId)).toEqual([]);
+  });
+
+  it('keeps the audit log append-only', async () => {
+    const manager = await createUser('manager');
+    const { requestId } = await submittedTutor();
+    await api(manager).post(`${ADMIN_API}/${requestId}/approve`);
+    await expect(
+      db.query(`UPDATE audit_logs SET action = 'x.y' WHERE entity_id = $1`, [requestId]),
+    ).rejects.toThrow('append-only');
+    await expect(
+      db.query(`DELETE FROM audit_logs WHERE entity_id = $1`, [requestId]),
+    ).rejects.toThrow('append-only');
+    await expect(db.query(`TRUNCATE audit_logs`)).rejects.toThrow('append-only');
+  });
+});
+
+describe('file maintenance jobs', () => {
+  const maintenance = () =>
+    createFilesMaintenanceService({ dataSource: db, storage: fakeStorage, logger: silentLogger });
+
+  it('deletes verification images once the retention period is over', async () => {
+    const manager = await createUser('manager');
+    const { requestId } = await submittedTutor();
+    await api(manager).post(`${ADMIN_API}/${requestId}/approve`);
+    const keys = await db.query<{ storage_key: string }[]>(
+      `SELECT f.storage_key FROM verification_documents d JOIN files f ON f.id = d.file_id
+        WHERE d.request_id = $1`,
+      [requestId],
+    );
+
+    // Chưa tới hạn: không xóa.
+    await maintenance().purgeVerificationDocuments();
+    for (const { storage_key } of keys) expect(deletedKeys).not.toContain(storage_key);
+
+    await db.query(
+      `UPDATE verification_requests SET documents_purge_at = now() - interval '1 minute' WHERE id = $1`,
+      [requestId],
+    );
+    expect(await maintenance().purgeVerificationDocuments()).toBeGreaterThanOrEqual(1);
+    for (const { storage_key } of keys) expect(deletedKeys).toContain(storage_key);
+    const [row] = await db.query<{ purged: boolean; live_files: number }[]>(
+      `SELECT documents_purged_at IS NOT NULL AS purged,
+              (SELECT count(*)::int FROM verification_documents d JOIN files f ON f.id = d.file_id
+                WHERE d.request_id = r.id AND f.status <> 'deleted') AS live_files
+         FROM verification_requests r WHERE id = $1`,
+      [requestId],
+    );
+    expect(row).toEqual({ purged: true, live_files: 0 });
+    expect((await auditRows(requestId)).map((r) => [r.action, r.actor_role])).toEqual([
+      ['verification.approved', 'manager'],
+      ['verification.documents_purged', 'system'],
+    ]);
+    // Kết quả xác minh vẫn giữ; màn duyệt không còn giấy tờ.
+    const detail = VerificationRequestDetail.parse(
+      (await api(manager).get(`${ADMIN_API}/${requestId}`)).body,
+    );
+    expect(detail).toMatchObject({ status: 'approved', documents: [] });
+  });
+
+  it('cleans uploads abandoned for more than 24 hours', async () => {
+    const tutor = await readyTutor();
+    const stale = await uploadDocument(tutor, 'verification_document', { upload: false });
+    const fresh = await uploadDocument(tutor, 'verification_document', { upload: false });
+    await db.query(`UPDATE files SET created_at = now() - interval '25 hours' WHERE id = $1`, [
+      stale.fileId,
+    ]);
+
+    await maintenance().cleanupStaleUploads();
+    const statuses = await db.query<{ id: string; status: string }[]>(
+      `SELECT id, status FROM files WHERE id = ANY($1::uuid[])`,
+      [[stale.fileId, fresh.fileId]],
+    );
+    expect(Object.fromEntries(statuses.map((s) => [s.id, s.status]))).toEqual({
+      [stale.fileId]: 'deleted',
+      [fresh.fileId]: 'pending_upload',
+    });
+    expect(deletedKeys).toContain(stale.storageKey);
   });
 });

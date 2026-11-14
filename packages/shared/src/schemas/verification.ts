@@ -2,7 +2,8 @@
 // `POST /files/uploads` (purpose `verification_document` hoặc `credential`), rồi gửi id tệp khi nộp.
 import { z } from 'zod';
 import {
-  type TutorOccupation,
+  CredentialKind,
+  TutorOccupation,
   VerificationDocumentType,
   VerificationRejectionCode,
   VerificationRequestKind,
@@ -108,3 +109,131 @@ export const OwnIdentityVerification = z.object({
   canSubmit: z.boolean(),
 });
 export type OwnIdentityVerification = z.infer<typeof OwnIdentityVerification>;
+
+// ---- Phía Manager (G3 đợt 2) ----------------------------------------------------------------------
+
+/** Ảnh giấy tờ được xóa sau từng này ngày kể từ khi duyệt (C4, chờ luật sư xác nhận). */
+export const DOCUMENT_RETENTION_DAYS = 30;
+
+/** URL xem ảnh giấy tờ cho người duyệt sống ngắn: đủ để mở ảnh, không đủ để chia sẻ đi. */
+export const DOCUMENT_VIEW_URL_TTL_SECONDS = 120;
+
+export const VERIFICATION_QUEUE_PAGE_SIZE = 20;
+
+export const VerificationQueueQuery = z.object({
+  kind: VerificationRequestKind.optional(),
+  page: z.coerce.number().int().min(1).max(1000).default(1),
+});
+export type VerificationQueueQuery = z.infer<typeof VerificationQueueQuery>;
+
+export const VerificationRequestIdParams = z.object({ requestId: Id });
+export type VerificationRequestIdParams = z.infer<typeof VerificationRequestIdParams>;
+
+export const VerificationDocumentParams = z.object({ requestId: Id, documentId: Id });
+export type VerificationDocumentParams = z.infer<typeof VerificationDocumentParams>;
+
+/** Một dòng trong hàng chờ duyệt (chỉ yêu cầu đang chờ), sắp theo hạn duyệt. */
+export const VerificationQueueItem = z.object({
+  id: Id,
+  kind: VerificationRequestKind,
+  tutorId: Id,
+  /** Họ tên thật (người duyệt đối chiếu với giấy tờ); chưa có thì tên hiển thị. */
+  tutorName: z.string(),
+  occupation: TutorOccupation.nullable(),
+  credentialTitle: z.string().nullable(),
+  credentialKind: CredentialKind.nullable(),
+  submittedAt: z.iso.datetime(),
+  reviewDueAt: z.iso.datetime(),
+  /** Lần nộp thứ mấy cho cùng danh tính / cùng bằng cấp. */
+  attempt: z.int().positive(),
+});
+export type VerificationQueueItem = z.infer<typeof VerificationQueueItem>;
+
+export const VerificationQueue = z.object({
+  items: z.array(VerificationQueueItem),
+  /** Số yêu cầu đang chờ theo loại, cho các nút lọc. */
+  counts: z.object({ all: z.int(), identity: z.int(), credential: z.int() }),
+  page: z.int(),
+  pageSize: z.int(),
+  total: z.int(),
+});
+export type VerificationQueue = z.infer<typeof VerificationQueue>;
+
+/** Một giấy tờ trong màn duyệt: không có URL; xem ảnh bằng một yêu cầu riêng (được ghi nhật ký). */
+export const ReviewDocument = z.object({
+  id: Id,
+  type: VerificationDocumentType,
+  mimeType: z.string(),
+  sizeBytes: z.int().positive(),
+});
+export type ReviewDocument = z.infer<typeof ReviewDocument>;
+
+/** Màn duyệt một yêu cầu xác minh. */
+export const VerificationRequestDetail = z.object({
+  id: Id,
+  kind: VerificationRequestKind,
+  status: VerificationRequestStatus,
+  submittedAt: z.iso.datetime(),
+  reviewDueAt: z.iso.datetime(),
+  reviewedAt: z.iso.datetime().nullable(),
+  rejectionCode: VerificationRejectionCode.nullable(),
+  rejectionNote: z.string().nullable(),
+  attempt: z.int().positive(),
+  tutor: z.object({
+    id: Id,
+    fullName: z.string().nullable(),
+    displayName: z.string(),
+    occupation: TutorOccupation.nullable(),
+    institution: z.string().nullable(),
+  }),
+  credential: z
+    .object({
+      id: Id,
+      kind: CredentialKind,
+      title: z.string(),
+      issuer: z.string().nullable(),
+      issuedYear: z.int().nullable(),
+    })
+    .nullable(),
+  /** Rỗng khi ảnh đã bị xóa theo hạn lưu giữ. */
+  documents: z.array(ReviewDocument),
+  /** Các lần nộp trước cho cùng danh tính / cùng bằng cấp, mới nhất trước. */
+  history: z.array(
+    z.object({
+      id: Id,
+      status: VerificationRequestStatus,
+      submittedAt: z.iso.datetime(),
+      reviewedAt: z.iso.datetime().nullable(),
+      rejectionCode: VerificationRejectionCode.nullable(),
+      rejectionNote: z.string().nullable(),
+    }),
+  ),
+  /** Người đang xem là chính gia sư này (Manager kiêm gia sư): không được duyệt yêu cầu của mình. */
+  isOwnRequest: z.boolean(),
+});
+export type VerificationRequestDetail = z.infer<typeof VerificationRequestDetail>;
+
+export const DocumentViewUrl = z.object({
+  url: z.url(),
+  mimeType: z.string(),
+  expiresAt: z.iso.datetime(),
+});
+export type DocumentViewUrl = z.infer<typeof DocumentViewUrl>;
+
+/** Từ chối: chọn lý do; lý do "khác" bắt buộc ghi chú. Gia sư đọc được cả hai. */
+export const RejectVerificationRequest = z
+  .object({
+    rejectionCode: VerificationRejectionCode,
+    rejectionNote: z
+      .string()
+      .trim()
+      .max(1000, { error: 'too_long' })
+      .transform((v) => (v === '' ? null : v))
+      .nullable()
+      .optional(),
+  })
+  .refine((v) => v.rejectionCode !== 'other' || Boolean(v.rejectionNote), {
+    path: ['rejectionNote'],
+    error: 'required',
+  });
+export type RejectVerificationRequest = z.infer<typeof RejectVerificationRequest>;

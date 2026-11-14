@@ -1,5 +1,12 @@
 // Tài liệu OpenAPI sinh từ chính các Zod schema trong @tps/shared. Thêm endpoint: khai báo path ở đây.
 import {
+  DocumentViewUrl,
+  RejectVerificationRequest,
+  VerificationDocumentParams,
+  VerificationQueue,
+  VerificationQueueQuery,
+  VerificationRequestDetail,
+  VerificationRequestIdParams,
   OwnIdentityVerification,
   SubmitCredentialVerificationRequest,
   SubmitIdentityVerificationRequest,
@@ -549,6 +556,91 @@ export function createOpenApiDocument() {
             204: { description: 'Đã hủy' },
             ...roleErrors,
             404: error('not_found: không có yêu cầu đang chờ'),
+          },
+        },
+      },
+      '/api/v1/admin/verification-requests': {
+        get: {
+          tags: ['verification'],
+          summary: 'Hàng chờ xác minh (Manager): yêu cầu đang chờ, sắp theo hạn duyệt',
+          security,
+          requestParams: { query: VerificationQueueQuery },
+          responses: {
+            200: { description: 'OK', ...json(VerificationQueue) },
+            ...{
+              401: error('unauthenticated'),
+              403: error('forbidden: không phải Manager, hoặc hồ sơ của chính mình'),
+            },
+          },
+        },
+      },
+      '/api/v1/admin/verification-requests/{requestId}': {
+        get: {
+          tags: ['verification'],
+          summary: 'Màn duyệt một yêu cầu (không có URL ảnh)',
+          security,
+          requestParams: { path: VerificationRequestIdParams },
+          responses: {
+            200: { description: 'OK', ...json(VerificationRequestDetail) },
+            ...{
+              401: error('unauthenticated'),
+              403: error('forbidden: không phải Manager, hoặc hồ sơ của chính mình'),
+            },
+            404: error('not_found'),
+          },
+        },
+      },
+      '/api/v1/admin/verification-requests/{requestId}/documents/{documentId}/view': {
+        post: {
+          tags: ['verification'],
+          summary:
+            'URL xem một giấy tờ, sống 2 phút; ghi nhật ký kiểm toán; chỉ khi yêu cầu đang chờ',
+          security,
+          requestParams: { path: VerificationDocumentParams },
+          responses: {
+            200: { description: 'OK (Cache-Control: no-store)', ...json(DocumentViewUrl) },
+            ...{
+              401: error('unauthenticated'),
+              403: error('forbidden: không phải Manager, hoặc hồ sơ của chính mình'),
+            },
+            404: error('not_found'),
+            409: error('invalid_state_transition: yêu cầu đã được xử lý'),
+          },
+        },
+      },
+      '/api/v1/admin/verification-requests/{requestId}/approve': {
+        post: {
+          tags: ['verification'],
+          summary: 'Duyệt; ảnh giấy tờ xóa sau 30 ngày; email kết quả cho gia sư',
+          security,
+          requestParams: { path: VerificationRequestIdParams },
+          responses: {
+            200: { description: 'OK', ...json(VerificationRequestDetail) },
+            ...{
+              401: error('unauthenticated'),
+              403: error('forbidden: không phải Manager, hoặc hồ sơ của chính mình'),
+            },
+            404: error('not_found'),
+            409: error('invalid_state_transition: yêu cầu đã được xử lý'),
+          },
+        },
+      },
+      '/api/v1/admin/verification-requests/{requestId}/reject': {
+        post: {
+          tags: ['verification'],
+          summary: 'Từ chối kèm lý do (lý do "other" bắt buộc ghi chú); email kết quả cho gia sư',
+          security,
+          requestParams: { path: VerificationRequestIdParams },
+          requestBody: json(RejectVerificationRequest),
+          responses: {
+            200: { description: 'OK', ...json(VerificationRequestDetail) },
+            ...{
+              401: error('unauthenticated'),
+              403: error('forbidden: không phải Manager, hoặc hồ sơ của chính mình'),
+            },
+            404: error('not_found'),
+            409: error('invalid_state_transition: yêu cầu đã được xử lý'),
+            422: error('validation_failed'),
           },
         },
       },

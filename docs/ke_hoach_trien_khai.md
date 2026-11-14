@@ -193,14 +193,17 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
   - ~~Mở endpoint tải tệp `POST /files/uploads` cho `verification_document` và `credential`~~: **xong ở đợt 1** (chỉ gia sư).
   - Duyệt bằng cấp thì cập nhật `tutor_credentials.verification_status` và `tutor_profiles.has_verified_degree` (D20). API đã khóa sửa, xóa bằng cấp đang chờ duyệt hoặc đã xác minh.
   - Job dọn bản ghi `files` còn `pending_upload` quá 24 giờ và xóa tệp tương ứng trên kho (thiết kế CSDL mục 13). Ảnh đại diện đã tạo được bản ghi loại này từ G2.
-- Thông báo email và trong app khi hồ sơ được duyệt hoặc bị từ chối (dùng bảng thông báo tối giản; hoàn thiện ở giai đoạn 5).
+- Thông báo khi hồ sơ được duyệt hoặc bị từ chối: email **xong ở đợt 2**; thông báo trong app làm ở G5 cùng bảng thông báo (G5 đã có loại "kết quả xác minh"), không làm bảng tạm ở G3.
 
 **Đầu ra:** luồng xác minh đầy đủ trên web; trang `/admin` cho Manager và Admin.
 
 **Tiến độ:** làm theo ba đợt.
 
 - ~~Đợt 1, gia sư nộp xác minh~~: **xong ngày 2026-11-14**. Bảng `verification_requests`, `verification_documents`; gia sư tải ảnh CCCD hai mặt (thêm thẻ sinh viên nếu là sinh viên) lên kho riêng tư, đồng ý dùng giấy tờ, nộp; hồ sơ chuyển "chờ xác minh", hạn duyệt 2 ngày làm việc (D26); hủy yêu cầu đang chờ (ảnh xóa ngay); nộp 1–3 tệp để xác minh từng bằng cấp, hủy; hiện lý do từ chối. Web: bước 2 ở `/app/profile` theo canvas Verification. Trong lúc chờ duyệt, họ tên thật và nghề nghiệp bị khóa (người duyệt đối chiếu với giấy tờ; muốn sửa thì hủy yêu cầu). Lý do từ chối là danh sách có sẵn (canvas ManagerQueue) cộng ghi chú.
-- Đợt 2, Manager duyệt: hàng chờ và màn duyệt `/admin` (canvas ManagerQueue), xem ảnh qua presigned URL ngắn hạn, `audit_logs` cho mỗi lần xem và mỗi quyết định, duyệt/từ chối (cập nhật hồ sơ, bằng cấp, `has_verified_degree`), email kết quả, job xóa ảnh sau 30 ngày và job dọn tệp tải dở.
+- ~~Đợt 2, Manager duyệt~~: **xong ngày 2026-11-14**. Hàng chờ `/admin/verifications` và màn duyệt (canvas ManagerQueue): lọc theo loại, hạn xử lý (quá hạn, còn dưới 24 giờ), lần nộp thứ mấy, lần nộp trước; xem ảnh qua URL ký sẵn sống 2 phút, chỉ khi yêu cầu đang chờ, mỗi lần xem ghi `audit_logs` (chỉ ghi thêm, trigger chặn sửa xóa); duyệt / từ chối kèm lý do (hồ sơ công khai ngay khi duyệt danh tính; duyệt bằng loại "Bằng cấp" bật huy hiệu); email kết quả theo ngôn ngữ của gia sư; job hằng ngày xóa ảnh 30 ngày sau quyết định và dọn tệp tải dở quá 24 giờ. Manager kiêm gia sư không duyệt hồ sơ của chính mình. Chỉ vai trò Manager vào được (Admin không duyệt, C1). Đã chạy thử với API, PostgreSQL, Redis, SeaweedFS, Mailpit thật. Khác canvas, chưa làm:
+  - Số yêu cầu đang chờ cạnh mục "Duyệt xác minh" trên thanh điều hướng (canvas ghi "Duyệt xác minh · 6"): trang hàng chờ có số theo loại; số trên thanh điều hướng cần gọi API ở mọi trang quản trị, làm khi có thêm hàng chờ báo cáo, tranh chấp (G8).
+  - Thông báo trong app khi có kết quả: chưa có bảng thông báo (G5); hiện có email và kết quả hiện ở trang hồ sơ.
+  - Thu hồi xác minh (B.4.1 `verified` → `incomplete`) là kết quả của vụ việc kiểm duyệt: làm ở G8.
 - Đợt 3, Admin: tài khoản (tìm, khóa/mở khóa, gán Manager), danh mục (canvas AdminAccounts, AdminCatalog), test điều kiện hoàn thành.
 
 **Hoàn thành khi:** gia sư chưa được duyệt danh tính không thể đăng bài và không xuất hiện trong kết quả tìm kiếm công khai; Manager không có quyền của Admin và ngược lại.
