@@ -6,6 +6,8 @@ Chúng tôi đang xây dựng TPS-Connection, một nền tảng trực tuyến 
 
 Mỗi câu hỏi bên dưới kèm **phương án chúng tôi đang dự kiến**. Luật sư chỉ cần xác nhận phương án đó, hoặc chỉ ra điểm cần sửa và căn cứ pháp lý. Các văn bản pháp luật chúng tôi nêu chỉ là phỏng đoán của người không có chuyên môn và có thể không đầy đủ.
 
+Chúng tôi đã tự rà soát sơ bộ 25 câu theo các văn bản có hiệu lực đến ngày 2026-11-15 (Luật Thương mại điện tử 2025, Luật Bảo vệ dữ liệu cá nhân 2025, Luật An ninh mạng 2025…); bản tự rà soát có thể gửi kèm: [rà soát pháp lý](ra_soat_phap_ly.md). Những điểm chúng tôi chưa chắc được gom ở mục 6 của bản đó và ở mục H bên dưới.
+
 ---
 
 ## 1. Thông tin về nền tảng
@@ -50,13 +52,13 @@ Mức ưu tiên: **[Trước thử nghiệm]** cần có câu trả lời trư�
 ### A. Tư cách pháp lý và thủ tục
 
 1. **[Trước thử nghiệm]** Đơn vị vận hành có cần thành lập doanh nghiệp không, hay cá nhân được vận hành ở giai đoạn thử nghiệm miễn phí?
-2. **[Trước thử nghiệm]** Nền tảng có thuộc diện **sàn giao dịch thương mại điện tử** hoặc **website cung cấp dịch vụ trực tuyến** phải đăng ký hoặc thông báo với cơ quan nhà nước (ví dụ Bộ Công Thương) không, khi đang miễn phí và không thu tiền hộ? Nếu có: thủ tục, thời gian, và cần soạn những văn bản gì (ví dụ quy chế hoạt động)?
+2. **[Trước thử nghiệm]** Theo Luật Thương mại điện tử 2025 và Nghị định 248/2026/NĐ-CP, nền tảng có thuộc diện **nền tảng thương mại điện tử trung gian** phải đăng ký với Bộ Công Thương trước khi vận hành không, khi đang miễn phí và không thu tiền hộ? Nếu có: thủ tục, thời gian, và cần soạn những văn bản gì (ví dụ đề án hoạt động, quy chế hoạt động)?
 3. **[Trước thử nghiệm]** Có cần giấy phép hoặc thủ tục nào liên quan đến **giáo dục** không, khi nền tảng chỉ kết nối và cung cấp công cụ quản lý, không tự tổ chức dạy học?
 4. **[Sau]** Khi bắt đầu thu phí (phí đăng bài, phí kết nối, gói dịch vụ) hoặc tích hợp thanh toán trực tuyến, phát sinh thêm nghĩa vụ gì?
 
 ### B. Dữ liệu cá nhân
 
-5. **[Trước thử nghiệm]** Theo quy định về bảo vệ dữ liệu cá nhân hiện hành (chúng tôi biết có Nghị định 13/2023/NĐ-CP và Luật Bảo vệ dữ liệu cá nhân năm 2025), nền tảng phải thực hiện những thủ tục gì? Ví dụ: hồ sơ đánh giá tác động xử lý dữ liệu, thông báo với cơ quan có thẩm quyền, chỉ định người phụ trách bảo vệ dữ liệu.
+5. **[Trước thử nghiệm]** Theo quy định về bảo vệ dữ liệu cá nhân hiện hành (Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15 và Nghị định 356/2025/NĐ-CP, thay Nghị định 13/2023/NĐ-CP từ 01/01/2026), nền tảng phải thực hiện những thủ tục gì? Ví dụ: hồ sơ đánh giá tác động xử lý dữ liệu, thông báo với cơ quan có thẩm quyền, chỉ định người phụ trách bảo vệ dữ liệu.
 6. **[Trước thử nghiệm]** Ảnh căn cước công dân và dữ liệu của trẻ em có phải là **dữ liệu nhạy cảm** không? Nếu có, cần thêm biện pháp gì?
 7. **[Trước thử nghiệm]** **Phương án:** người dùng tích chọn đồng ý điều khoản sử dụng và chính sách quyền riêng tư khi đăng ký; nền tảng lưu lại phiên bản văn bản và thời điểm đồng ý. Cách này có đủ không?
 8. **[Trước thử nghiệm]** **Phương án xóa dữ liệu:** khi người dùng xóa tài khoản, tài khoản bị ẩn ngay; sau 6 tháng dữ liệu cá nhân bị xóa hẳn; lịch sử học tập và học phí được giữ ở dạng ẩn danh (không còn liên kết được tới người cụ thể). Thời hạn 6 tháng và việc giữ dữ liệu ẩn danh có phù hợp không? Có quy định nào buộc giữ lâu hơn (ví dụ để phục vụ cơ quan chức năng) hoặc xóa sớm hơn không?
@@ -74,7 +76,7 @@ Mức ưu tiên: **[Trước thử nghiệm]** cần có câu trả lời trư�
 
 ### D. Lưu trữ tại Việt Nam và dịch vụ nước ngoài
 
-17. **[Trước thử nghiệm]** Nền tảng có thuộc diện bắt buộc lưu trữ dữ liệu tại Việt Nam theo Luật An ninh mạng 2018 và Nghị định 53/2022/NĐ-CP không? Phương án đặt máy chủ trong nước như trên đã đủ chưa?
+17. **[Trước thử nghiệm]** Nền tảng có thuộc diện bắt buộc lưu trữ dữ liệu tại Việt Nam theo Luật An ninh mạng 2025 (thay Luật An ninh mạng 2018 từ 01/7/2026) và văn bản hướng dẫn không? Thời hạn lưu dữ liệu và nhật ký là bao lâu? Phương án đặt máy chủ trong nước như trên đã đủ chưa?
 18. **[Trước thử nghiệm]** Việc gửi email qua Gmail, báo lỗi qua Sentry, thông báo đẩy qua dịch vụ nước ngoài có bị coi là **chuyển dữ liệu cá nhân ra nước ngoài** không? Nếu có, cần thủ tục gì, hay nên thay bằng dịch vụ trong nước?
 
 ### E. Trách nhiệm với nội dung và giao dịch giữa người dùng
@@ -86,12 +88,20 @@ Mức ưu tiên: **[Trước thử nghiệm]** cần có câu trả lời trư�
 
 ### F. Quy định về dạy thêm
 
-23. **[Trước thử nghiệm]** Quy định về dạy thêm, học thêm của Bộ Giáo dục và Đào tạo (chúng tôi biết có Thông tư 29/2024/TT-BGDĐT) có áp dụng cho gia sư cá nhân trên nền tảng không? Đặc biệt với gia sư là **giáo viên đang công tác**: nền tảng có trách nhiệm gì (ví dụ yêu cầu gia sư cam kết không dạy học sinh của chính mình ở trường)?
-24. **[Sau]** Gia sư cá nhân có phải đăng ký kinh doanh để nhận dạy qua nền tảng không? Nền tảng có phải nhắc hoặc kiểm tra điều này không?
+23. **[Trước thử nghiệm]** Quy định về dạy thêm, học thêm của Bộ Giáo dục và Đào tạo (Thông tư 29/2024/TT-BGDĐT, sửa đổi bởi Thông tư 19/2026/TT-BGDĐT) có áp dụng cho gia sư cá nhân trên nền tảng không? Đặc biệt với gia sư là **giáo viên đang công tác**: nền tảng có trách nhiệm gì (ví dụ yêu cầu gia sư cam kết không dạy học sinh của chính mình ở trường)?
+24. **[Trước thử nghiệm]** Gia sư cá nhân (kể cả sinh viên dạy kèm 1-1) có phải đăng ký kinh doanh để nhận dạy qua nền tảng không? Nền tảng có phải nhắc hoặc kiểm tra điều này không?
 
 ### G. Thuế
 
 25. **[Sau]** Nền tảng có nghĩa vụ khai thay, khấu trừ hoặc cung cấp thông tin về thu nhập của gia sư cho cơ quan thuế không? Câu trả lời có khác khi tiền đi ngoài nền tảng (hiện tại) so với khi có thanh toán trực tuyến (sau này)?
+
+### H. Câu hỏi bổ sung sau khi tự rà soát (2026-11-15)
+
+26. **[Trước thử nghiệm]** Luật Thương mại điện tử 2025 yêu cầu xác thực điện tử danh tính người bán trước khi cho cung ứng dịch vụ. **Phương án hiện tại:** gia sư tải ảnh CCCD hai mặt, nhân viên duyệt bằng mắt. Cách này có đạt yêu cầu không, hay phải liên kết với tài khoản định danh điện tử (Nghị định 69/2024/NĐ-CP, sửa đổi bởi Nghị định 320/2026/NĐ-CP)?
+27. **[Trước thử nghiệm]** Chủ quản nền tảng thương mại điện tử trung gian trong nước có bắt buộc là pháp nhân không?
+28. **[Trước thử nghiệm]** Đồng ý của trẻ từ đủ 7 tuổi: việc chia sẻ họ tên, trường, địa chỉ của trẻ cho gia sư sau khi phụ huynh xác nhận hợp tác có tính là "công bố thông tin đời sống riêng tư" không? Với hồ sơ con không có tài khoản, đồng ý của phụ huynh có đủ không?
+29. **[Trước thử nghiệm]** Quy định không dạy thêm có thu tiền cho học sinh tiểu học (trừ nghệ thuật, thể dục thể thao, kỹ năng sống) có áp dụng cho gia sư 1-1 tại nhà không? Nền tảng có nên chặn các môn khác ở lớp 1–5 không?
+30. **[Trước thử nghiệm]** **Phương án:** khi người dùng xóa tài khoản, ẩn ngay và xóa hoặc khử nhận dạng dữ liệu cá nhân trong 20 ngày, trừ khi đang có tranh chấp hoặc cơ quan chức năng yêu cầu giữ; nhật ký hệ thống và nhật ký thao tác của nhân viên giữ theo thời hạn riêng. Có phù hợp không?
 
 ---
 
@@ -102,8 +112,9 @@ Mức ưu tiên: **[Trước thử nghiệm]** cần có câu trả lời trư�
 | Điều khoản sử dụng | Cho mọi người dùng; có phần riêng cho gia sư |
 | Chính sách quyền riêng tư | Tiếng Việt và tiếng Anh (nền tảng hỗ trợ hai ngôn ngữ) |
 | Nội dung đồng ý của phụ huynh khi tạo hồ sơ và tài khoản cho con | |
-| Cam kết của gia sư khi đăng ký | Thông tin trung thực; quy tắc ứng xử với trẻ em; các cam kết theo câu 23 nếu cần |
-| Quy chế hoạt động | Nếu nền tảng thuộc diện ở câu 2 |
+| Cam kết của gia sư khi đăng ký | Thông tin trung thực; quy tắc ứng xử với trẻ em; không có tiền án liên quan đến trẻ em (thay cho nộp lý lịch tư pháp); các cam kết theo câu 23, 24 |
+| Đề án hoạt động và Quy chế hoạt động | Hồ sơ đăng ký nền tảng trung gian với Bộ Công Thương (câu 2) |
+| Hồ sơ đánh giá tác động xử lý dữ liệu, chuyển dữ liệu xuyên biên giới; quyết định chỉ định nhân sự bảo vệ dữ liệu | Theo câu 5 và 18 |
 | Quy trình xử lý yêu cầu về dữ liệu và sự cố lộ lọt dữ liệu | Theo câu 10 và 11 |
 
 **Tài liệu có thể gửi kèm:** mô tả nghiệp vụ chi tiết của nền tảng (tiếng Việt).

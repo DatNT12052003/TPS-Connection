@@ -175,7 +175,10 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 - "Tùy chọn riêng tư" (§3.1) gồm những gì? Gợi ý: bật/tắt nhận email giới thiệu (loại đồng ý `marketing_email` đã có trong bảng `user_consents`).
 - Có cho phụ huynh xóa hồ sơ con đã có tài khoản học sinh không? Nếu có, tài khoản học sinh xử lý thế nào? API hiện trả 409.
-- Độ tuổi tối thiểu của tài khoản học sinh (D4, chờ luật sư). Lời mời học sinh hiện chưa kiểm tra tuổi.
+- Độ tuổi tối thiểu của tài khoản học sinh (D4). Lời mời học sinh hiện chưa kiểm tra tuổi. Theo [rà soát pháp lý](00-product/ra_soat_phap_ly.md) câu 13, luật không đặt tuổi tối thiểu nếu có cha mẹ đồng ý; chờ luật sư xác nhận rồi chốt.
+- Từ [rà soát pháp lý](00-product/ra_soat_phap_ly.md) (2026-11-15), chờ chủ dự án quyết và luật sư xác nhận:
+  - Tách ô đồng ý khi đăng ký thành hai ô riêng (Điều khoản sử dụng; Chính sách quyền riêng tư). Hiện là một ô `acceptTerms` ghi hai bản ghi đồng ý (câu 7).
+  - Học sinh từ đủ 7 tuổi tự bấm đồng ý khi kích hoạt tài khoản (loại đồng ý mới), và khi gửi đánh giá công khai (câu 12, 15).
 
 ### Giai đoạn 3. Xác minh gia sư và trang quản trị cơ bản
 
@@ -185,7 +188,13 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 - **Nộp hồ sơ xác minh** _(C4)_: mọi gia sư nộp CCCD; sinh viên nộp thêm thẻ sinh viên; bằng cấp, chứng chỉ nộp tùy chọn để lấy huy hiệu. Tệp lưu ở bucket private, xem bằng presigned URL ngắn hạn.
 - **Duyệt:** Manager xem hàng chờ, duyệt hoặc từ chối kèm lý do; gia sư được nộp lại. Mục tiêu xử lý trong 2 ngày làm việc. Mỗi trường trong hồ sơ được đánh dấu tự khai hoặc đã xác minh.
-- **Sau khi duyệt:** giữ kết quả xác minh, job tự xóa ảnh giấy tờ sau 30 ngày (mốc chờ luật sư xác nhận).
+- **Sau khi duyệt:** giữ kết quả xác minh, job tự xóa ảnh giấy tờ sau 30 ngày (mốc chờ luật sư xác nhận; [rà soát pháp lý](00-product/ra_soat_phap_ly.md) câu 9 đánh giá là phù hợp).
+- **Từ rà soát pháp lý (2026-11-15), chờ chủ dự án quyết và luật sư xác nhận:**
+  - Luật Thương mại điện tử 2025 yêu cầu xác thực điện tử danh tính người bán (ở đây là gia sư) trước khi cho cung ứng dịch vụ, có thể phải liên kết tài khoản định danh điện tử. Nếu ảnh CCCD + Manager duyệt không đạt yêu cầu, luồng xác minh của G3 phải đổi (câu 20). Ưu tiên hỏi luật sư điểm này.
+  - Câu chữ đồng ý khi nộp giấy tờ (`verification_document_processing`) ghi rõ ảnh CCCD là "dữ liệu cá nhân nhạy cảm" (câu 6, 7).
+  - Cam kết điện tử của gia sư khi nộp xác minh (không có tiền án liên quan đến trẻ em; tuân thủ quy định dạy thêm; giáo viên không dạy học sinh của mình), lưu như một loại đồng ý mới trong `user_consents` (câu 20, 23).
+  - Lớp 1–5 hiện chọn được mọi môn. Nếu quy định không dạy thêm có thu tiền cho học sinh tiểu học áp dụng cho gia sư 1-1, giới hạn môn của cấp tiểu học hoặc cảnh báo gia sư (câu 23).
+  - Thời hạn lưu `audit_logs` (đề xuất tối thiểu 24 tháng) và ghi lý do xem vào `metadata` (câu 22).
 - **Quản trị (Admin):** danh sách và tìm kiếm tài khoản, khóa/mở khóa, gán vai trò Manager, quản lý danh mục môn, khối lớp, khu vực.
 - **Nhật ký kiểm toán (audit log):** ghi mọi thao tác của Manager và Admin, nhất là mỗi lần xem giấy tờ tùy thân.
 - **Việc chuyển từ G2:**
@@ -312,6 +321,9 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 - **Kiểm duyệt** (§13): hàng chờ báo cáo vi phạm cho tài khoản, bài đăng, tin nhắn; Manager chỉ xem đoạn tin nhắn bị báo cáo _(C1)_; lưu kết quả xử lý; cảnh báo, hạn chế, khóa tài khoản; ẩn bài đăng vi phạm. Admin xử lý khiếu nại lại.
 - **Xóa tài khoản** _(C2, D19)_: ghi `deleted_at` và ẩn ngay; job sau 6 tháng xóa hẳn dữ liệu cá nhân, ẩn danh bản ghi lớp và đánh giá; giấy tờ xác minh theo mốc riêng. Bên còn lại vẫn thấy lịch sử buổi học, điểm, học phí dưới nhãn "Học sinh đã xóa tài khoản".
+  - **Chờ chủ dự án quyết lại C2:** [rà soát pháp lý](00-product/ra_soat_phap_ly.md) câu 8 cho thấy khi chủ thể yêu cầu xóa, phải hoàn thành trong 20 ngày (30 ngày nếu cần bên thứ ba), nên 6 tháng là quá dài. Đề xuất: xóa hoặc khử nhận dạng trong 20 ngày, trừ tài khoản đang tranh chấp hoặc bị cơ quan chức năng yêu cầu giữ (cần cờ giữ dữ liệu); log hệ thống và `audit_logs` giữ theo thời hạn riêng; khi khử nhận dạng, kiểm tra cả các trường văn bản tự do.
+  - Xóa ảnh giấy tờ xác minh ngay khi gia sư xóa tài khoản, không chờ mốc 30 ngày (câu 9).
+  - Thêm cách để người dùng tải bản sao dữ liệu của mình và một đầu mối nhận yêu cầu về dữ liệu (câu 10).
 - **Đổi phụ huynh quản lý** do Admin xử lý theo yêu cầu _(C9)_: kết thúc dòng `learner_guardians` cũ (`ended_reason = 'transferred'`, `changed_by`) rồi thêm dòng mới, trong một transaction.
 - **Thống kê cơ bản** cho Admin theo các chỉ số pilot ở giai đoạn 0.
 - **Review bảo mật** (skill `security-review`): xác thực, phân quyền theo quan hệ, upload tệp, rate limit, header bảo mật, CORS, lộ dữ liệu qua API, log không chứa dữ liệu của trẻ.
@@ -320,7 +332,8 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Hạ tầng** (§7.1 tài liệu công nghệ): server đặt tại Việt Nam, Caddy + HTTPS, tên miền, tường lửa, backup PostgreSQL và SeaweedFS hằng ngày có mã hóa, thử khôi phục, Sentry.
 - **Việc chuyển từ G3:** khóa ngoại `account_sanctions.case_id → moderation_cases` (bảng vụ việc tạo ở G8); hạn chế tài khoản (`restricted`) và thu hồi xác minh (B.4.1 `verified` → `incomplete`) là kết quả của vụ việc; trang "Lý do báo cáo", "Cấu hình hệ thống" (các mốc thời gian hiện là hằng số theo decision log), "Khiếu nại quyết định" và xem "Nhật ký kiểm toán" trên giao diện Admin (canvas AdminCatalog, Appeals); số việc đang chờ cạnh các mục điều hướng của Manager.
 - **Việc chuyển từ G2 (triển khai web):** server web gọi API thay trình duyệt và chuyển tiếp header `X-Forwarded-For`. Khi chạy thật: chỉ cho web nhận request qua Caddy (Caddy ghi đè `X-Forwarded-For` bằng IP thật, không giữ giá trị trình duyệt gửi), và đặt `TRUST_PROXY` của API tin địa chỉ của server web. Nếu không, rate limit theo IP của API hoặc chỉ thấy IP của web (mọi người dùng chung một giới hạn), hoặc người dùng giả được IP. Đặt `COOKIE_DOMAIN` là tên miền gốc và `COOKIE_SECURE=true` (D57). Kiểm tra trong review bảo mật ở trên.
-- **Pháp lý và nội dung:** điều khoản sử dụng, chính sách quyền riêng tư (đã qua luật sư), hướng dẫn sử dụng cơ bản hai ngôn ngữ.
+- **Pháp lý và nội dung:** điều khoản sử dụng, chính sách quyền riêng tư (đã qua luật sư), hướng dẫn sử dụng cơ bản hai ngôn ngữ. Bộ văn bản đầy đủ và checklist kỹ thuật ở [rà soát pháp lý](00-product/ra_soat_phap_ly.md) mục 4, 5.
+- **Dữ liệu gửi ra nước ngoài** (câu 18 rà soát pháp lý): khi tích hợp Sentry, lọc bỏ IP, email, tên trước khi gửi hoặc tự host trong nước; quyết định giữ Gmail SMTP (phải lập hồ sơ chuyển dữ liệu xuyên biên giới) hay đổi sang SMTP trong nước.
 
 **Hoàn thành khi:** không còn lỗi bảo mật mức cao; backup đã thử khôi phục thành công; toàn bộ test E2E xanh trên staging.
 
@@ -404,7 +417,10 @@ Các việc bên ngoài, không chặn việc viết code nhưng có hạn chót
 
 | Việc | Hạn | Ghi chú |
 | ---- | --- | ------- |
-| Điền thông tin đơn vị vận hành và gửi [câu hỏi pháp lý](00-product/cau_hoi_phap_ly.md) cho luật sư | Trước G8; nên gửi sớm vì luật sư cần thời gian | Kết quả có thể làm thay đổi các mốc 30 ngày (C4), 6 tháng (C2), ngưỡng tuổi tài khoản học sinh (D4) |
+| Điền thông tin đơn vị vận hành và gửi [câu hỏi pháp lý](00-product/cau_hoi_phap_ly.md) cho luật sư, kèm bản [tự rà soát](00-product/ra_soat_phap_ly.md) | Trước G8; nên gửi sớm vì luật sư cần thời gian | Kết quả có thể làm thay đổi các mốc 30 ngày (C4), 6 tháng (C2), ngưỡng tuổi tài khoản học sinh (D4) và luồng xác minh gia sư (câu 26) |
+| Thành lập doanh nghiệp làm đơn vị vận hành | Trước khi đăng ký nền tảng | Rà soát pháp lý câu 1 |
+| Đăng ký nền tảng thương mại điện tử trung gian với Bộ Công Thương (đề án hoạt động, quy chế hoạt động) | Được xác nhận trước G9 | Thời hạn xác nhận 07 ngày làm việc, thực tế có thể lâu hơn (rà soát pháp lý câu 2) |
+| Hồ sơ đánh giá tác động xử lý dữ liệu cá nhân; hồ sơ chuyển dữ liệu xuyên biên giới (nếu dùng dịch vụ nước ngoài); chỉ định nhân sự bảo vệ dữ liệu | Trước G9 | Gửi Cục A05, Bộ Công an (rà soát pháp lý câu 5, 18) |
 | Đăng ký tên miền cho TPS-Connection _(D1)_ | Trước G8 | Cần cho HTTPS và bundle ID của app Mobile |
 | Chọn khu vực pilot _(D11, D45)_ | Trước G9 | Nên chọn nơi có sẵn nguồn gia sư hoặc kênh tiếp cận phụ huynh |
 | Cung cấp đầu vào cho thiết kế giao diện (G1b) | Khi bắt đầu G1b | Logo, màu, cảm giác thương hiệu, chế độ tối |
