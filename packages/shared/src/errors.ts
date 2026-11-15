@@ -23,6 +23,8 @@ export const ErrorCode = z.enum([
   // Lời mời học sinh (D50): không tồn tại, đã dùng hoặc đã hủy / đã quá 7 ngày.
   'invitation_invalid',
   'invitation_expired',
+  // Bài đăng (G4): gia sư chưa được duyệt danh tính hoặc tài khoản không hoạt động (D5).
+  'tutor_not_verified',
   'internal_error',
   'service_unavailable',
 ]);
@@ -48,6 +50,7 @@ export const ERROR_HTTP_STATUS = {
   code_attempts_exceeded: 400,
   invitation_invalid: 404,
   invitation_expired: 410,
+  tutor_not_verified: 403,
   internal_error: 500,
   service_unavailable: 503,
 } as const satisfies Record<ErrorCode, number>;

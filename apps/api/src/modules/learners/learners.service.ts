@@ -14,6 +14,7 @@ import type { DataSource } from 'typeorm';
 import { conflict, notFound } from '../../lib/app-error.js';
 import type { Logger } from '../../lib/logger.js';
 import { assertCatalogRefs } from '../catalog/catalog-checks.js';
+import { createRequestPostsRepository } from '../request-posts/request-posts.repository.js';
 import { createUsersRepository } from '../users/users.repository.js';
 import { createLearnerAccess, type LearnerViewer } from './learner-access.js';
 import type { Learner } from './learner.entity.js';
@@ -216,8 +217,9 @@ export function createLearnersService(deps: {
     },
 
     /**
-     * Xóa mềm hồ sơ con: ẩn ngay, rút lại đồng ý xử lý dữ liệu, hủy lời mời đang mở. Dữ liệu cá nhân được
-     * ẩn danh hóa sau 6 tháng bằng job (C2). Hồ sơ đã có tài khoản học sinh thì chưa xóa được ở bản này.
+     * Xóa mềm hồ sơ con: ẩn ngay, rút lại đồng ý xử lý dữ liệu, hủy lời mời đang mở, xóa mềm các bài tìm gia sư
+     * của con. Dữ liệu cá nhân được ẩn danh hóa sau 6 tháng bằng job (C2). Hồ sơ đã có tài khoản học sinh thì chưa
+     * xóa được ở bản này.
      */
     async remove(actorId: string, learnerId: string): Promise<void> {
       await dataSource.transaction(async (manager) => {
@@ -231,6 +233,7 @@ export function createLearnersService(deps: {
         await repo.softDelete(learnerId);
         await createStudentInvitationsRepository(manager).revokeOpen(learnerId);
         await createUsersRepository(manager).withdrawChildDataConsent(learnerId);
+        await createRequestPostsRepository(manager).softDeleteForLearner(learnerId);
       });
       logger.info({ userId: actorId, learnerId }, 'Learner profile deleted');
     },

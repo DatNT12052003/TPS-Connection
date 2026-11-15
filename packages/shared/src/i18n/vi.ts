@@ -41,6 +41,8 @@ export const vi = {
       'Liên kết mời không còn dùng được: đã được dùng, đã bị hủy hoặc không đúng. Hãy nhờ phụ huynh gửi lời mời mới.',
     invitation_expired:
       'Liên kết mời đã quá 7 ngày nên hết hạn. Hãy nhờ phụ huynh gửi lời mời mới.',
+    tutor_not_verified:
+      'Bạn cần được duyệt xác minh danh tính trước khi đăng bài hoặc xem nhu cầu tìm gia sư.',
     internal_error: 'Hệ thống gặp sự cố khi xử lý yêu cầu. Hãy thử lại sau ít phút.',
     service_unavailable: 'Hệ thống đang bảo trì hoặc quá tải. Hãy thử lại sau ít phút.',
   },
@@ -91,6 +93,11 @@ export const vi = {
     documents_incomplete: 'Còn thiếu giấy tờ bắt buộc. Hãy tải đủ ảnh rồi nộp lại.',
     document_type_not_allowed: 'Loại giấy tờ này không dùng cho yêu cầu xác minh này.',
     duplicate_document: 'Mỗi loại giấy tờ chỉ nộp một ảnh.',
+    budget_range: 'Ngân sách tối thiểu không được lớn hơn ngân sách tối đa.',
+    province_required_for_in_person: 'Học trực tiếp hoặc kết hợp cần chọn tỉnh/thành phố.',
+    invalid_calendar_date: 'Ngày chưa hợp lệ. Hãy chọn lại ngày.',
+    request_post_exists:
+      'Con đã có một bài tìm gia sư cho môn này. Hãy sửa bài đó, hoặc đóng bài đó trước khi đăng bài mới.',
   },
 
   // ---- Email gửi người dùng (API dựng nội dung theo ngôn ngữ của người nhận) ----
@@ -940,6 +947,17 @@ export const vi = {
     found_tutor: 'Đã tìm được gia sư',
     no_longer_needed: 'Không còn nhu cầu',
     other: 'Lý do khác',
+  },
+  requestPostGoal: {
+    reinforce: 'Củng cố kiến thức',
+    exam_prep: 'Luyện thi',
+    advanced: 'Học nâng cao',
+    other: 'Mục tiêu khác',
+  },
+  budgetUnit: {
+    hour: 'Theo giờ',
+    session: 'Theo buổi',
+    month: 'Theo tháng',
   },
   teachingMode: {
     online: 'Trực tuyến',

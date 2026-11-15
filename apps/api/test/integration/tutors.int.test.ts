@@ -32,6 +32,8 @@ import { createDataSource } from '../../src/db/data-source.js';
 import { createMemoryRateLimiter } from '../../src/lib/rate-limiter.js';
 import { buildStorageKey, type Storage } from '../../src/lib/storage.js';
 import type { AuthService } from '../../src/modules/auth/auth.service.js';
+import type { RequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
+import type { TutorPostsService } from '../../src/modules/tutor-posts/tutor-posts.service.js';
 import { createCatalogService } from '../../src/modules/catalog/catalog.service.js';
 import { createFilesService } from '../../src/modules/files/files.service.js';
 import type { LearnersService } from '../../src/modules/learners/learners.service.js';
@@ -163,6 +165,9 @@ beforeAll(async () => {
     adminCatalog: createAdminCatalogService({ dataSource: db, logger: silentLogger }),
     account: createAccountService({ dataSource: db, files, publicFileUrl, logger: silentLogger }),
     catalog: createCatalogService({ dataSource: db }),
+    // Bài đăng: test riêng ở posts.int.test.ts.
+    tutorPosts: {} as TutorPostsService,
+    requestPosts: {} as RequestPostsService,
   });
 });
 

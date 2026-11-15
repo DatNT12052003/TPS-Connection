@@ -248,6 +248,15 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Hoàn thành khi:** khách chưa đăng nhập tìm được gia sư đã xác minh; trang công khai render phía server; không có dữ liệu nhận dạng của trẻ trong bất kỳ response công khai nào.
 
+**Tiến độ:** làm theo ba đợt.
+
+- **Đợt 1, bài đăng (database và API):** **xong ngày 2026-11-15**. Bảng `tutor_posts` (môn × khối, khu vực, lịch) và `request_posts` (lịch mong muốn). Gia sư: `/api/v1/me/tutor-posts` (tạo nháp kể cả khi chưa xác minh, sửa, đổi trạng thái theo B.2, nhân bản D33, xóa mềm), bài công khai `GET /api/v1/tutor-posts/:id` (tăng lượt xem). Phụ huynh: `/api/v1/me/request-posts` (cho hồ sơ con mình quản lý, đổi trạng thái theo B.3, đóng phải có lý do), gia sư đã xác minh xem `GET /api/v1/request-posts/:id` (không có hồ sơ con, người đăng hay danh tính của trẻ). Mở bài cần gia sư đã duyệt danh tính (403 `tutor_not_verified`, mã lỗi mới) và tài khoản đang hoạt động. Bài đã đăng phải có ít nhất một môn, hình thức dạy, và khu vực nếu dạy trực tiếp. Mỗi hồ sơ con chỉ một bài chưa đóng cho mỗi môn (unique một phần, lỗi `request_post_exists`). Xóa hồ sơ con thì xóa mềm bài của con. Giới hạn: 20 bài chưa đóng mỗi gia sư, 30 mỗi phụ huynh. Test: `apps/api/test/integration/posts.int.test.ts`, gồm phần "Việc chuyển từ G3" về đăng bài và hiển thị công khai.
+- **Đợt 2, tìm kiếm (API):** cột `search_vector`, slug, danh sách và tìm kiếm gia sư, bài tuyển, nhu cầu; index kiểm bằng `EXPLAIN ANALYZE`.
+- **Đợt 3, web:** trang công khai SSR, trang chủ, quản lý bài đăng trong `/app`.
+- **Chuyển sang giai đoạn sau:**
+  - G5: ẩn hoặc đóng bài tìm gia sư thì hủy các ứng tuyển còn `pending` (D31); xác nhận hợp tác từ bài thì hệ thống đóng bài với lý do `found_tutor`; đếm số yêu cầu phát sinh từ bài tuyển.
+  - G8: Manager ẩn, bỏ ẩn bài vi phạm (`moderation_hidden_at`, cột đã có); thu hồi xác minh thì các bài đang mở, đủ học sinh chuyển `paused` (B.2); xóa tài khoản thì xóa mềm bài đăng.
+
 ### Giai đoạn 5. Kết nối, nhắn tin và thông báo
 
 **Mục tiêu:** hai bên gửi yêu cầu, trao đổi và cùng xác nhận hợp tác. Đây là điểm chuyển từ marketplace sang quản lý dạy học.

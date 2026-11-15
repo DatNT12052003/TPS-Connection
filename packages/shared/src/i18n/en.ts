@@ -40,6 +40,8 @@ export const en: Messages = {
       'This invitation link can no longer be used: it was already used, cancelled, or is not correct. Ask your parent to send a new invitation.',
     invitation_expired:
       'This invitation link is more than 7 days old and has expired. Ask your parent to send a new invitation.',
+    tutor_not_verified:
+      'Your identity needs to be verified before you can publish posts or view tutor requests.',
     internal_error:
       'Something went wrong on our side while handling your request. Try again in a few minutes.',
     service_unavailable:
@@ -93,6 +95,11 @@ export const en: Messages = {
     documents_incomplete: 'Some required documents are missing. Upload them all and submit again.',
     document_type_not_allowed: 'This kind of document is not used for this verification request.',
     duplicate_document: 'Upload only one image for each kind of document.',
+    budget_range: 'The minimum budget cannot be higher than the maximum budget.',
+    province_required_for_in_person: 'In-person or hybrid lessons need a province or city.',
+    invalid_calendar_date: 'This date is not valid. Choose the date again.',
+    request_post_exists:
+      'Your child already has a tutor request for this subject. Edit that post, or close it before posting a new one.',
   },
 
   emailCommon: {
@@ -944,6 +951,17 @@ export const en: Messages = {
     found_tutor: 'Found a tutor',
     no_longer_needed: 'No longer needed',
     other: 'Other reason',
+  },
+  requestPostGoal: {
+    reinforce: 'Strengthen the basics',
+    exam_prep: 'Exam preparation',
+    advanced: 'Advanced study',
+    other: 'Other goal',
+  },
+  budgetUnit: {
+    hour: 'Per hour',
+    session: 'Per session',
+    month: 'Per month',
   },
   teachingMode: {
     online: 'Online',

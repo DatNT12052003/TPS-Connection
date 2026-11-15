@@ -19,6 +19,8 @@ import { createParentsService } from './modules/parents/parents.service.js';
 import { createCatalogService } from './modules/catalog/catalog.service.js';
 import { createFilesService } from './modules/files/files.service.js';
 import { createTutorsService } from './modules/tutors/tutors.service.js';
+import { createRequestPostsService } from './modules/request-posts/request-posts.service.js';
+import { createTutorPostsService } from './modules/tutor-posts/tutor-posts.service.js';
 import { createVerificationService } from './modules/verification/verification.service.js';
 import { createVerificationReviewService } from './modules/verification/verification-review.service.js';
 import { createFilesMaintenanceService } from './modules/files/files-maintenance.service.js';
@@ -163,6 +165,9 @@ async function main() {
     adminCatalog: createAdminCatalogService({ dataSource, logger }),
     account,
     catalog,
+    // Bài đăng (G4).
+    tutorPosts: createTutorPostsService({ dataSource, logger, publicFileUrl }),
+    requestPosts: createRequestPostsService({ dataSource, logger }),
   });
   const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API chạy tại http://${env.HOST}:${env.PORT} (môi trường ${env.NODE_ENV})`);

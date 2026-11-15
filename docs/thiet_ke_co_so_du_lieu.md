@@ -578,6 +578,8 @@ CREATE TABLE tutor_post_slots (
 
 Chỉ gia sư đã xác minh mới được chuyển bài sang `open` _(D5)_. Ràng buộc này kiểm tra ở service vì phụ thuộc bảng khác; có thể thêm trigger nếu muốn chặn cả ở database.
 
+**Bổ sung khi làm G4 (migration `CreateMarketplacePosts`):** bài đã đăng (khác `draft`) phải có ít nhất một hình thức dạy (`tutor_posts_published_mode_chk`) và có `published_at` (`tutor_posts_published_at_chk`); tiêu đề, mô tả không rỗng. Index `tutor_posts_tutor_idx` chỉ gồm bài chưa xóa. Cột `search_vector` và index tìm kiếm thêm ở đợt 2 của G4.
+
 ### 6.3. Bài tìm gia sư của phụ huynh
 
 ```sql
@@ -631,6 +633,13 @@ CREATE TABLE favorite_tutors (
 ```
 
 Mỗi bài tìm gia sư một môn: một nhu cầu dẫn tới một lớp. Phụ huynh cần nhiều môn thì đăng nhiều bài.
+
+**Bổ sung khi làm G4 (migration `CreateMarketplacePosts`):**
+
+- Mỗi hồ sơ con chỉ có một bài chưa đóng, chưa xóa cho mỗi môn: `UNIQUE (learner_id, subject_id) WHERE deleted_at IS NULL AND status <> 'closed'` (`request_posts_learner_subject_active_uq`).
+- `closed_reason` có giá trị khi và chỉ khi `status = 'closed'`; ngân sách có đơn vị khi và chỉ khi có ít nhất một mức; có xã thì phải có tỉnh; bài đã đăng có `published_at`.
+- Thêm index `request_posts_learner_idx` (xóa mềm bài khi xóa hồ sơ con). `request_posts_author_idx` chỉ gồm bài chưa xóa.
+- Bảng `favorite_tutors` chưa tạo: làm cùng tính năng yêu thích (D10, nếu kịp).
 
 ### 6.4. Yêu cầu kết nối
 

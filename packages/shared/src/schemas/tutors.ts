@@ -131,22 +131,26 @@ export const UpdateTutorProfileRequest = z
         message: 'service_areas_need_in_person',
       });
     }
-    // Khung giờ cùng ngày không được chồng nhau.
-    const byDay = new Map<number, AvailabilitySlot[]>();
-    for (const slot of value.availability) {
-      byDay.set(slot.weekday, [...(byDay.get(slot.weekday) ?? []), slot]);
-    }
-    for (const slots of byDay.values()) {
-      const sorted = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
-      for (let i = 1; i < sorted.length; i += 1) {
-        if (sorted[i]!.startTime < sorted[i - 1]!.endTime) {
-          ctx.addIssue({ code: 'custom', path: ['availability'], message: 'slot_overlap' });
-          return;
-        }
-      }
+    if (slotsOverlap(value.availability)) {
+      ctx.addIssue({ code: 'custom', path: ['availability'], message: 'slot_overlap' });
     }
   });
 export type UpdateTutorProfileRequest = z.infer<typeof UpdateTutorProfileRequest>;
+
+/** Có hai khung giờ cùng ngày chồng nhau không (dùng cho lịch rảnh và lịch của bài đăng). */
+export function slotsOverlap(slots: readonly AvailabilitySlot[]): boolean {
+  const byDay = new Map<number, AvailabilitySlot[]>();
+  for (const slot of slots) {
+    byDay.set(slot.weekday, [...(byDay.get(slot.weekday) ?? []), slot]);
+  }
+  for (const daySlots of byDay.values()) {
+    const sorted = [...daySlots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    for (let i = 1; i < sorted.length; i += 1) {
+      if (sorted[i]!.startTime < sorted[i - 1]!.endTime) return true;
+    }
+  }
+  return false;
+}
 
 // ---- Bằng cấp, chứng chỉ ------------------------------------------------------------------------
 

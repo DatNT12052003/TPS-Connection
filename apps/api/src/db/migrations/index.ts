@@ -9,6 +9,7 @@ import { CreateTutorProfiles1794970400000 } from './1794970400000-CreateTutorPro
 import { CreateVerification1794970500000 } from './1794970500000-CreateVerification.js';
 import { CreateAuditLogs1794970600000 } from './1794970600000-CreateAuditLogs.js';
 import { CreateAccountSanctions1794970700000 } from './1794970700000-CreateAccountSanctions.js';
+import { CreateMarketplacePosts1794970800000 } from './1794970800000-CreateMarketplacePosts.js';
 
 export const MIGRATIONS = [
   InitExtensions1794960000000,
@@ -20,4 +21,5 @@ export const MIGRATIONS = [
   CreateVerification1794970500000,
   CreateAuditLogs1794970600000,
   CreateAccountSanctions1794970700000,
+  CreateMarketplacePosts1794970800000,
 ];

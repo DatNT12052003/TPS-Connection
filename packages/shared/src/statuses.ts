@@ -162,6 +162,14 @@ export type RequestPostStatus = z.infer<typeof RequestPostStatus>;
 export const RequestPostClosedReason = z.enum(['found_tutor', 'no_longer_needed', 'other']);
 export type RequestPostClosedReason = z.infer<typeof RequestPostClosedReason>;
 
+/** `request_posts.goal`: mục tiêu học của nhu cầu (§4.2). */
+export const RequestPostGoal = z.enum(['reinforce', 'exam_prep', 'advanced', 'other']);
+export type RequestPostGoal = z.infer<typeof RequestPostGoal>;
+
+/** `request_posts.budget_unit`: ngân sách dự kiến theo giờ, buổi hoặc tháng. */
+export const BudgetUnit = z.enum(['hour', 'session', 'month']);
+export type BudgetUnit = z.infer<typeof BudgetUnit>;
+
 /** Hình thức học. */
 export const TeachingMode = z.enum(['online', 'in_person', 'hybrid']);
 export type TeachingMode = z.infer<typeof TeachingMode>;
@@ -321,6 +329,8 @@ export const LABELLED_ENUMS = {
   tutorPostStatus: TutorPostStatus,
   requestPostStatus: RequestPostStatus,
   requestPostClosedReason: RequestPostClosedReason,
+  requestPostGoal: RequestPostGoal,
+  budgetUnit: BudgetUnit,
   teachingMode: TeachingMode,
   connectionDirection: ConnectionDirection,
   connectionRequestStatus: ConnectionRequestStatus,
