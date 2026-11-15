@@ -22,6 +22,16 @@ import { getServerApi } from './server-api.server';
 
 type Context = Readonly<RouterContextProvider>;
 
+/** Môn, khối, tỉnh cho trang marketplace (bộ lọc và nhãn trên thẻ). */
+export async function loadCatalogs(context: Context, locale: Locale) {
+  const [subjects, grades, provinces] = await Promise.all([
+    loadSubjects(context, locale),
+    loadGradeLevels(context, locale),
+    loadProvinces(context, locale),
+  ]);
+  return { subjects, grades, provinces };
+}
+
 export async function loadSubjects(context: Context, locale: Locale): Promise<CatalogOption[]> {
   const { items } = await getServerApi(context).call('/api/v1/catalog/subjects', {
     schema: catalogList(CatalogSubject),

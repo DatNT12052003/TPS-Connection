@@ -4,6 +4,11 @@ export default [
   // Khu công khai: SSR cho SEO.
   layout('routes/public/layout.tsx', [
     index('routes/public/home.tsx'),
+    // Marketplace (G4): tìm gia sư, hồ sơ gia sư, bài tuyển học sinh. Đường dẫn là slug (D56).
+    route('tutors', 'routes/public/tutors/search.tsx'),
+    route('tutors/:tutorRef', 'routes/public/tutors/detail.tsx'),
+    route('tutor-posts', 'routes/public/posts/search.tsx'),
+    route('tutor-posts/:postRef', 'routes/public/posts/detail.tsx'),
     route('status', 'routes/public/status.tsx'),
     route('*', 'routes/public/not-found.tsx'),
   ]),
@@ -31,6 +36,14 @@ export default [
     // Tài khoản và cài đặt (mọi vai trò); đổi ảnh đại diện (chỉ action, trả JSON).
     route('account', 'routes/app/account.tsx'),
     route('account/avatar', 'routes/app/account-avatar.ts'),
+    // Bài đăng (G4). Gia sư: bài tuyển học sinh, tìm học sinh. Phụ huynh: bài tìm gia sư.
+    route('posts', 'routes/app/posts/index.tsx'),
+    route('posts/new', 'routes/app/posts/new.tsx'),
+    route('posts/:postId/edit', 'routes/app/posts/edit.tsx'),
+    route('find-students', 'routes/app/find-students.tsx'),
+    route('requests', 'routes/app/requests/index.tsx'),
+    route('requests/new', 'routes/app/requests/new.tsx'),
+    route('requests/:postId/edit', 'routes/app/requests/edit.tsx'),
     route('*', 'routes/app/not-found.tsx'),
   ]),
 

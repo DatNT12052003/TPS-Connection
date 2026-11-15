@@ -22,9 +22,12 @@ const timeSelect = cn(
 export function AvailabilityEditor({
   initial,
   error,
+  name = 'availability',
 }: {
   initial: readonly AvailabilitySlot[];
   error?: string | undefined;
+  /** Tên ô ẩn gửi JSON (hồ sơ: `availability`, bài đăng: `slots`). */
+  name?: string;
 }) {
   const { t } = useTranslation();
   const [slots, setSlots] = useState<Slot[]>(() => initial.map((slot, key) => ({ ...slot, key })));
@@ -51,7 +54,7 @@ export function AvailabilityEditor({
 
   return (
     <div className="flex flex-col gap-1">
-      <input type="hidden" name="availability" value={JSON.stringify(value)} />
+      <input type="hidden" name={name} value={JSON.stringify(value)} />
       {error && <span className="pb-2 text-small font-medium text-danger">{error}</span>}
       <ul className="flex flex-col divide-y divide-border">
         {WEEKDAYS.map((weekday) => {

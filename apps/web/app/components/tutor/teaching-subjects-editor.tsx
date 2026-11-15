@@ -27,11 +27,14 @@ export function TeachingSubjectsEditor({
   grades,
   initial,
   error,
+  name = 'teachingSubjects',
 }: {
   subjects: readonly CatalogOption[];
   grades: readonly CatalogOption[];
   initial: readonly TeachingSubject[];
   error?: string | undefined;
+  /** Tên ô ẩn gửi JSON (hồ sơ: `teachingSubjects`, bài đăng: `subjects`). */
+  name?: string;
 }) {
   const { t } = useTranslation();
   const errorId = useId();
@@ -75,7 +78,7 @@ export function TeachingSubjectsEditor({
       role="group"
       aria-label={t('tutorProfile.subjectsTitle')}
     >
-      <input type="hidden" name="teachingSubjects" value={JSON.stringify(pairs)} />
+      <input type="hidden" name={name} value={JSON.stringify(pairs)} />
       {error && (
         <span id={errorId} className="text-small font-medium text-danger">
           {error}
