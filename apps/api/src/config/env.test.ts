@@ -9,6 +9,8 @@ const valid = {
   S3_SECRET_KEY: 'secret',
   SMTP_HOST: '127.0.0.1',
   EMAIL_FROM: 'TPS-Connection <no-reply@tps-connection.local>',
+  JWT_SECRET: 'j'.repeat(32),
+  OTP_SECRET: 'o'.repeat(32),
 };
 
 describe('loadEnv', () => {
@@ -27,7 +29,17 @@ describe('loadEnv', () => {
       SMTP_PORT: 587,
       SMTP_SECURE: false,
       WORKERS_ENABLED: true,
+      COOKIE_SECURE: false,
+      TRUST_PROXY: 'loopback',
     });
+  });
+
+  it('requires long secrets and secure cookies in production', () => {
+    expect(() => loadEnv({ ...valid, JWT_SECRET: 'short' })).toThrow(/JWT_SECRET/);
+    expect(() => loadEnv({ ...valid, NODE_ENV: 'production' })).toThrow(/COOKIE_SECURE/);
+    expect(loadEnv({ ...valid, NODE_ENV: 'production', COOKIE_SECURE: 'true' }).COOKIE_SECURE).toBe(
+      true,
+    );
   });
 
   it('treats an empty optional variable (KEY=) as not set', () => {

@@ -1,4 +1,4 @@
-# Kiểm tra mỗi pull request và mỗi lần push lên main: định dạng, lint, kiểu, build, test.
+# Kiểm tra mỗi pull request và mỗi lần push lên main hoặc develop: định dạng, lint, kiểu, build, test.
 # Test tích hợp của API tự chạy PostgreSQL, Redis, SeaweedFS và Mailpit bằng Testcontainers
 # (máy ubuntu của GitHub có sẵn Docker), nên không cần compose.yaml ở đây.
 name: CI
@@ -6,7 +6,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
   workflow_dispatch:
 
 permissions:

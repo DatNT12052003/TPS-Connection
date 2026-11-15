@@ -173,7 +173,7 @@ Chia module theo nghiệp vụ: `auth`, `users`, `tutors`, `students`, `posts`, 
 
 ### 7.1. Hosting và lưu trữ
 
-**Nguyên tắc:** cơ sở dữ liệu và tệp chứa dữ liệu cá nhân (hồ sơ học sinh, giấy tờ xác minh gia sư, bài nộp, tin nhắn) được lưu **tại Việt Nam**. Lý do là các quy định về lưu trữ dữ liệu trong nước (Luật An ninh mạng 2018, Nghị định 53/2022) và về chuyển dữ liệu cá nhân ra nước ngoài (Nghị định 13/2023, Luật Bảo vệ dữ liệu cá nhân 2025). Cần người am hiểu pháp lý xác nhận lại trước khi đưa vào vận hành thật.
+**Nguyên tắc:** cơ sở dữ liệu và tệp chứa dữ liệu cá nhân (hồ sơ học sinh, giấy tờ xác minh gia sư, bài nộp, tin nhắn) được lưu **tại Việt Nam**. Lý do là các quy định về lưu trữ dữ liệu trong nước (Luật An ninh mạng 2025, hiệu lực 01/7/2026, thay Luật 2018) và về chuyển dữ liệu cá nhân ra nước ngoài (Luật Bảo vệ dữ liệu cá nhân 2025 và Nghị định 356/2025, thay Nghị định 13/2023 từ 01/01/2026). Phân tích chi tiết ở [rà soát pháp lý](00-product/ra_soat_phap_ly.md) câu 17, 18; cần luật sư xác nhận trước khi vận hành thật.
 
 **Lộ trình theo giai đoạn:**
 
@@ -199,6 +199,7 @@ Internet ── tên miền (HTTPS) ── Caddy (reverse proxy, tự cấp SSL 
 - Chỉ reverse proxy được truy cập từ Internet. SSH chỉ cho đăng nhập bằng khóa, bật tường lửa (`ufw`) và tự động cập nhật bản vá.
 - **Backup:** dump PostgreSQL và đồng bộ dữ liệu SeaweedFS hằng ngày ra nơi khác (ổ ngoài hoặc máy/cloud khác), **mã hóa** trước khi chuyển đi, và thử khôi phục định kỳ.
 - Dịch vụ bên thứ ba ở nước ngoài (Gmail, Sentry, Expo Push) chỉ nhận lượng dữ liệu cá nhân tối thiểu: không ghi thông tin học sinh vào log, báo lỗi hay nội dung push.
+- Gửi dữ liệu cá nhân (kể cả địa chỉ email, IP, push token) qua các dịch vụ này là **chuyển dữ liệu cá nhân ra nước ngoài**: phải lập hồ sơ đánh giá tác động chuyển dữ liệu xuyên biên giới gửi Bộ Công an, hoặc thay bằng dịch vụ trong nước (SMTP trong nước, Sentry tự host trong nước hoặc lọc bỏ IP, email, tên trước khi gửi). Chọn phương án trước khi vận hành thật ([rà soát pháp lý](00-product/ra_soat_phap_ly.md) câu 18).
 
 **Nếu chọn PC tự host tại nhà:**
 

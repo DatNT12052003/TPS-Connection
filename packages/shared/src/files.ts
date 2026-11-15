@@ -42,7 +42,7 @@ export interface FileRule {
 
 /**
  * Quy tắc theo mục đích. Giấy tờ xác minh luôn ở bucket private (CHECK trong bảng `files`, C4).
- * Dung lượng tối đa là giá trị mặc định đề xuất ở G1, chủ dự án có thể điều chỉnh.
+ * Dung lượng tối đa theo D55 (decision log).
  */
 export const FILE_RULES: Record<FilePurpose, FileRule> = {
   avatar: { bucket: 'public', maxBytes: 5 * MB, mimeTypes: IMAGES },

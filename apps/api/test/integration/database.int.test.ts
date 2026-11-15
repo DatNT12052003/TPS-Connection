@@ -7,11 +7,10 @@ import { HealthReport } from '@tps/shared';
 import type { Redis } from 'ioredis';
 import request from 'supertest';
 import type { DataSource } from 'typeorm';
-import { createApp } from '../../src/app.js';
 import { createDataSource } from '../../src/db/data-source.js';
 import { createRedis } from '../../src/lib/redis.js';
 import { createHealthService } from '../../src/modules/health/health.service.js';
-import { silentLogger } from '../helpers.js';
+import { createTestApp, silentLogger } from '../helpers.js';
 
 jest.setTimeout(180_000);
 
@@ -88,7 +87,7 @@ describe('GET /health/ready with real PostgreSQL and Redis', () => {
         redis: () => redis.ping(),
       },
     });
-    const app = createApp({ env: { CORS_ORIGINS: [] }, logger: silentLogger, health });
+    const app = createTestApp(health);
 
     const res = await request(app).get('/health/ready');
     expect(res.status).toBe(200);

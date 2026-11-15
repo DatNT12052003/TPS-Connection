@@ -44,11 +44,24 @@ export const PATHS = {
   forTutors: '/for-tutors',
   login: '/login',
   register: '/register',
+  verifyEmail: '/verify-email',
+  forgotPassword: '/forgot-password',
+  logout: '/logout',
   terms: '/terms',
   privacy: '/privacy',
   contact: '/contact',
   status: '/status',
+  studentInvitation: '/student-invitation',
   app: '/app',
+  children: '/app/children',
+  newChild: '/app/children/new',
+  account: '/app/account',
+  tutorProfile: '/app/profile',
+  tutorProfileEdit: '/app/profile/edit',
+  /** Route chỉ có action: hai bước phía server của việc đổi ảnh đại diện. */
+  accountAvatar: '/app/account/avatar',
+  /** Route chỉ có action: xin URL tải giấy tờ xác minh lên kho riêng tư. */
+  documentTicket: '/app/profile/documents/ticket',
   admin: '/admin',
   notifications: '/app/notifications',
 } as const;
@@ -87,7 +100,7 @@ export const APP_NAV: Record<AppRole, NavConfig> = {
       item('/app/schedule', 'nav.teachSchedule', Calendar),
       item('/app/connections', 'nav.connectionsShort', MessageSquare),
       item('/app/classes', 'nav.classes', BookOpen),
-      item('/app/profile', 'nav.profile', User),
+      item(PATHS.tutorProfile, 'nav.profile', User),
     ],
   },
   parent: {

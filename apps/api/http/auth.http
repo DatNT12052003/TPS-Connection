@@ -1,0 +1,130 @@
+# Thử tay API xác thực (G2 phần 2) bằng extension REST Client (humao.rest-client) trong VS Code.
+# Bấm "Send Request" phía trên từng yêu cầu, theo thứ tự. REST Client tự giữ cookie đăng nhập
+# (tps_at, tps_rt) giữa các yêu cầu, giống trình duyệt.
+#
+# Cần chạy trước: npm run infra:up  và  npm run dev -w @tps/api
+# Mã OTP: mở Mailpit http://127.0.0.1:8025, copy 6 số trong email rồi sửa @code bên dưới.
+# Muốn thử lại từ đầu: đổi @email sang địa chỉ khác (email đã xác thực không đăng ký lại được).
+
+@api = http://127.0.0.1:3000/api/v1
+@email = phuhuynh.thu1@example.com
+@password = matkhau123
+@code = 000000
+
+### 1. Đăng ký phụ huynh -> 201, chưa đăng nhập; email chứa mã tới Mailpit
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{
+  "role": "parent",
+  "fullName": "Nguyễn Thị Thử",
+  "email": "{{email}}",
+  "phone": "0912 345 678",
+  "password": "{{password}}",
+  "acceptTerms": true
+}
+
+### 2. Đăng nhập khi chưa xác thực email -> 403 email_not_verified
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+### 3. Nhập SAI mã -> 400 invalid_code, meta.attemptsLeft = 4
+POST {{api}}/auth/email-verification/confirm
+Content-Type: application/json
+
+{ "email": "{{email}}", "code": "999999" }
+
+### 4. Nhập ĐÚNG mã (sửa @code ở đầu tệp) -> 200, đặt cookie, đã đăng nhập
+POST {{api}}/auth/email-verification/confirm
+Content-Type: application/json
+
+{ "email": "{{email}}", "code": "{{code}}" }
+
+### 5. Người dùng hiện tại -> 200 (dùng cookie vừa nhận)
+GET {{api}}/auth/me
+
+### 6. Làm mới phiên -> 200, cookie tps_rt mới
+POST {{api}}/auth/refresh
+
+### 7. Đăng xuất -> 204, xóa cookie
+POST {{api}}/auth/logout
+
+### 8. Sau khi đăng xuất -> 401 unauthenticated
+GET {{api}}/auth/me
+
+### 9. Đăng nhập lại, có "ghi nhớ đăng nhập" -> 200 (cookie tps_rt có Expires 30 ngày)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}", "rememberMe": true }
+
+### 10. Đăng ký lại email đã xác thực -> 409 email_taken
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{
+  "role": "tutor",
+  "fullName": "Ai đó",
+  "email": "{{email}}",
+  "password": "matkhaukhac9",
+  "acceptTerms": true
+}
+
+### 11. Dữ liệu sai -> 422 validation_failed, details theo từng trường
+POST {{api}}/auth/register
+Content-Type: application/json
+
+{ "role": "admin", "fullName": "", "email": "khong-phai-email", "password": "abc", "acceptTerms": false }
+
+### 12. Quên mật khẩu -> 202 (trả giống hệt nhau dù email có tồn tại hay không); mã mới tới Mailpit
+POST {{api}}/auth/password-reset/request
+Content-Type: application/json
+
+{ "email": "{{email}}" }
+
+### 13. Đặt mật khẩu mới bằng mã (sửa @code) -> 204; mọi phiên bị đăng xuất
+POST {{api}}/auth/password-reset/confirm
+Content-Type: application/json
+
+{ "email": "{{email}}", "code": "{{code}}", "newPassword": "matkhaumoi456" }
+
+### 14. Phiên cũ đã bị thu hồi -> 401
+POST {{api}}/auth/refresh
+
+### 15. Mật khẩu cũ -> 401 invalid_credentials (gửi 5 lần thì lần sau bị 429, kể cả mật khẩu đúng)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+### 16. Mật khẩu mới -> 200
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "matkhaumoi456" }
+
+### 17. Gọi từ trang web lạ (chống CSRF) -> 403 forbidden
+POST {{api}}/auth/logout
+Origin: https://evil.example
+
+# ---- Cài đặt > Bảo mật (G2 phần 3). Đăng nhập trước (yêu cầu số 16). ----
+
+### 18. Thiết bị đang đăng nhập -> 200, phiên của máy này có "current": true
+GET {{api}}/auth/sessions
+
+### 19. Đổi mật khẩu, nhập sai mật khẩu hiện tại -> 422, lỗi gắn vào ô currentPassword
+POST {{api}}/auth/password/change
+Content-Type: application/json
+
+{ "currentPassword": "saimatkhau1", "newPassword": "matkhau789" }
+
+### 20. Đổi mật khẩu đúng -> 204; các thiết bị khác bị đăng xuất, máy này vẫn đăng nhập
+POST {{api}}/auth/password/change
+Content-Type: application/json
+
+{ "currentPassword": "matkhaumoi456", "newPassword": "matkhau789" }
+
+### 21. Đăng xuất mọi thiết bị khác -> 204
+POST {{api}}/auth/sessions/revoke-others

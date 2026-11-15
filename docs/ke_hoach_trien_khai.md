@@ -6,7 +6,7 @@ Tài liệu này chia việc phát triển TPS-Connection thành các giai đo�
 
 - [Mô tả nghiệp vụ](mo_ta_nghiep_vu.md): phạm vi bản đầu ở §15.1, mở rộng ở §15.2, quy tắc ở §16.
 - [Công nghệ sử dụng](cong_nghe_su_dung.md): stack và hạ tầng.
-- [Decision log](00-product/decision-log.md): các quyết định D1–D48 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
+- [Decision log](00-product/decision-log.md): các quyết định D1–D56 và câu trả lời C1–C13 đã chốt. Tài liệu này trích mã quyết định trong ngoặc, ví dụ _(D5)_.
 
 > Trạng thái: **đề xuất**. Chưa ước lượng thời gian theo tuần vì chưa có quy mô đội ngũ, số giờ làm việc và ngân sách (C13). Thứ tự giai đoạn là thứ tự phụ thuộc; khi có nguồn lực, một số giai đoạn có thể chạy song song như ghi chú ở mục 4.
 
@@ -17,8 +17,8 @@ Tài liệu này chia việc phát triển TPS-Connection thành các giai đo�
 | Giai đoạn | Tên                                         | Bản phát hành |
 | --------- | ------------------------------------------- | ------------- |
 | 0         | Chuẩn bị và chốt quyết định (**hoàn thành**) | –            |
-| 1         | Nền móng kỹ thuật                           | MVP           |
-| 1b        | Thiết kế giao diện (song song với G1)       | MVP           |
+| 1         | Nền móng kỹ thuật (**hoàn thành**)          | MVP           |
+| 1b        | Thiết kế giao diện (**hoàn thành**)         | MVP           |
 | 2         | Tài khoản, phân quyền và hồ sơ              | MVP           |
 | 3         | Xác minh gia sư và trang quản trị cơ bản    | MVP           |
 | 4         | Bài đăng và tìm kiếm (marketplace)          | MVP           |
@@ -88,6 +88,8 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 ### Giai đoạn 1. Nền móng kỹ thuật
 
+> **Hoàn thành ngày 2026-11-13.** Mã nằm trên `main` (PR #2, #3); CI xanh trên pull request và trên `main`. Đã thử tiêu chí hoàn thành: clone repo mới, làm theo `README.md` là chạy được API, web và các dịch vụ phụ (trang `/status` báo cả ba dịch vụ hoạt động). Lưu tệp dùng SeaweedFS thay MinIO _(D53)_. Giới hạn dung lượng tệp theo từng mục đích đã chốt ở D55.
+
 **Mục tiêu:** một bộ khung chạy được end-to-end, để các giai đoạn sau chỉ thêm tính năng.
 
 **Công việc:**
@@ -104,9 +106,11 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Đầu ra:** `npm run dev` chạy API, web và các dịch vụ phụ; CI xanh; một trang mẫu gọi được API.
 
-**Hoàn thành khi:** lập trình viên mới clone repo và chạy được toàn bộ hệ thống chỉ với hướng dẫn trong README.
+**Hoàn thành khi:** lập trình viên mới clone repo và chạy được toàn bộ hệ thống chỉ với hướng dẫn trong README. ✅ Đạt.
 
 ### Giai đoạn 1b. Thiết kế giao diện
+
+> **Hoàn thành ngày 2026-11-13.** Hệ thống thiết kế và giao diện MVP đã duyệt _(D49, D52)_; bộ token đã vào `packages/config` và được web dùng.
 
 **Mục tiêu:** có giao diện hoàn chỉnh, thống nhất cho Web trước khi bắt đầu code giao diện ở G2. Làm song song với G1 _(D46)_.
 
@@ -122,7 +126,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Đầu ra:** hệ thống thiết kế, giao diện các màn hình MVP (máy tính và điện thoại), bộ token.
 
-**Hoàn thành khi:** chủ dự án duyệt hệ thống thiết kế và giao diện các màn hình dùng ở G2; bộ token đã đưa vào cấu hình web.
+**Hoàn thành khi:** chủ dự án duyệt hệ thống thiết kế và giao diện các màn hình dùng ở G2; bộ token đã đưa vào cấu hình web. ✅ Đạt.
 
 ### Giai đoạn 2. Tài khoản, phân quyền và hồ sơ
 
@@ -130,7 +134,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Công việc:**
 
-- **Xác thực:** đăng ký bằng email, OTP qua email (lưu Redis có TTL), đăng nhập, quên và đặt lại mật khẩu (băm `argon2`), JWT access token ngắn hạn + refresh token xoay vòng lưu hash, đăng xuất và thu hồi phiên. Rate limit cho đăng nhập và gửi OTP.
+- **Xác thực:** đăng ký bằng email, xác thực email bằng OTP 6 số qua email (lưu Redis có TTL; hiệu lực 10 phút, sai 5 lần thì hủy, gửi lại sau 45 giây, tối đa 5 lần mỗi giờ _(D54)_), đăng nhập, quên và đặt lại mật khẩu bằng OTP (băm `argon2`), JWT access token ngắn hạn + refresh token xoay vòng lưu hash, đăng xuất và thu hồi phiên. Rate limit cho đăng nhập và gửi OTP.
 - **Vai trò:** gia sư, phụ huynh, học sinh, Manager, Admin. Thiết kế bảng vai trò cho phép một người có nhiều vai trò về sau.
 - **Hồ sơ phụ huynh** và **hồ sơ học sinh:** phụ huynh tạo nhiều hồ sơ con. Hồ sơ học sinh tồn tại độc lập với tài khoản. Mỗi trẻ có đúng một phụ huynh quản lý _(C9)_. Lưu đồng ý xử lý dữ liệu của phụ huynh.
 - **Tài khoản học sinh:** phụ huynh gửi lời mời qua email; học sinh nhận lời mời, tạo tài khoản và liên kết với hồ sơ có sẵn; quyền chỉ xem _(D4)_.
@@ -143,6 +147,39 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Hoàn thành khi:** test chứng minh phụ huynh A không đọc được hồ sơ con của phụ huynh B, và API công khai không lộ email hay số điện thoại.
 
+**Tiến độ (2026-11-13):** phần API đã xong: xác thực, vai trò và phân quyền, hồ sơ phụ huynh và con, đồng ý xử lý dữ liệu của con, lời mời học sinh, hồ sơ gia sư, thông tin cá nhân và ảnh đại diện, API đọc danh mục, `isParentOf` và `isStudentSelf` (`teachesStudent` làm ở G6 cùng bảng lớp học). Hai test của điều kiện hoàn thành đã có (`learners.int.test.ts`, `tutors.int.test.ts` trong `apps/api/test/integration`).
+
+**Còn lại của G2:**
+
+- Các màn hình web (mục Đầu ra), chia ba đợt:
+  - ~~Đợt 1, đăng nhập thật~~: **xong ngày 2026-11-13**. Đăng ký, nhập mã OTP, đăng nhập, quên mật khẩu, đăng xuất; server web đứng giữa trình duyệt và API, chuyển cookie phiên và tự làm mới phiên (`apps/web/README.md`, mục Đăng nhập và phiên). Đã gỡ thanh chọn vai trò tạm thời. Đã chạy thử cả luồng với API, PostgreSQL, Redis, Mailpit thật.
+  - ~~Đợt 2, phụ huynh~~: **xong ngày 2026-11-13**. Trang tổng quan phụ huynh (thẻ "Con của tôi") và học sinh (hồ sơ của mình); tạo hồ sơ con `/app/children/new` (kèm đồng ý xử lý dữ liệu của con); xem, sửa, xóa hồ sơ con `/app/children/:id` (dựng theo màn tạo hồ sơ con, vì canvas chưa có); mời con `/app/children/:id/invite` (gửi, gửi lại, hủy lời mời); trang nhận lời mời `/student-invitation`; hồ sơ phụ huynh (tỉnh, xã, địa chỉ) ở `/app/account`. Màn "Email đã được xác thực" của phụ huynh dẫn tới tạo hồ sơ con. Đã chạy thử cả luồng với API, PostgreSQL, Redis, Mailpit thật. Khác canvas, chưa làm:
+    - Ô "Môn cần học" và "Mục tiêu học tập" trên canvas ChildProfile: hồ sơ con (`learners`) không có hai trường này; môn và mục tiêu nằm ở bài tìm gia sư và yêu cầu kết nối (`request_posts`, `connection_requests`). Làm ở G4/G5 trong form đăng bài và gửi yêu cầu.
+    - Canvas ChildProfile ghi "Năm sinh"; API lưu ngày sinh đầy đủ (`date_of_birth`, dùng để tính dưới 18 tuổi khi ẩn danh đánh giá, D22) nên form dùng ô ngày: gõ `dd/mm/yyyy` hoặc chọn trên lịch (react-day-picker, có ô chọn tháng/năm).
+    - Cách "sao chép liên kết mời" để gửi qua Zalo (canvas InviteStudent): API chỉ gửi liên kết qua email, không trả token cho phụ huynh. Muốn có thì cần quyết định trước: API trả liên kết cho phụ huynh (liên kết đó ai cầm cũng tạo được tài khoản).
+    - Canvas InviteStudent ghi "Bạn có thể khóa tài khoản này bất cứ lúc nào": chưa có API cho phụ huynh khóa tài khoản học sinh, nên trang không hứa điều đó. Cần quyết định có làm không (và làm ở giai đoạn nào).
+    - Xóa hồ sơ con đã có tài khoản học sinh: API chưa cho (409); trang ẩn nút xóa khi đã có tài khoản.
+  - ~~Đợt 3, gia sư và cài đặt~~: **xong ngày 2026-11-14**. Tài khoản và cài đặt `/app/account` cho mọi vai trò (thông tin cá nhân, ảnh đại diện tải thẳng lên kho lưu trữ, nơi bạn sống với phụ huynh, giao diện và ngôn ngữ, đổi mật khẩu, thiết bị đang đăng nhập; ô tên trên thanh trên dẫn tới đây); hồ sơ và xác minh của gia sư `/app/profile` (trạng thái, bốn bước, mục còn thiếu, bằng cấp tự khai: thêm, sửa, xóa); sửa hồ sơ `/app/profile/edit` (giới thiệu, môn × khối, hình thức và khu vực, lịch rảnh, học phí tham khảo, đang nhận học sinh); trang tổng quan gia sư (trạng thái hồ sơ, việc còn thiếu, công tắc nhận học sinh); màn "Email đã được xác thực" của gia sư dẫn tới sửa hồ sơ. Đổi ngôn ngữ khi đã đăng nhập lưu cả vào tài khoản (ngôn ngữ email). API thêm `GET /catalog/areas?ids=` (tra tên tỉnh/xã đã lưu). Đã chạy thử cả luồng với API, PostgreSQL, Redis, Mailpit, SeaweedFS thật. Khác canvas, chưa làm:
+    - Canvas Settings có "Đã chặn", "Xóa tài khoản", "Thông báo": chưa có API (chặn và báo cáo: G9; xóa tài khoản: G11; thông báo: G8). Trang chưa hiện các mục này.
+    - Email chỉ xem, chưa đổi được (cần luồng xác thực email mới; chưa có trong kế hoạch, cần quyết định có làm ở v1 không).
+    - Bước 2 "Giấy tờ danh tính" và nút "Nộp để xác minh" của bằng cấp: làm ở G3 (trang hiện ghi chú "đang được hoàn thiện").
+    - Thẻ "Phụ huynh sẽ thấy" tóm tắt hồ sơ đã lưu, không cập nhật ngay khi đang gõ; nút "Xem như phụ huynh" chờ trang hồ sơ công khai (G4).
+    - Lịch rảnh chọn giờ theo nấc 30 phút cho từng ngày, thay cho lưới Sáng/Chiều/Tối của canvas (API lưu giờ bắt đầu, kết thúc tùy ý).
+    - Học phí tham khảo không có "thời lượng buổi" như canvas: API chưa có trường này (D18 chỉ có số tiền và đơn vị giờ/buổi).
+    - Trên máy tính, thanh điều hướng của gia sư chưa có mục "Hồ sơ" (canvas TutorHome không có); vào qua trang tổng quan, hoặc mục "Hồ sơ" ở thanh dưới trên điện thoại.
+- Người có nhiều vai trò (ví dụ vừa gia sư vừa phụ huynh) hiện vào khu `/app` theo thứ tự gia sư, phụ huynh, học sinh (`appRoleOf` trong `apps/web/app/lib/session.ts`); chưa có chỗ chuyển vai trò. Tự đăng ký chỉ chọn được một vai trò nên chưa gặp; thêm khi có trường hợp thật.
+- Trang tổng quan `/app` và `/admin` hiện chỉ là trang giữ chỗ; canvas ParentHome, TutorHome, StudentHome cần dữ liệu của G4 đến G7 (xem "Việc chuyển từ G2" ở các giai đoạn đó). Trong G2 làm bản tối thiểu theo vai trò: phụ huynh thấy danh sách con và nút tạo hồ sơ con (đợt 2, **xong**); gia sư thấy trạng thái hồ sơ và các trường còn thiếu để nộp xác minh, từ `missingForVerification` (đợt 3, **xong**); học sinh thấy hồ sơ của mình (đợt 2, **xong**).
+- ~~Thống nhất định dạng lỗi validation trước phần web~~: **xong ngày 2026-11-13**. Mọi lỗi theo từng ô có `details[].code` là khóa `validation.*` trong i18n (mã lạ quy về `invalid`); web hiển thị `t('validation.<code>')`, lỗi đầu tiên của mỗi ô.
+
+**Câu hỏi chờ chủ dự án quyết** (chốt xong thì ghi vào decision log):
+
+- "Tùy chọn riêng tư" (§3.1) gồm những gì? Gợi ý: bật/tắt nhận email giới thiệu (loại đồng ý `marketing_email` đã có trong bảng `user_consents`).
+- Có cho phụ huynh xóa hồ sơ con đã có tài khoản học sinh không? Nếu có, tài khoản học sinh xử lý thế nào? API hiện trả 409.
+- Độ tuổi tối thiểu của tài khoản học sinh (D4). Lời mời học sinh hiện chưa kiểm tra tuổi. Theo [rà soát pháp lý](00-product/ra_soat_phap_ly.md) câu 13, luật không đặt tuổi tối thiểu nếu có cha mẹ đồng ý; chờ luật sư xác nhận rồi chốt.
+- Từ [rà soát pháp lý](00-product/ra_soat_phap_ly.md) (2026-11-15), chờ chủ dự án quyết và luật sư xác nhận:
+  - Tách ô đồng ý khi đăng ký thành hai ô riêng (Điều khoản sử dụng; Chính sách quyền riêng tư). Hiện là một ô `acceptTerms` ghi hai bản ghi đồng ý (câu 7).
+  - Học sinh từ đủ 7 tuổi tự bấm đồng ý khi kích hoạt tài khoản (loại đồng ý mới), và khi gửi đánh giá công khai (câu 12, 15).
+
 ### Giai đoạn 3. Xác minh gia sư và trang quản trị cơ bản
 
 **Mục tiêu:** gia sư được xác minh để có thể xuất hiện công khai; Manager và Admin có công cụ làm việc tối thiểu.
@@ -151,12 +188,37 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 - **Nộp hồ sơ xác minh** _(C4)_: mọi gia sư nộp CCCD; sinh viên nộp thêm thẻ sinh viên; bằng cấp, chứng chỉ nộp tùy chọn để lấy huy hiệu. Tệp lưu ở bucket private, xem bằng presigned URL ngắn hạn.
 - **Duyệt:** Manager xem hàng chờ, duyệt hoặc từ chối kèm lý do; gia sư được nộp lại. Mục tiêu xử lý trong 2 ngày làm việc. Mỗi trường trong hồ sơ được đánh dấu tự khai hoặc đã xác minh.
-- **Sau khi duyệt:** giữ kết quả xác minh, job tự xóa ảnh giấy tờ sau 30 ngày (mốc chờ luật sư xác nhận).
+- **Sau khi duyệt:** giữ kết quả xác minh, job tự xóa ảnh giấy tờ sau 30 ngày (mốc chờ luật sư xác nhận; [rà soát pháp lý](00-product/ra_soat_phap_ly.md) câu 9 đánh giá là phù hợp).
+- **Từ rà soát pháp lý (2026-11-15), chờ chủ dự án quyết và luật sư xác nhận:**
+  - Luật Thương mại điện tử 2025 yêu cầu xác thực điện tử danh tính người bán (ở đây là gia sư) trước khi cho cung ứng dịch vụ, có thể phải liên kết tài khoản định danh điện tử. Nếu ảnh CCCD + Manager duyệt không đạt yêu cầu, luồng xác minh của G3 phải đổi (câu 20). Ưu tiên hỏi luật sư điểm này.
+  - Câu chữ đồng ý khi nộp giấy tờ (`verification_document_processing`) ghi rõ ảnh CCCD là "dữ liệu cá nhân nhạy cảm" (câu 6, 7).
+  - Cam kết điện tử của gia sư khi nộp xác minh (không có tiền án liên quan đến trẻ em; tuân thủ quy định dạy thêm; giáo viên không dạy học sinh của mình), lưu như một loại đồng ý mới trong `user_consents` (câu 20, 23).
+  - Lớp 1–5 hiện chọn được mọi môn. Nếu quy định không dạy thêm có thu tiền cho học sinh tiểu học áp dụng cho gia sư 1-1, giới hạn môn của cấp tiểu học hoặc cảnh báo gia sư (câu 23).
+  - Thời hạn lưu `audit_logs` (đề xuất tối thiểu 24 tháng) và ghi lý do xem vào `metadata` (câu 22).
 - **Quản trị (Admin):** danh sách và tìm kiếm tài khoản, khóa/mở khóa, gán vai trò Manager, quản lý danh mục môn, khối lớp, khu vực.
 - **Nhật ký kiểm toán (audit log):** ghi mọi thao tác của Manager và Admin, nhất là mỗi lần xem giấy tờ tùy thân.
-- Thông báo email và trong app khi hồ sơ được duyệt hoặc bị từ chối (dùng bảng thông báo tối giản; hoàn thiện ở giai đoạn 5).
+- **Việc chuyển từ G2:**
+  - ~~Nộp xác minh chuyển hồ sơ `incomplete` → `pending_verification` (B.4.1), chỉ khi `missingForVerification` rỗng (D34)~~: **xong ở đợt 1**.
+  - ~~Mở endpoint tải tệp `POST /files/uploads` cho `verification_document` và `credential`~~: **xong ở đợt 1** (chỉ gia sư).
+  - Duyệt bằng cấp thì cập nhật `tutor_credentials.verification_status` và `tutor_profiles.has_verified_degree` (D20). API đã khóa sửa, xóa bằng cấp đang chờ duyệt hoặc đã xác minh.
+  - Job dọn bản ghi `files` còn `pending_upload` quá 24 giờ và xóa tệp tương ứng trên kho (thiết kế CSDL mục 13). Ảnh đại diện đã tạo được bản ghi loại này từ G2.
+- Thông báo khi hồ sơ được duyệt hoặc bị từ chối: email **xong ở đợt 2**; thông báo trong app làm ở G5 cùng bảng thông báo (G5 đã có loại "kết quả xác minh"), không làm bảng tạm ở G3.
 
 **Đầu ra:** luồng xác minh đầy đủ trên web; trang `/admin` cho Manager và Admin.
+
+**Tiến độ:** làm theo ba đợt.
+
+- ~~Đợt 1, gia sư nộp xác minh~~: **xong ngày 2026-11-14**. Bảng `verification_requests`, `verification_documents`; gia sư tải ảnh CCCD hai mặt (thêm thẻ sinh viên nếu là sinh viên) lên kho riêng tư, đồng ý dùng giấy tờ, nộp; hồ sơ chuyển "chờ xác minh", hạn duyệt 2 ngày làm việc (D26); hủy yêu cầu đang chờ (ảnh xóa ngay); nộp 1–3 tệp để xác minh từng bằng cấp, hủy; hiện lý do từ chối. Web: bước 2 ở `/app/profile` theo canvas Verification. Trong lúc chờ duyệt, họ tên thật và nghề nghiệp bị khóa (người duyệt đối chiếu với giấy tờ; muốn sửa thì hủy yêu cầu). Lý do từ chối là danh sách có sẵn (canvas ManagerQueue) cộng ghi chú.
+- ~~Đợt 2, Manager duyệt~~: **xong ngày 2026-11-14**. Hàng chờ `/admin/verifications` và màn duyệt (canvas ManagerQueue): lọc theo loại, hạn xử lý (quá hạn, còn dưới 24 giờ), lần nộp thứ mấy, lần nộp trước; xem ảnh qua URL ký sẵn sống 2 phút, chỉ khi yêu cầu đang chờ, mỗi lần xem ghi `audit_logs` (chỉ ghi thêm, trigger chặn sửa xóa); duyệt / từ chối kèm lý do (hồ sơ công khai ngay khi duyệt danh tính; duyệt bằng loại "Bằng cấp" bật huy hiệu); email kết quả theo ngôn ngữ của gia sư; job hằng ngày xóa ảnh 30 ngày sau quyết định và dọn tệp tải dở quá 24 giờ. Manager kiêm gia sư không duyệt hồ sơ của chính mình. Chỉ vai trò Manager vào được (Admin không duyệt, C1). Đã chạy thử với API, PostgreSQL, Redis, SeaweedFS, Mailpit thật. Khác canvas, chưa làm:
+  - Số yêu cầu đang chờ cạnh mục "Duyệt xác minh" trên thanh điều hướng (canvas ghi "Duyệt xác minh · 6"): trang hàng chờ có số theo loại; số trên thanh điều hướng cần gọi API ở mọi trang quản trị, làm khi có thêm hàng chờ báo cáo, tranh chấp (G8).
+  - Thông báo trong app khi có kết quả: chưa có bảng thông báo (G5); hiện có email và kết quả hiện ở trang hồ sơ.
+  - Thu hồi xác minh (B.4.1 `verified` → `incomplete`) là kết quả của vụ việc kiểm duyệt: làm ở G8.
+- ~~Đợt 3, Admin~~: **xong ngày 2026-11-14**. Tài khoản `/admin/accounts` (canvas AdminAccounts): tìm theo tên không dấu hoặc email, lọc vai trò, trạng thái (kể cả đã xóa); khóa kèm lý do (đăng xuất khỏi mọi thiết bị ngay), mở khóa; thêm Manager theo email (email mới thì tạo tài khoản không mật khẩu, người đó đặt mật khẩu bằng "Quên mật khẩu"), gỡ Manager. Danh mục `/admin/catalog` (canvas AdminCatalog): môn học và khối lớp, thêm, sửa tên hai ngôn ngữ, thứ tự, bật/tắt, số gia sư dạy. `/admin` chuyển tới màn chính theo vai trò. Mọi thay đổi ghi nhật ký kiểm toán. Test điều kiện hoàn thành ở `describe('G3 completion')` (`apps/api/test/integration/tutors.int.test.ts`). Đã chạy thử với API, PostgreSQL, Redis, Mailpit thật. Khác canvas, chưa làm:
+  - Vai trò Admin không cấp, gỡ qua giao diện (chỉ bằng `npm run users:staff`), và Admin không khóa được Admin khác: tránh một Admin tự ý tước quyền Admin khác. Cần quyết định nếu muốn khác.
+  - Không xóa mục danh mục (chỉ tắt): mục đã có dữ liệu không xóa được, mục chưa dùng tắt là đủ.
+  - Tỉnh và xã/phường: nạp từ bộ dữ liệu hành chính chính thức (`db:seed:areas`), không sửa tay trên giao diện.
+  - "Lý do báo cáo" và "Cấu hình hệ thống" (hạn xác nhận buổi, hạn tự hủy yêu cầu…): làm ở G8 cùng báo cáo vi phạm; các mốc hiện là hằng số trong code theo decision log. Mục "Khiếu nại quyết định" và "Nhật ký kiểm toán" (xem nhật ký trên giao diện) cũng ở G8.
+  - Điều kiện "gia sư chưa được duyệt không đăng được bài, không hiện trong tìm kiếm": phần hồ sơ công khai đã có test; bài đăng và tìm kiếm có ở G4 và phải giữ đúng điều kiện này (test ở G4).
 
 **Hoàn thành khi:** gia sư chưa được duyệt danh tính không thể đăng bài và không xuất hiện trong kết quả tìm kiếm công khai; Manager không có quyền của Admin và ngược lại.
 
@@ -174,6 +236,13 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Gợi ý đơn giản:** xếp hạng theo các tiêu chí giải thích được (môn, cấp lớp, ngân sách, lịch rảnh, hình thức, khu vực, tình trạng nhận học sinh).
 - **Yêu thích và so sánh gia sư** _(D10, làm nếu kịp)_.
 - Index cơ sở dữ liệu theo đúng các truy vấn lọc, kiểm chứng bằng `EXPLAIN ANALYZE` với dữ liệu mẫu.
+- **Việc chuyển từ G2:**
+  - Thêm cột `tutor_profiles.search_vector` cùng index (G2 chưa tạo, xem thiết kế CSDL mục 5.1).
+  - Slug cho URL hồ sơ gia sư `/tutors/<slug>` _(D56)_. API hiện dùng id: `GET /api/v1/tutors/:tutorId`.
+  - Danh sách và tìm kiếm gia sư dùng cùng điều kiện hiển thị công khai với `GET /tutors/:tutorId`: đã xác minh, tài khoản `active`, chưa xóa. Không trả email, số điện thoại, họ tên thật (đã có test ở `tutors.int.test.ts`; thêm test tương tự cho danh sách).
+
+- **Việc chuyển từ G3:** test điều kiện hoàn thành của G3 cho phần mới: gia sư chưa được duyệt danh tính không đăng được bài tuyển học sinh (403) và không hiện trong kết quả tìm kiếm; tài khoản bị khóa hoặc hạn chế không hiện công khai. Bộ lọc tìm kiếm chỉ dùng môn, khối đang bật (Admin tắt được ở `/admin/catalog`).
+- **Việc chuyển từ G2 (trang chủ công khai):** trang `/` hiện là khung đơn giản từ G1 (khối giới thiệu, ba thẻ tin cậy). Làm đúng canvas Main / MainMobile khi có tìm kiếm: ô tìm gia sư theo môn, lớp, khu vực; gia sư nổi bật; bài tuyển học sinh mới.
 
 **Đầu ra:** trang tìm gia sư, chi tiết gia sư, chi tiết bài đăng, quản lý bài đăng của gia sư và phụ huynh.
 
@@ -193,6 +262,8 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Mở thông tin liên hệ và danh tính trẻ:** email, số điện thoại và thông tin nhận dạng của trẻ (họ tên đầy đủ, trường, địa chỉ) chỉ hiện cho bên kia sau khi hai bên xác nhận hợp tác. Trong lúc trao đổi, gia sư chỉ thấy cấp lớp, môn, mục tiêu, tỉnh/xã _(D8, D16)_.
 - **Chặn và báo cáo** tài khoản và tin nhắn (dữ liệu báo cáo dùng cho giai đoạn 8).
 - **Thông báo** (§12): bảng thông báo, đẩy realtime qua Socket.IO, email cho sự kiện quan trọng, tùy chọn bật/tắt theo loại. Các loại trong MVP: yêu cầu mới, được chấp nhận/từ chối, tin nhắn mới, sắp hết hạn yêu cầu, kết quả xác minh. Nội dung email không chứa thông tin của trẻ.
+
+- **Trang tổng quan (từ G2):** thêm khối yêu cầu kết nối cần xử lý và tin nhắn mới vào trang tổng quan của phụ huynh và gia sư (canvas ParentHome, TutorHome).
 
 **Đầu ra:** hộp yêu cầu kết nối của gia sư và phụ huynh, màn hình chat, trung tâm thông báo.
 
@@ -215,6 +286,9 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - **Khiếu nại buổi học** _(C5)_: buổi bị khiếu nại tạm chưa tính tiền; hai bên có 3 ngày tự thống nhất, nếu không thì Manager quyết định và chỉ sửa bản ghi, không hoàn tiền.
 - **Kết quả cơ bản** (§15.1): gia sư nhập điểm và nhận xét theo buổi hoặc theo bài kiểm tra; phụ huynh và học sinh xem được.
 - **Thông báo:** buổi học sắp diễn ra, lịch thay đổi hoặc bị hủy, buổi cần xác nhận, điểm và nhận xét mới.
+- **Việc chuyển từ G2:** hàm `teachesStudent` (gia sư dạy hoặc đã dạy người học qua lớp; thiết kế CSDL mục 12 gọi là `teachesLearner`). Đặt cạnh `isParentOf`, `isStudentSelf` trong `apps/api/src/modules/learners/learner-access.ts`, kèm test chứng minh gia sư không xem được học sinh mình không dạy. Xóa hồ sơ con khi đã có lớp: không được xóa lịch sử học tập (C2), nên phải chặn hoặc chỉ ẩn.
+
+- **Trang tổng quan (từ G2):** thêm buổi học sắp tới, buổi cần xác nhận, lớp đang học vào trang tổng quan của phụ huynh, gia sư, học sinh (canvas ParentHome, TutorHome, StudentHome).
 
 **Đầu ra:** trang lớp học, lịch, điểm danh, xác nhận buổi, khiếu nại buổi, xem kết quả của con.
 
@@ -233,6 +307,8 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 - Thông báo khoản học phí đến hạn.
 - Thiết kế bảng thanh toán có trường phương thức (thủ công / trực tuyến) để mở rộng sau mà không phải đổi cấu trúc.
 
+- **Trang tổng quan (từ G2):** thêm khối học phí tháng này vào trang tổng quan của phụ huynh và gia sư (canvas ParentHome, TutorHome).
+
 **Đầu ra:** trang học phí của lớp cho gia sư và phụ huynh, bảng tổng hợp theo tháng.
 
 **Hoàn thành khi:** số liệu học phí khớp với lịch sử buổi học trong các test có buổi vắng, hủy muộn, học bù và khiếu nại.
@@ -245,13 +321,19 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 - **Kiểm duyệt** (§13): hàng chờ báo cáo vi phạm cho tài khoản, bài đăng, tin nhắn; Manager chỉ xem đoạn tin nhắn bị báo cáo _(C1)_; lưu kết quả xử lý; cảnh báo, hạn chế, khóa tài khoản; ẩn bài đăng vi phạm. Admin xử lý khiếu nại lại.
 - **Xóa tài khoản** _(C2, D19)_: ghi `deleted_at` và ẩn ngay; job sau 6 tháng xóa hẳn dữ liệu cá nhân, ẩn danh bản ghi lớp và đánh giá; giấy tờ xác minh theo mốc riêng. Bên còn lại vẫn thấy lịch sử buổi học, điểm, học phí dưới nhãn "Học sinh đã xóa tài khoản".
-- **Đổi phụ huynh quản lý** do Admin xử lý theo yêu cầu _(C9)_.
+  - **Chờ chủ dự án quyết lại C2:** [rà soát pháp lý](00-product/ra_soat_phap_ly.md) câu 8 cho thấy khi chủ thể yêu cầu xóa, phải hoàn thành trong 20 ngày (30 ngày nếu cần bên thứ ba), nên 6 tháng là quá dài. Đề xuất: xóa hoặc khử nhận dạng trong 20 ngày, trừ tài khoản đang tranh chấp hoặc bị cơ quan chức năng yêu cầu giữ (cần cờ giữ dữ liệu); log hệ thống và `audit_logs` giữ theo thời hạn riêng; khi khử nhận dạng, kiểm tra cả các trường văn bản tự do.
+  - Xóa ảnh giấy tờ xác minh ngay khi gia sư xóa tài khoản, không chờ mốc 30 ngày (câu 9).
+  - Thêm cách để người dùng tải bản sao dữ liệu của mình và một đầu mối nhận yêu cầu về dữ liệu (câu 10).
+- **Đổi phụ huynh quản lý** do Admin xử lý theo yêu cầu _(C9)_: kết thúc dòng `learner_guardians` cũ (`ended_reason = 'transferred'`, `changed_by`) rồi thêm dòng mới, trong một transaction.
 - **Thống kê cơ bản** cho Admin theo các chỉ số pilot ở giai đoạn 0.
 - **Review bảo mật** (skill `security-review`): xác thực, phân quyền theo quan hệ, upload tệp, rate limit, header bảo mật, CORS, lộ dữ liệu qua API, log không chứa dữ liệu của trẻ.
 - **Kiểm thử end-to-end** bằng Playwright cho các luồng §14.1, §14.2, §14.3.
 - **Hiệu năng:** kiểm tra truy vấn tìm kiếm và danh sách bằng dữ liệu mẫu lớn; bổ sung index thiếu.
 - **Hạ tầng** (§7.1 tài liệu công nghệ): server đặt tại Việt Nam, Caddy + HTTPS, tên miền, tường lửa, backup PostgreSQL và SeaweedFS hằng ngày có mã hóa, thử khôi phục, Sentry.
-- **Pháp lý và nội dung:** điều khoản sử dụng, chính sách quyền riêng tư (đã qua luật sư), hướng dẫn sử dụng cơ bản hai ngôn ngữ.
+- **Việc chuyển từ G3:** khóa ngoại `account_sanctions.case_id → moderation_cases` (bảng vụ việc tạo ở G8); hạn chế tài khoản (`restricted`) và thu hồi xác minh (B.4.1 `verified` → `incomplete`) là kết quả của vụ việc; trang "Lý do báo cáo", "Cấu hình hệ thống" (các mốc thời gian hiện là hằng số theo decision log), "Khiếu nại quyết định" và xem "Nhật ký kiểm toán" trên giao diện Admin (canvas AdminCatalog, Appeals); số việc đang chờ cạnh các mục điều hướng của Manager.
+- **Việc chuyển từ G2 (triển khai web):** server web gọi API thay trình duyệt và chuyển tiếp header `X-Forwarded-For`. Khi chạy thật: chỉ cho web nhận request qua Caddy (Caddy ghi đè `X-Forwarded-For` bằng IP thật, không giữ giá trị trình duyệt gửi), và đặt `TRUST_PROXY` của API tin địa chỉ của server web. Nếu không, rate limit theo IP của API hoặc chỉ thấy IP của web (mọi người dùng chung một giới hạn), hoặc người dùng giả được IP. Đặt `COOKIE_DOMAIN` là tên miền gốc và `COOKIE_SECURE=true` (D57). Kiểm tra trong review bảo mật ở trên.
+- **Pháp lý và nội dung:** điều khoản sử dụng, chính sách quyền riêng tư (đã qua luật sư), hướng dẫn sử dụng cơ bản hai ngôn ngữ. Bộ văn bản đầy đủ và checklist kỹ thuật ở [rà soát pháp lý](00-product/ra_soat_phap_ly.md) mục 4, 5.
+- **Dữ liệu gửi ra nước ngoài** (câu 18 rà soát pháp lý): khi tích hợp Sentry, lọc bỏ IP, email, tên trước khi gửi hoặc tự host trong nước; quyết định giữ Gmail SMTP (phải lập hồ sơ chuyển dữ liệu xuyên biên giới) hay đổi sang SMTP trong nước.
 
 **Hoàn thành khi:** không còn lỗi bảo mật mức cao; backup đã thử khôi phục thành công; toàn bộ test E2E xanh trên staging.
 
@@ -335,7 +417,10 @@ Các việc bên ngoài, không chặn việc viết code nhưng có hạn chót
 
 | Việc | Hạn | Ghi chú |
 | ---- | --- | ------- |
-| Điền thông tin đơn vị vận hành và gửi [câu hỏi pháp lý](00-product/cau_hoi_phap_ly.md) cho luật sư | Trước G8; nên gửi sớm vì luật sư cần thời gian | Kết quả có thể làm thay đổi các mốc 30 ngày (C4), 6 tháng (C2), ngưỡng tuổi tài khoản học sinh (D4) |
+| Điền thông tin đơn vị vận hành và gửi [câu hỏi pháp lý](00-product/cau_hoi_phap_ly.md) cho luật sư, kèm bản [tự rà soát](00-product/ra_soat_phap_ly.md) | Trước G8; nên gửi sớm vì luật sư cần thời gian | Kết quả có thể làm thay đổi các mốc 30 ngày (C4), 6 tháng (C2), ngưỡng tuổi tài khoản học sinh (D4) và luồng xác minh gia sư (câu 26) |
+| Thành lập doanh nghiệp làm đơn vị vận hành | Trước khi đăng ký nền tảng | Rà soát pháp lý câu 1 |
+| Đăng ký nền tảng thương mại điện tử trung gian với Bộ Công Thương (đề án hoạt động, quy chế hoạt động) | Được xác nhận trước G9 | Thời hạn xác nhận 07 ngày làm việc, thực tế có thể lâu hơn (rà soát pháp lý câu 2) |
+| Hồ sơ đánh giá tác động xử lý dữ liệu cá nhân; hồ sơ chuyển dữ liệu xuyên biên giới (nếu dùng dịch vụ nước ngoài); chỉ định nhân sự bảo vệ dữ liệu | Trước G9 | Gửi Cục A05, Bộ Công an (rà soát pháp lý câu 5, 18) |
 | Đăng ký tên miền cho TPS-Connection _(D1)_ | Trước G8 | Cần cho HTTPS và bundle ID của app Mobile |
 | Chọn khu vực pilot _(D11, D45)_ | Trước G9 | Nên chọn nơi có sẵn nguồn gia sư hoặc kênh tiếp cận phụ huynh |
 | Cung cấp đầu vào cho thiết kế giao diện (G1b) | Khi bắt đầu G1b | Logo, màu, cảm giác thương hiệu, chế độ tối |
@@ -343,4 +428,8 @@ Các việc bên ngoài, không chặn việc viết code nhưng có hạn chót
 
 ## 6. Việc cần làm tiếp
 
-1. Bắt đầu G1 (nền móng kỹ thuật) và G1b (thiết kế giao diện) song song.
+1. ~~Bắt đầu G1 (nền móng kỹ thuật) và G1b (thiết kế giao diện) song song~~: **xong ngày 2026-11-13**.
+2. ~~Chốt giới hạn dung lượng tệp và ngôn ngữ của đường dẫn trang~~: **xong ngày 2026-11-13** (D55, D56).
+3. ~~Bắt đầu G2 (tài khoản, phân quyền và hồ sơ)~~: **xong ngày 2026-11-14**.
+4. ~~G3 (xác minh gia sư và trang quản trị cơ bản)~~: **xong ngày 2026-11-14**.
+5. Bắt đầu G4 (bài đăng và tìm kiếm).

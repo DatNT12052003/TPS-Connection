@@ -131,3 +131,28 @@ Chi tiết ở [danh mục hành chính](../danh_muc_hanh_chinh.md).
 | Mã  | Chủ đề | Quyết định |
 | --- | ------ | ---------- |
 | D53 | Dịch vụ lưu tệp | **SeaweedFS** thay MinIO, cho cả máy local và máy chủ thật (thay phần MinIO trong [công nghệ sử dụng](../cong_nghe_su_dung.md) §2, §7, §7.1). Lý do: MinIO đã ngừng phát hành Docker image bản cộng đồng (Docker Hub và quay.io không còn kéo được; bản lưu trữ `bitnamilegacy/minio` đóng băng từ 06/2025, không được vá lỗi bảo mật). SeaweedFS mã nguồn mở Apache 2.0, còn phát hành đều, tương thích S3 (presigned URL, bucket public/private). Code vẫn dùng `@aws-sdk/client-s3`, nên sau này đổi sang object storage của nhà cung cấp trong nước chỉ cần đổi cấu hình. |
+
+## 11. Xác thực bằng mã OTP ngày 2026-11-13 (D54)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D54 | Xác thực email và đặt lại mật khẩu | **Thay phần "xác thực email bằng liên kết" của D50.** Xác thực email khi đăng ký và đặt lại mật khẩu đều bằng **mã OTP 6 chữ số** gửi qua email. Mã có hiệu lực **10 phút**; gửi mã mới thì mã cũ mất hiệu lực. Nhập sai **5 lần** thì mã bị hủy, phải xin mã mới. Gửi lại cách nhau tối thiểu **45 giây** (giữ như D50), tối đa **5 lần mỗi giờ** cho một email. Liên kết mời học sinh tạo tài khoản vẫn là liên kết dùng một lần, hết hạn sau 7 ngày (D50). Các quy tắc khác của D50 giữ nguyên. Lý do: một cơ chế cho cả hai luồng, và nhập mã tiện khi người dùng đăng ký trên máy tính nhưng đọc email trên điện thoại. Giao diện: màn "kiểm tra email" của canvas D52 đổi thành màn nhập mã. |
+
+## 12. Trước giai đoạn 2 ngày 2026-11-13 (D55–D56)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D55 | Giới hạn tệp tải lên | Ảnh đại diện, ảnh bài đăng: tối đa **5 MB**, chỉ ảnh (JPG, PNG, WEBP), lưu ở bucket công khai. Giấy tờ xác minh, bằng cấp, tệp đính kèm tin nhắn, tệp khác: tối đa **10 MB**, ảnh hoặc PDF, bucket riêng tư. Tài liệu bài tập, bài nộp (bản 3): tối đa **20 MB**, ảnh, PDF, Word, Excel, PowerPoint, bucket riêng tư. Giá trị nằm ở `FILE_RULES` trong `packages/shared/src/files.ts`. |
+| D56 | Đường dẫn trang web | **Toàn bộ đường dẫn bằng tiếng Anh**, cho cả trang công khai và trang sau đăng nhập (ví dụ `/register`, `/tutors/<slug>`, `/app/classes`, `/admin/verifications`), giống nhau cho mọi ngôn ngữ giao diện. Phần định danh trong đường dẫn (slug) sinh từ nội dung, bỏ dấu tiếng Việt (ví dụ `nguyen-van-a-toan-ha-noi`). Tiêu đề, mô tả và nội dung trang theo ngôn ngữ người dùng chọn (mặc định tiếng Việt). |
+
+## 13. Xác thực ngày 2026-11-13 (D57)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D57 | Phiên đăng nhập | Web giữ token trong **cookie httpOnly** do API đặt (JavaScript không đọc được; trang SSR biết người dùng đã đăng nhập). Access token JWT 15 phút; refresh token xoay vòng, 30 ngày khi chọn "ghi nhớ đăng nhập", 12 giờ (cookie phiên) khi không chọn; dùng lại refresh token đã đổi thì thu hồi cả chuỗi phiên. Cookie SameSite=Lax, Secure khi chạy thật, kèm kiểm tra Origin để chống CSRF. Web và API phải cùng tên miền gốc (ví dụ tps.vn và api.tps.vn; khi dev cùng là localhost). App mobile dùng header Authorization. Đăng ký xong **chưa đăng nhập**: nhập đúng mã xác thực (D54) mới đăng nhập. Email đã đăng ký nhưng chưa xác thực có thể đăng ký lại (không để một lần đăng ký dở chặn chủ thật của email). Đăng nhập sai 5 lần trong 15 phút thì tạm khóa đăng nhập email đó tới hết 15 phút. |
+
+## 14. Giao diện ngày 2026-11-13 (D58)
+
+| Mã  | Chủ đề | Quyết định |
+| --- | ------ | ---------- |
+| D58 | Viền ô nhập khi focus | **Sửa một chi tiết của D49.** Ô nhập (TextField, ô chọn, ô nhiều dòng) khi focus: viền đổi sang màu `focus-ring` và dày thành **2 px liền** (viền 1 px + vòng 1 px sát ngoài viền), không còn khe hở giữa viền và vòng focus như bản D49 (outline cách viền 1 px). Nút và thẻ giữ vòng focus cách 2 px. Đã cập nhật [TPS-Connection Design System](https://claude.ai/artifact/263FLgUp1zeKVVnVnRMUY1) (TextField, `bundle.css`), canvas giao diện MVP và `apps/web/app/components/ui/field.tsx`. |

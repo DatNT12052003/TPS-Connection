@@ -1,0 +1,93 @@
+# Thử tay hồ sơ phụ huynh, hồ sơ con và lời mời học sinh (G2 phần 4) bằng REST Client (humao.rest-client).
+# Bấm "Send Request" theo thứ tự. Cookie đăng nhập được REST Client giữ giữa các yêu cầu.
+#
+# Cần chạy trước: npm run infra:up, npm run db:migrate -w @tps/api, npm run db:seed:areas -w @tps/api,
+# npm run dev -w @tps/api. Cần một tài khoản phụ huynh đã xác thực email (làm theo http/auth.http).
+# Token lời mời: mở Mailpit http://127.0.0.1:8025, trong email mời copy phần sau "#token=" rồi sửa @token.
+
+@api = http://127.0.0.1:3000/api/v1
+@email = phuhuynh.thu1@example.com
+@password = matkhau123
+@kidEmail = con.thu1@example.com
+@token = dan-token-tu-email-vao-day-43-ky-tu-xxxxxxx
+
+### 1. Đăng nhập phụ huynh -> 200
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+### 2. Hồ sơ phụ huynh (trống nếu chưa lưu) -> 200
+GET {{api}}/me/parent-profile
+
+### 3. Lưu hồ sơ phụ huynh -> 200. Lấy id tỉnh/xã: SELECT id, full_name FROM administrative_areas WHERE code IN ('01','00004')
+PUT {{api}}/me/parent-profile
+Content-Type: application/json
+
+{ "provinceId": 1, "communeId": null, "addressLine": "12 Phố Huế" }
+
+### 4. Tạo hồ sơ con (bắt buộc đồng ý xử lý dữ liệu của con) -> 201
+# @name createChild
+POST {{api}}/learners
+Content-Type: application/json
+
+{
+  "fullName": "Trần Minh Khang",
+  "nickname": "Bin",
+  "dateOfBirth": "2013-05-20",
+  "gradeLevelId": 9,
+  "schoolName": "THCS Nguyễn Du",
+  "relationship": "mother",
+  "acceptChildDataProcessing": true
+}
+
+### 5. Thiếu đồng ý -> 422 validation_failed (acceptChildDataProcessing)
+POST {{api}}/learners
+Content-Type: application/json
+
+{ "fullName": "Không đồng ý", "gradeLevelId": 9, "relationship": "mother", "acceptChildDataProcessing": false }
+
+### 6. Danh sách con -> 200
+GET {{api}}/learners
+
+### 7. Một hồ sơ con -> 200
+GET {{api}}/learners/{{createChild.response.body.id}}
+
+### 8. Sửa hồ sơ (null xóa giá trị) -> 200
+PATCH {{api}}/learners/{{createChild.response.body.id}}
+Content-Type: application/json
+
+{ "schoolName": null, "notes": "Con thích học buổi tối." }
+
+### 9. Hồ sơ không phải của mình (id ngẫu nhiên) -> 404
+GET {{api}}/learners/0193a1b2-0000-7000-8000-000000000000
+
+### 10. Mời con tạo tài khoản -> 201; email mời tới Mailpit
+POST {{api}}/learners/{{createChild.response.body.id}}/invitation
+Content-Type: application/json
+
+{ "email": "{{kidEmail}}" }
+
+### 11. Đăng xuất phụ huynh trước khi nhận lời mời -> 204
+POST {{api}}/auth/logout
+
+### 12. Xem lời mời (sửa @token trước) -> 200
+POST {{api}}/student-invitations/lookup
+Content-Type: application/json
+
+{ "token": "{{token}}" }
+
+### 13. Nhận lời mời: tạo tài khoản học sinh và đăng nhập -> 201
+POST {{api}}/student-invitations/accept
+Content-Type: application/json
+
+{ "token": "{{token}}", "password": "{{password}}", "acceptTerms": true }
+
+### 14. Học sinh xem hồ sơ của mình (viewer = student, không có notes) -> 200
+GET {{api}}/learners
+
+### 15. Dùng lại liên kết -> 404 invitation_invalid
+POST {{api}}/student-invitations/accept
+Content-Type: application/json
+
+{ "token": "{{token}}", "password": "{{password}}", "acceptTerms": true }

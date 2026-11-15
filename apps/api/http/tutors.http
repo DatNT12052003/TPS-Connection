@@ -1,0 +1,106 @@
+# Thử tay hồ sơ gia sư, thông tin cá nhân, ảnh đại diện và danh mục (G2 phần 5) bằng REST Client
+# (humao.rest-client). Bấm "Send Request" theo thứ tự. Cookie đăng nhập được REST Client giữ giữa các yêu cầu.
+#
+# Cần chạy trước: npm run infra:up, npm run db:migrate -w @tps/api, npm run db:seed:areas -w @tps/api,
+# npm run dev -w @tps/api. Cần một tài khoản GIA SƯ đã xác thực email (đăng ký "role": "tutor" theo
+# http/auth.http).
+# Hồ sơ công khai chỉ hiện khi đã xác minh (G3). Muốn thử bước 12 trước G3, chạy SQL trong DB dev:
+#   UPDATE tutor_profiles SET profile_status = 'verified', identity_verified_at = now() WHERE user_id = '<id>';
+
+@api = http://127.0.0.1:3000/api/v1
+@email = giasu.thu1@example.com
+@password = matkhau123
+
+### 1. Đăng nhập gia sư -> 200
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+### 2. Danh mục: môn học, khối lớp, tỉnh -> 200 (không cần đăng nhập)
+GET {{api}}/catalog/subjects
+
+###
+GET {{api}}/catalog/grade-levels
+
+###
+# @name provinces
+GET {{api}}/catalog/provinces
+
+### 3. Xã/phường của tỉnh đầu tiên -> 200
+GET {{api}}/catalog/provinces/{{provinces.response.body.items[0].id}}/communes
+
+### 4. Hồ sơ gia sư của mình (tạo hồ sơ trống lần đầu) -> 200; xem missingForVerification
+# @name me
+GET {{api}}/me/tutor-profile
+
+### 5. Lưu hồ sơ (sửa subjectId, gradeLevelId, serviceAreaIds theo kết quả bước 2, 3) -> 200
+PUT {{api}}/me/tutor-profile
+Content-Type: application/json
+
+{
+  "headline": "Gia sư Toán THCS, 5 năm kinh nghiệm",
+  "bio": "Tốt nghiệp Sư phạm Toán, dạy kèm từ năm 2020.",
+  "occupation": "teacher",
+  "institution": "THCS Giảng Võ",
+  "experienceYears": 5,
+  "teachingMode": "hybrid",
+  "rate": { "amountVnd": 200000, "unit": "session" },
+  "acceptingStudents": true,
+  "teachingSubjects": [{ "subjectId": 1, "gradeLevelId": 9 }],
+  "serviceAreaIds": [],
+  "availability": [
+    { "weekday": 2, "startTime": "18:00", "endTime": "20:00" },
+    { "weekday": 4, "startTime": "19:30", "endTime": "21:00" }
+  ]
+}
+
+### 6. Khung giờ chồng nhau -> 422 (message slot_overlap)
+PUT {{api}}/me/tutor-profile
+Content-Type: application/json
+
+{
+  "availability": [
+    { "weekday": 2, "startTime": "18:00", "endTime": "20:00" },
+    { "weekday": 2, "startTime": "19:00", "endTime": "21:00" }
+  ]
+}
+
+### 7. Thêm bằng cấp tự khai -> 201
+# @name credential
+POST {{api}}/me/tutor-profile/credentials
+Content-Type: application/json
+
+{ "kind": "certificate", "title": "IELTS 8.0", "issuer": "British Council", "issuedYear": 2022 }
+
+### 8. Sửa bằng cấp -> 200
+PATCH {{api}}/me/tutor-profile/credentials/{{credential.response.body.id}}
+Content-Type: application/json
+
+{ "title": "IELTS 8.5" }
+
+### 9. Thông tin cá nhân -> 200
+GET {{api}}/me
+
+### 10. Sửa tên hiển thị, số điện thoại, ngôn ngữ -> 200
+PATCH {{api}}/me
+Content-Type: application/json
+
+{ "displayName": "Thầy Nam", "phone": "0912 345 678", "locale": "vi" }
+
+### 11. Xin URL tải ảnh đại diện -> 201. Sau đó PUT tệp ảnh (đúng Content-Type và dung lượng) lên uploadUrl,
+# rồi gửi PUT /me/avatar với fileId nhận được.
+# @name upload
+POST {{api}}/files/uploads
+Content-Type: application/json
+
+{ "purpose": "avatar", "fileName": "anh.png", "contentType": "image/png", "sizeBytes": 2048 }
+
+###
+PUT {{api}}/me/avatar
+Content-Type: application/json
+
+{ "fileId": "{{upload.response.body.fileId}}" }
+
+### 12. Hồ sơ công khai (khách xem được) -> 200 nếu đã xác minh, 404 nếu chưa
+GET {{api}}/tutors/{{me.response.body.userId}}
