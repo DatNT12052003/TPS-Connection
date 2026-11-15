@@ -3,6 +3,7 @@ import type {
   CreateRequestPostRequest,
   OwnRequestPostsQuery,
   RequestPostIdParams,
+  RequestPostSearchQuery,
   UpdateRequestPostRequest,
 } from '@tps/shared';
 import type { RequestHandler } from 'express';
@@ -56,7 +57,16 @@ export function createRequestPostsController(service: RequestPostsService) {
     res.json(await service.getForTutor(requireAuth(req).user.id, req.params.postId));
   };
 
-  return { listOwn, create, getOwn, update, changeStatus, remove, getForTutor };
+  const searchForTutor: RequestHandler = async (req, res) => {
+    res.json(
+      await service.searchForTutor(
+        requireAuth(req).user.id,
+        req.query as unknown as RequestPostSearchQuery,
+      ),
+    );
+  };
+
+  return { listOwn, create, getOwn, update, changeStatus, remove, getForTutor, searchForTutor };
 }
 
 export type RequestPostsController = ReturnType<typeof createRequestPostsController>;

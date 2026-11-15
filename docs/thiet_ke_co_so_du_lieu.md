@@ -392,6 +392,12 @@ CREATE INDEX tutor_credentials_tutor_idx ON tutor_credentials (tutor_id);
 
 **Ghi chú triển khai (G2, migration `CreateTutorProfiles`):** cột `search_vector` chưa tạo; thêm ở G4 cùng index và truy vấn tìm kiếm (mục 14). Thêm các CHECK: `verified_at` có khi và chỉ khi `verification_status = 'verified'`; `rating_avg` trong khoảng 1–5, `rating_count >= 0`; `title` không rỗng. Thêm index `tutor_profiles_verified_idx` (partial, các hồ sơ đã xác minh) và `tutor_availability_slots_tutor_idx`. Hồ sơ gia sư được tạo (trạng thái `incomplete`) lần đầu gia sư mở hồ sơ của mình. Lịch rảnh không chồng nhau trong một ngày được kiểm tra ở API, chưa có exclusion constraint.
 
+**Ghi chú triển khai (G4, migration `AddMarketplaceSearch`):**
+
+- `search_vector` là cột `GENERATED ALWAYS ... STORED` từ các trường văn bản của chính bảng (giới thiệu ngắn, giới thiệu, nơi học/công tác, chuyên ngành, học vấn, phương pháp, thành tích), `to_tsvector('simple', immutable_unaccent(lower(...)))`, index GIN. Không chứa tên môn học (lọc môn bằng id) hay tên hiển thị (ở `users`, tìm bằng trigram `users_display_name_trgm_idx`). Họ tên thật và email không bao giờ được tìm từ trang công khai.
+- `public_code`: 10 ký tự hex ngẫu nhiên, unique, database tự sinh; cuối slug `/tutors/<tên-không-dấu>-<mã>` (D56). Phần chữ sinh lúc trả về nên đổi tên hiển thị không làm hỏng đường dẫn cũ. `tutor_posts` có cột `public_code` và `search_vector` (tiêu đề, mô tả) tương tự.
+- `tutor_profiles_ranking_idx` (partial, hồ sơ đã xác minh) theo đúng thứ tự "phù hợp nhất" khi không có từ khóa; `request_posts_open_idx` cho danh sách nhu cầu mới nhất khi gia sư chưa lọc.
+
 ### 5.2. Phụ huynh và người học
 
 ```sql

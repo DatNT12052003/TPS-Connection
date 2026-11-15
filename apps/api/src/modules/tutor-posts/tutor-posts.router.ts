@@ -3,6 +3,8 @@ import {
   OwnTutorPostsQuery,
   SaveTutorPostRequest,
   TutorPostIdParams,
+  TutorPostRefParams,
+  TutorPostSearchQuery,
 } from '@tps/shared';
 import { type RequestHandler, Router } from 'express';
 import { requireRole } from '../../http/authorize.js';
@@ -45,12 +47,14 @@ export function ownTutorPostsRouter(
 }
 
 /**
- * /api/v1/tutor-posts: bài tuyển học sinh công khai (khách xem được, C8). Danh sách và tìm kiếm ở đợt 2.
+ * /api/v1/tutor-posts: bài tuyển học sinh công khai (khách xem được, C8).
  *
- *   GET /:postId   200  bài đang mở của gia sư đã xác minh; còn lại 404
+ *   GET /           200  tìm bài đang mở (lọc, sắp xếp, phân trang; xem TutorPostSearchQuery)
+ *   GET /:postRef   200  bài theo slug hoặc id; không mở, bị ẩn, gia sư không còn hiển thị: 404
  */
 export function publicTutorPostsRouter(controller: TutorPostsController): Router {
   const router = Router();
-  router.get('/:postId', validate({ params: TutorPostIdParams }), controller.getPublic);
+  router.get('/', validate({ query: TutorPostSearchQuery }), controller.search);
+  router.get('/:postRef', validate({ params: TutorPostRefParams }), controller.getPublic);
   return router;
 }

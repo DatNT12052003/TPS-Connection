@@ -27,3 +27,27 @@ export function slugify(text: string, maxLength = 80): string {
   const lastDash = cut.lastIndexOf('-');
   return (lastDash > 0 ? cut.slice(0, lastDash) : slug.slice(0, maxLength)).replace(/-+$/, '');
 }
+
+/** Mã công khai trong đường dẫn: 10 ký tự hex thường, sinh ngẫu nhiên trong database (`public_code`). */
+export const PUBLIC_CODE_PATTERN = /^[0-9a-f]{10}$/;
+
+/**
+ * Slug công khai (D56): phần chữ không dấu sinh từ nội dung, cuối là mã công khai để tìm lại bản ghi.
+ * ("Thầy Nam", "a1b2c3d4e5") -> "thay-nam-a1b2c3d4e5". Đổi tên thì phần chữ đổi, mã giữ nguyên.
+ */
+export function publicSlug(text: string, code: string): string {
+  const words = slugify(text, 60);
+  return words ? `${words}-${code}` : code;
+}
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Đọc phần định danh trong đường dẫn công khai: id dạng uuid, hoặc slug kết thúc bằng mã công khai.
+ * Phần chữ của slug không dùng để tìm (có thể cũ); trang web chuyển hướng về slug đúng.
+ */
+export function parsePublicRef(ref: string): { id: string } | { code: string } | null {
+  if (UUID_PATTERN.test(ref)) return { id: ref.toLowerCase() };
+  const code = /(?:^|-)([0-9a-f]{10})$/.exec(ref)?.[1];
+  return code ? { code } : null;
+}

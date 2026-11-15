@@ -1,7 +1,8 @@
 import {
   CreateTutorCredentialRequest,
   CredentialIdParams,
-  TutorIdParams,
+  TutorRefParams,
+  TutorSearchQuery,
   UpdateTutorCredentialRequest,
   UpdateTutorProfileRequest,
 } from '@tps/shared';
@@ -46,12 +47,14 @@ export function ownTutorProfileRouter(
 }
 
 /**
- * /api/v1/tutors: hồ sơ gia sư công khai (khách xem được, C8). Tìm kiếm và danh sách thêm ở G4.
+ * /api/v1/tutors: tìm gia sư và hồ sơ gia sư công khai (khách xem được, C8).
  *
- *   GET /:tutorId   200  hồ sơ công khai; chưa xác minh / bị khóa / đã xóa: 404
+ *   GET /            200  tìm gia sư (lọc, sắp xếp, phân trang; xem TutorSearchQuery)
+ *   GET /:tutorRef  200  hồ sơ công khai theo slug hoặc id; chưa xác minh / bị khóa / đã xóa: 404
  */
 export function publicTutorsRouter(controller: TutorsController): Router {
   const router = Router();
-  router.get('/:tutorId', validate({ params: TutorIdParams }), controller.getPublic);
+  router.get('/', validate({ query: TutorSearchQuery }), controller.search);
+  router.get('/:tutorRef', validate({ params: TutorRefParams }), controller.getPublic);
   return router;
 }

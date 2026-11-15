@@ -10,6 +10,11 @@ import {
   type PublicTutorPost,
   type SaveTutorPostRequest,
   type TeachingMode,
+  parsePublicRef,
+  publicSlug,
+  type TutorPostAuthor,
+  type TutorPostSearchQuery,
+  type TutorPostSearchResult,
   type TutorPostStatus,
   type UserStatus,
 } from '@tps/shared';
@@ -21,6 +26,7 @@ import { createTutorsRepository } from '../tutors/tutors.repository.js';
 import type { TutorPost } from './tutor-post.entity.js';
 import {
   createTutorPostsRepository,
+  type PublicTutorPostRow,
   type TutorPostData,
   type TutorPostItems,
 } from './tutor-posts.repository.js';
@@ -268,30 +274,79 @@ export function createTutorPostsService(deps: {
       logger.info({ userId: tutorId, postId }, 'Tutor post deleted');
     },
 
-    /** Bài công khai (khách xem được, C8); không hiển thị được thì 404. Mỗi lần xem tăng lượt xem. */
-    async getPublic(postId: string): Promise<PublicTutorPost> {
+    /**
+     * Bài công khai theo slug hoặc id (khách xem được, C8); không hiển thị được hoặc định danh không đọc được thì
+     * 404. Mỗi lần xem tăng lượt xem.
+     */
+    async getPublic(postRef: string): Promise<PublicTutorPost> {
       const repo = createTutorPostsRepository(dataSource.manager);
-      const row = await repo.findPublic(postId);
+      const ref = parsePublicRef(postRef);
+      const row = ref ? await repo.findPublic(ref) : null;
       if (!row) throw notFound('Post');
-      const items = await repo.items(postId);
-      await repo.incrementViews(postId);
       const { post } = row;
+      const items = await repo.items(post.id);
+      await repo.incrementViews(post.id);
       return {
         ...contentFields(post, items),
         id: post.id,
+        slug: publicSlug(post.title, post.publicCode),
         publishedAt: post.publishedAt!.toISOString(),
         updatedAt: post.updatedAt.toISOString(),
-        tutor: {
-          id: post.tutorId,
-          displayName: row.displayName,
-          avatarUrl: row.avatarStorageKey ? deps.publicFileUrl(row.avatarStorageKey) : null,
-          hasVerifiedDegree: row.hasVerifiedDegree,
-          ratingAvg: row.ratingAvg === null ? null : Number(row.ratingAvg),
-          ratingCount: row.ratingCount,
-        },
+        tutor: authorOf(row),
+      };
+    },
+
+    /** Tìm bài tuyển công khai (khách xem được, C8). */
+    async search(query: TutorPostSearchQuery): Promise<TutorPostSearchResult> {
+      const repo = createTutorPostsRepository(dataSource.manager);
+      const { rows, total } = await repo.search(query);
+      const items = await repo.itemsOf(rows.map((r) => r.post.id));
+      return {
+        items: rows.map((row) => {
+          const { post } = row;
+          const { subjects, areaIds } = items.get(post.id)!;
+          return {
+            id: post.id,
+            slug: publicSlug(post.title, post.publicCode),
+            title: post.title,
+            excerpt: excerptOf(post.description),
+            teachingMode: teachingModeOf(post),
+            rate: rateOf(post),
+            capacity: post.capacity,
+            availableFrom: post.availableFrom,
+            subjects,
+            areaIds,
+            publishedAt: post.publishedAt!.toISOString(),
+            tutor: authorOf(row),
+          };
+        }),
+        page: query.page,
+        pageSize: query.pageSize,
+        total,
       };
     },
   };
+
+  function authorOf(row: PublicTutorPostRow): TutorPostAuthor {
+    return {
+      id: row.post.tutorId,
+      slug: publicSlug(row.displayName, row.tutorPublicCode),
+      displayName: row.displayName,
+      avatarUrl: row.avatarStorageKey ? deps.publicFileUrl(row.avatarStorageKey) : null,
+      hasVerifiedDegree: row.hasVerifiedDegree,
+      ratingAvg: row.ratingAvg === null ? null : Number(row.ratingAvg),
+      ratingCount: row.ratingCount,
+    };
+  }
+}
+
+/** Đoạn đầu của mô tả cho thẻ bài: tối đa 200 ký tự, không cắt giữa từ. */
+function excerptOf(text: string, max = 200): string {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  if (flat.length <= max) return flat;
+  const cut = flat.slice(0, max);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > max / 2 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
 export type TutorPostsService = ReturnType<typeof createTutorPostsService>;

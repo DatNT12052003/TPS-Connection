@@ -35,7 +35,7 @@ import {
   PublicTutorProfile,
   SetAvatarRequest,
   TutorCredential,
-  TutorIdParams,
+  TutorRefParams,
   UpdateAccountRequest,
   UpdateTutorCredentialRequest,
   UpdateTutorProfileRequest,
@@ -80,6 +80,13 @@ import {
   SaveTutorPostRequest,
   TutorPostIdParams,
   UpdateRequestPostRequest,
+  RequestPostSearchQuery,
+  RequestPostSearchResult,
+  TutorPostRefParams,
+  TutorPostSearchQuery,
+  TutorPostSearchResult,
+  TutorSearchQuery,
+  TutorSearchResult,
 } from '@tps/shared';
 import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
@@ -827,12 +834,24 @@ export function createOpenApiDocument() {
           },
         },
       },
-      '/api/v1/tutors/{tutorId}': {
+      '/api/v1/tutors': {
+        get: {
+          tags: ['tutors'],
+          summary:
+            'Tìm gia sư công khai (khách xem được): chỉ gia sư đã xác minh, đang hoạt động; môn, khối đang bật',
+          requestParams: { query: TutorSearchQuery },
+          responses: {
+            200: { description: 'OK', ...json(TutorSearchResult) },
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/tutors/{tutorRef}': {
         get: {
           tags: ['tutors'],
           summary:
             'Hồ sơ gia sư công khai (khách xem được; không có email, số điện thoại, họ tên thật)',
-          requestParams: { path: TutorIdParams },
+          requestParams: { path: TutorRefParams },
           responses: {
             200: { description: 'OK', ...json(PublicTutorProfile) },
             404: error(
@@ -931,11 +950,22 @@ export function createOpenApiDocument() {
           },
         },
       },
-      '/api/v1/tutor-posts/{postId}': {
+      '/api/v1/tutor-posts': {
         get: {
           tags: ['tutor-posts'],
-          summary: 'Bài tuyển học sinh công khai (khách xem được); tăng lượt xem',
-          requestParams: { path: TutorPostIdParams },
+          summary: 'Tìm bài tuyển học sinh đang mở (khách xem được)',
+          requestParams: { query: TutorPostSearchQuery },
+          responses: {
+            200: { description: 'OK', ...json(TutorPostSearchResult) },
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/tutor-posts/{postRef}': {
+        get: {
+          tags: ['tutor-posts'],
+          summary: 'Bài tuyển học sinh công khai theo slug hoặc id (khách xem được); tăng lượt xem',
+          requestParams: { path: TutorPostRefParams },
           responses: {
             200: { description: 'OK', ...json(PublicTutorPost) },
             404: error(
@@ -1017,6 +1047,21 @@ export function createOpenApiDocument() {
             403: error('forbidden (không phải phụ huynh), account_restricted'),
             404: error('not_found'),
             409: error('invalid_state_transition'),
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/request-posts': {
+        get: {
+          tags: ['request-posts'],
+          summary:
+            'Tìm nhu cầu đang mở cho gia sư đã xác minh (không có hồ sơ con, người đăng hay danh tính của trẻ)',
+          security,
+          requestParams: { query: RequestPostSearchQuery },
+          responses: {
+            200: { description: 'OK', ...json(RequestPostSearchResult) },
+            401: error('unauthenticated'),
+            403: error('forbidden (không phải gia sư), tutor_not_verified'),
             422: error('validation_failed'),
           },
         },

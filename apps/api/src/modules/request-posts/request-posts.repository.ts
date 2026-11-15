@@ -1,4 +1,9 @@
-import type { AvailabilitySlot, RequestPostClosedReason, RequestPostStatus } from '@tps/shared';
+import type {
+  AvailabilitySlot,
+  RequestPostClosedReason,
+  RequestPostSearchQuery,
+  RequestPostStatus,
+} from '@tps/shared';
 import { type EntityManager, In, IsNull, Not } from 'typeorm';
 import { RequestPost, RequestPostSlot } from './request-post.entity.js';
 
@@ -44,6 +49,22 @@ export function createRequestPostsRepository(manager: EntityManager) {
     }
     return result;
   }
+
+  /**
+   * Bài gia sư đã xác minh được xem (C8): đang mở, chưa bị ẩn, chưa xóa; hồ sơ con chưa xóa; tài khoản người
+   * đăng đang hoạt động, chưa xóa.
+   */
+  const visibleToTutors = () =>
+    posts
+      .createQueryBuilder('p')
+      .innerJoin('learners', 'l', 'l.id = p.learner_id')
+      .innerJoin('users', 'u', 'u.id = p.author_user_id')
+      .where(`p.status = 'open'`)
+      .andWhere('p.deletedAt IS NULL')
+      .andWhere('p.moderationHiddenAt IS NULL')
+      .andWhere('l.deleted_at IS NULL')
+      .andWhere(`u.status = 'active'`)
+      .andWhere('u.deleted_at IS NULL');
 
   return {
     slotsOf,
@@ -143,23 +164,70 @@ export function createRequestPostsRepository(manager: EntityManager) {
       return { rows, total };
     },
 
-    /**
-     * Bài gia sư đã xác minh được xem (C8): đang mở, chưa bị ẩn, chưa xóa; hồ sơ con chưa xóa; tài khoản người
-     * đăng đang hoạt động, chưa xóa.
-     */
+    /** Một bài gia sư đã xác minh được xem. */
     findVisibleToTutors(id: string): Promise<RequestPost | null> {
-      return posts
-        .createQueryBuilder('p')
-        .innerJoin('learners', 'l', 'l.id = p.learner_id')
-        .innerJoin('users', 'u', 'u.id = p.author_user_id')
-        .where('p.id = :id', { id })
-        .andWhere(`p.status = 'open'`)
-        .andWhere('p.deletedAt IS NULL')
-        .andWhere('p.moderationHiddenAt IS NULL')
-        .andWhere('l.deleted_at IS NULL')
-        .andWhere(`u.status = 'active'`)
-        .andWhere('u.deleted_at IS NULL')
-        .getOne();
+      return visibleToTutors().andWhere('p.id = :id', { id }).getOne();
+    },
+
+    /**
+     * Tìm nhu cầu cho gia sư đã xác minh (G4 đợt 2). Chỉ môn, khối đang bật. Index: `request_posts_search_idx`.
+     * `tutorId` dùng cho `matchProfile`: chỉ nhu cầu có môn × khối nằm trong hồ sơ của gia sư đó.
+     */
+    async search(
+      tutorId: string,
+      filter: RequestPostSearchQuery,
+    ): Promise<{ rows: RequestPost[]; total: number }> {
+      const query = visibleToTutors()
+        .innerJoin('subjects', 's', 's.id = p.subject_id AND s.is_active')
+        .innerJoin('grade_levels', 'g', 'g.id = p.grade_level_id AND g.is_active');
+      if (filter.subjectId !== undefined) {
+        query.andWhere('p.subjectId = :subjectId', { subjectId: filter.subjectId });
+      }
+      if (filter.gradeLevelId !== undefined) {
+        query.andWhere('p.gradeLevelId = :gradeLevelId', { gradeLevelId: filter.gradeLevelId });
+      }
+      if (filter.goal !== undefined) query.andWhere('p.goal = :goal', { goal: filter.goal });
+      if (filter.mode === 'online') query.andWhere(`p.teachingMode IN ('online', 'hybrid')`);
+      if (filter.mode === 'in_person') query.andWhere(`p.teachingMode IN ('in_person', 'hybrid')`);
+      if (filter.communeId !== undefined) {
+        // Đúng xã, hoặc nhu cầu ở tỉnh chứa xã mà chưa ghi xã.
+        query.andWhere(
+          `(p.communeId = :communeId OR (p.communeId IS NULL AND p.provinceId =
+             (SELECT parent_id FROM administrative_areas WHERE id = :communeId)))`,
+          { communeId: filter.communeId },
+        );
+      } else if (filter.provinceId !== undefined) {
+        query.andWhere('p.provinceId = :provinceId', { provinceId: filter.provinceId });
+      }
+      if (filter.budgetUnit !== undefined) {
+        query.andWhere('p.budgetUnit = :budgetUnit', { budgetUnit: filter.budgetUnit });
+      }
+      if (filter.minBudget !== undefined) {
+        query.andWhere('coalesce(p.budgetMaxVnd, p.budgetMinVnd) >= :minBudget', {
+          minBudget: filter.minBudget,
+        });
+      }
+      if (filter.matchProfile) {
+        query.andWhere(
+          `EXISTS (SELECT 1 FROM tutor_teaching_subjects t
+                    WHERE t.tutor_id = :tutorId AND t.subject_id = p.subject_id
+                      AND t.grade_level_id = p.grade_level_id)`,
+          { tutorId },
+        );
+      }
+
+      const total = await query.getCount();
+      if (total === 0) return { rows: [], total };
+      if (filter.sort === 'budget_desc') {
+        query.orderBy('coalesce(p.budget_max_vnd, p.budget_min_vnd)', 'DESC', 'NULLS LAST');
+      }
+      const rows = await query
+        .addOrderBy('p.publishedAt', 'DESC')
+        .addOrderBy('p.id', 'DESC')
+        .offset((filter.page - 1) * filter.pageSize)
+        .limit(filter.pageSize)
+        .getMany();
+      return { rows, total };
     },
 
     /** Gia sư đã được duyệt danh tính chưa (chỉ gia sư đã xác minh mới xem được bài tìm gia sư, C8). */

@@ -3,6 +3,8 @@ import type {
   OwnTutorPostsQuery,
   SaveTutorPostRequest,
   TutorPostIdParams,
+  TutorPostRefParams,
+  TutorPostSearchQuery,
 } from '@tps/shared';
 import type { RequestHandler } from 'express';
 import { requireAuth } from '../../http/authorize.js';
@@ -55,11 +57,25 @@ export function createTutorPostsController(service: TutorPostsService) {
     res.status(204).end();
   };
 
-  const getPublic: RequestHandler<TutorPostIdParams> = async (req, res) => {
-    res.json(await service.getPublic(req.params.postId));
+  const getPublic: RequestHandler<TutorPostRefParams> = async (req, res) => {
+    res.json(await service.getPublic(req.params.postRef));
   };
 
-  return { listOwn, create, getOwn, update, changeStatus, duplicate, remove, getPublic };
+  const search: RequestHandler = async (req, res) => {
+    res.json(await service.search(req.query as unknown as TutorPostSearchQuery));
+  };
+
+  return {
+    listOwn,
+    create,
+    getOwn,
+    update,
+    changeStatus,
+    duplicate,
+    remove,
+    getPublic,
+    search,
+  };
 }
 
 export type TutorPostsController = ReturnType<typeof createTutorPostsController>;

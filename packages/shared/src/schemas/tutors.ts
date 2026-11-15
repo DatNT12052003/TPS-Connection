@@ -241,6 +241,8 @@ export type OwnTutorProfile = z.infer<typeof OwnTutorProfile>;
 export const PublicTutorProfile = z.object({
   ...TutorProfileFields,
   id: Id,
+  /** Đường dẫn `/tutors/<slug>` (D56): tên hiển thị không dấu + mã công khai. */
+  slug: z.string(),
   displayName: z.string(),
   avatarUrl: z.string().nullable(),
   /** Luôn true: chỉ gia sư đã xác minh danh tính mới công khai (D5). */
@@ -259,5 +261,11 @@ export const PublicTutorProfile = z.object({
 });
 export type PublicTutorProfile = z.infer<typeof PublicTutorProfile>;
 
-export const TutorIdParams = z.object({ tutorId: Id });
-export type TutorIdParams = z.infer<typeof TutorIdParams>;
+/**
+ * Định danh trong đường dẫn công khai: slug (`thay-nam-a1b2c3d4e5`) hoặc id. Chuỗi không đọc được thì API trả 404
+ * như gia sư không tồn tại.
+ */
+export const PublicRef = z.string().trim().min(1).max(200);
+
+export const TutorRefParams = z.object({ tutorRef: PublicRef });
+export type TutorRefParams = z.infer<typeof TutorRefParams>;

@@ -58,6 +58,10 @@ export class TutorPost {
   @Column({ name: 'view_count', type: 'integer', default: 0 })
   viewCount!: number;
 
+  /** Mã công khai cuối slug của bài (D56); database tự sinh, không đổi. */
+  @Column({ name: 'public_code', type: 'text', insert: false, update: false })
+  publicCode!: string;
+
   @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt!: Date | null;
 

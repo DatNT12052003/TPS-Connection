@@ -10,6 +10,7 @@ import { CreateVerification1794970500000 } from './1794970500000-CreateVerificat
 import { CreateAuditLogs1794970600000 } from './1794970600000-CreateAuditLogs.js';
 import { CreateAccountSanctions1794970700000 } from './1794970700000-CreateAccountSanctions.js';
 import { CreateMarketplacePosts1794970800000 } from './1794970800000-CreateMarketplacePosts.js';
+import { AddMarketplaceSearch1794970900000 } from './1794970900000-AddMarketplaceSearch.js';
 
 export const MIGRATIONS = [
   InitExtensions1794960000000,
@@ -22,4 +23,5 @@ export const MIGRATIONS = [
   CreateAuditLogs1794970600000,
   CreateAccountSanctions1794970700000,
   CreateMarketplacePosts1794970800000,
+  AddMarketplaceSearch1794970900000,
 ];

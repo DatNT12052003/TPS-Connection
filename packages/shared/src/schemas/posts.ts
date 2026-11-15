@@ -13,7 +13,7 @@ import {
   TutorPostStatus,
 } from '../statuses.js';
 import { Id, optionalText, PaginationQuery, paginated } from './common.js';
-import { AvailabilitySlot, slotsOverlap, TeachingSubject, TutorRate } from './tutors.js';
+import { AvailabilitySlot, PublicRef, slotsOverlap, TeachingSubject, TutorRate } from './tutors.js';
 
 /** Giới hạn để một bài đăng hay một tài khoản không phình vô hạn. */
 export const POST_LIMITS = {
@@ -99,6 +99,10 @@ export type ChangeTutorPostStatusRequest = z.infer<typeof ChangeTutorPostStatusR
 export const TutorPostIdParams = z.object({ postId: Id });
 export type TutorPostIdParams = z.infer<typeof TutorPostIdParams>;
 
+/** Bài công khai theo slug (`toan-9-luyen-thi-a1b2c3d4e5`) hoặc id. */
+export const TutorPostRefParams = z.object({ postRef: PublicRef });
+export type TutorPostRefParams = z.infer<typeof TutorPostRefParams>;
+
 export const OwnTutorPostsQuery = PaginationQuery.extend({ status: TutorPostStatus.optional() });
 export type OwnTutorPostsQuery = z.infer<typeof OwnTutorPostsQuery>;
 
@@ -134,6 +138,8 @@ export type OwnTutorPostList = z.infer<typeof OwnTutorPostList>;
 /** Gia sư đứng tên bài tuyển, ở dạng công khai: không email, số điện thoại, họ tên thật (D16). */
 export const TutorPostAuthor = z.object({
   id: Id,
+  /** Đường dẫn hồ sơ `/tutors/<slug>`. */
+  slug: z.string(),
   displayName: z.string(),
   avatarUrl: z.string().nullable(),
   hasVerifiedDegree: z.boolean(),
@@ -146,6 +152,8 @@ export type TutorPostAuthor = z.infer<typeof TutorPostAuthor>;
 export const PublicTutorPost = z.object({
   ...TutorPostFields,
   id: Id,
+  /** Đường dẫn bài: tiêu đề không dấu + mã công khai (D56). */
+  slug: z.string(),
   publishedAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
   tutor: TutorPostAuthor,

@@ -3,6 +3,7 @@ import {
   CreateRequestPostRequest,
   OwnRequestPostsQuery,
   RequestPostIdParams,
+  RequestPostSearchQuery,
   UpdateRequestPostRequest,
 } from '@tps/shared';
 import { type RequestHandler, Router } from 'express';
@@ -44,8 +45,9 @@ export function ownRequestPostsRouter(
 }
 
 /**
- * /api/v1/request-posts: bài tìm gia sư cho gia sư đã xác minh, đã đăng nhập (C8). Danh sách, tìm kiếm ở đợt 2.
+ * /api/v1/request-posts: bài tìm gia sư cho gia sư đã xác minh, đã đăng nhập (C8).
  *
+ *   GET /          200  tìm nhu cầu đang mở (xem RequestPostSearchQuery); chưa xác minh: 403 tutor_not_verified
  *   GET /:postId   200  bài đang mở; gia sư chưa xác minh: 403 tutor_not_verified; không hiển thị được: 404
  */
 export function tutorRequestPostsRouter(
@@ -54,6 +56,7 @@ export function tutorRequestPostsRouter(
 ): Router {
   const router = Router();
   router.use(authenticate, requireRole('tutor'));
+  router.get('/', validate({ query: RequestPostSearchQuery }), controller.searchForTutor);
   router.get('/:postId', validate({ params: RequestPostIdParams }), controller.getForTutor);
   return router;
 }

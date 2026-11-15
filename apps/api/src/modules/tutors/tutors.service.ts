@@ -12,6 +12,10 @@ import {
   type UpdateTutorCredentialRequest,
   type UpdateTutorProfileRequest,
   type VerificationRejectionCode,
+  parsePublicRef,
+  publicSlug,
+  type TutorSearchQuery,
+  type TutorSearchResult,
 } from '@tps/shared';
 import type { DataSource } from 'typeorm';
 import { AppError, conflict, invalidStateTransition, notFound } from '../../lib/app-error.js';
@@ -23,9 +27,12 @@ import { createUsersRepository } from '../users/users.repository.js';
 import type { TutorCredential } from './tutor-credential.entity.js';
 import type { TutorProfile } from './tutor-profile.entity.js';
 import { createVerificationRepository } from '../verification/verification.repository.js';
+import { createTutorSearchRepository } from './tutor-search.repository.js';
 import { createTutorsRepository, type TutorProfileItems } from './tutors.repository.js';
 
-function teachingModeOf(profile: TutorProfile): TeachingMode | null {
+function teachingModeOf(
+  profile: Pick<TutorProfile, 'teachesOnline' | 'teachesInPerson'>,
+): TeachingMode | null {
   if (profile.teachesOnline && profile.teachesInPerson) return 'hybrid';
   if (profile.teachesOnline) return 'online';
   if (profile.teachesInPerson) return 'in_person';
@@ -248,21 +255,24 @@ export function createTutorsService(deps: {
     },
 
     /**
-     * Hồ sơ công khai (khách xem được, C8). Gia sư chưa xác minh, bị khóa, bị hạn chế hoặc đã xóa: 404.
-     * Bằng cấp bị từ chối không hiện; đang chờ duyệt hiện như tự khai.
+     * Hồ sơ công khai (khách xem được, C8) theo slug hoặc id. Gia sư chưa xác minh, bị khóa, bị hạn chế hoặc đã
+     * xóa, hoặc định danh không đọc được: 404. Bằng cấp bị từ chối không hiện; đang chờ duyệt hiện như tự khai.
      */
-    async getPublic(tutorId: string): Promise<PublicTutorProfile> {
+    async getPublic(tutorRef: string): Promise<PublicTutorProfile> {
       const tutors = repo();
-      const row = await tutors.findPublic(tutorId);
+      const ref = parsePublicRef(tutorRef);
+      const row = ref ? await tutors.findPublic(ref) : null;
       if (!row) throw notFound('Tutor');
+      const { profile } = row;
+      const tutorId = profile.userId;
       const [items, credentials] = await Promise.all([
         tutors.items(tutorId),
         tutors.listCredentials(tutorId),
       ]);
-      const { profile } = row;
       return {
         ...profileFields(profile, items),
         id: tutorId,
+        slug: publicSlug(row.displayName, profile.publicCode),
         displayName: row.displayName,
         avatarUrl: row.avatarStorageKey ? deps.publicFileUrl(row.avatarStorageKey) : null,
         identityVerified: true,
@@ -277,6 +287,43 @@ export function createTutorsService(deps: {
           })),
         ratingAvg: profile.ratingAvg === null ? null : Number(profile.ratingAvg),
         ratingCount: profile.ratingCount,
+      };
+    },
+
+    /** Tìm gia sư công khai (khách xem được, C8, §4.3). Không có email, số điện thoại, họ tên thật. */
+    async search(query: TutorSearchQuery): Promise<TutorSearchResult> {
+      const repo = createTutorSearchRepository(dataSource.manager);
+      const { rows, total } = await repo.search(query);
+      const ids = rows.map((r) => r.user_id);
+      const subjects = await repo.subjectsOf(ids);
+      const provinces = await repo.provincesOf(ids);
+      return {
+        items: rows.map((r) => ({
+          id: r.user_id,
+          slug: publicSlug(r.display_name, r.public_code),
+          displayName: r.display_name,
+          avatarUrl: r.avatar_storage_key ? deps.publicFileUrl(r.avatar_storage_key) : null,
+          headline: r.headline,
+          teachingMode: teachingModeOf({
+            teachesOnline: r.teaches_online,
+            teachesInPerson: r.teaches_in_person,
+          }),
+          rate:
+            r.rate_amount_vnd !== null && r.rate_unit !== null
+              ? { amountVnd: Number(r.rate_amount_vnd), unit: r.rate_unit }
+              : null,
+          experienceYears: r.experience_years,
+          hasVerifiedDegree: r.has_verified_degree,
+          acceptingStudents: r.accepting_students,
+          ratingAvg: r.rating_avg === null ? null : Number(r.rating_avg),
+          ratingCount: r.rating_count,
+          subjects: subjects.get(r.user_id) ?? [],
+          provinceIds: provinces.get(r.user_id) ?? [],
+          updatedAt: r.updated_at.toISOString(),
+        })),
+        page: query.page,
+        pageSize: query.pageSize,
+        total,
       };
     },
   };

@@ -1,6 +1,7 @@
 import type {
   AvailabilitySlot,
   TeachingSubject,
+  TutorPostSearchQuery,
   TutorPostStatus,
   TutorProfileStatus,
   UserStatus,
@@ -32,6 +33,8 @@ export interface PublicTutorPostRow {
   post: TutorPost;
   displayName: string;
   avatarStorageKey: string | null;
+  /** Mã công khai của gia sư, cho slug hồ sơ. */
+  tutorPublicCode: string;
   hasVerifiedDegree: boolean;
   ratingAvg: string | null;
   ratingCount: number;
@@ -80,6 +83,60 @@ export function createTutorPostsRepository(manager: EntityManager) {
       });
     }
     return result;
+  }
+
+  /**
+   * Bài hiển thị công khai (B.2, C8): đang mở, chưa bị ẩn, chưa xóa; gia sư đã xác minh, tài khoản đang hoạt
+   * động, chưa xóa. Chỉ đọc tên hiển thị và ảnh đại diện từ `users`, không đọc email, số điện thoại, họ tên thật.
+   */
+  const publicPosts = () =>
+    posts
+      .createQueryBuilder('p')
+      .innerJoin('tutor_profiles', 'tp', 'tp.user_id = p.tutor_id')
+      .innerJoin('users', 'u', 'u.id = p.tutor_id')
+      .leftJoin('files', 'f', `f.id = u.avatar_file_id AND f.status = 'ready'`)
+      .addSelect('u.display_name', 'display_name')
+      .addSelect('f.storage_key', 'avatar_storage_key')
+      .addSelect('tp.public_code', 'tutor_public_code')
+      .addSelect('tp.has_verified_degree', 'has_verified_degree')
+      .addSelect('tp.rating_avg', 'rating_avg')
+      .addSelect('tp.rating_count', 'rating_count')
+      .where(`p.status = 'open'`)
+      .andWhere('p.deletedAt IS NULL')
+      .andWhere('p.moderationHiddenAt IS NULL')
+      .andWhere(`tp.profile_status = 'verified'`)
+      .andWhere(`u.status = 'active'`)
+      .andWhere('u.deleted_at IS NULL');
+
+  /** Ghép entity với cột hiển thị của gia sư (mỗi bài một dòng: các join đều 1-1). */
+  async function toPublicRows(
+    query: ReturnType<typeof publicPosts>,
+  ): Promise<PublicTutorPostRow[]> {
+    const { entities, raw } = await query.getRawAndEntities<{
+      p_id: string;
+      display_name: string;
+      avatar_storage_key: string | null;
+      tutor_public_code: string;
+      has_verified_degree: boolean;
+      rating_avg: string | null;
+      rating_count: number;
+    }>();
+    const rawById = new Map(raw.map((r) => [r.p_id, r]));
+    return entities.flatMap((post) => {
+      const r = rawById.get(post.id);
+      if (!r) return [];
+      return [
+        {
+          post,
+          displayName: r.display_name,
+          avatarStorageKey: r.avatar_storage_key,
+          tutorPublicCode: r.tutor_public_code,
+          hasVerifiedDegree: r.has_verified_degree,
+          ratingAvg: r.rating_avg,
+          ratingCount: r.rating_count,
+        },
+      ];
+    });
   }
 
   return {
@@ -170,46 +227,78 @@ export function createTutorPostsRepository(manager: EntityManager) {
       return row ? { profileStatus: row.profile_status, userStatus: row.user_status } : null;
     },
 
+    /** Bài công khai theo id hoặc mã công khai (slug). */
+    async findPublic(ref: { id: string } | { code: string }): Promise<PublicTutorPostRow | null> {
+      const query = publicPosts();
+      if ('id' in ref) query.andWhere('p.id = :id', { id: ref.id });
+      else query.andWhere('p.publicCode = :code', { code: ref.code });
+      return (await toPublicRows(query))[0] ?? null;
+    },
+
     /**
-     * Bài hiển thị công khai (B.2, C8): đang mở, chưa bị ẩn, chưa xóa; gia sư đã xác minh, tài khoản đang hoạt
-     * động, chưa xóa. Chỉ đọc tên hiển thị và ảnh đại diện từ `users`.
+     * Tìm bài công khai (G4 đợt 2). Index: `tutor_posts_public_idx` (mới nhất), `tutor_posts_search_idx` (từ khóa),
+     * `tutor_post_subjects_search_idx`, `tutor_post_areas_area_idx`.
      */
-    async findPublic(id: string): Promise<PublicTutorPostRow | null> {
-      const result = await posts
-        .createQueryBuilder('p')
-        .innerJoin('tutor_profiles', 'tp', 'tp.user_id = p.tutor_id')
-        .innerJoin('users', 'u', 'u.id = p.tutor_id')
-        .leftJoin('files', 'f', `f.id = u.avatar_file_id AND f.status = 'ready'`)
-        .addSelect('u.display_name', 'display_name')
-        .addSelect('f.storage_key', 'avatar_storage_key')
-        .addSelect('tp.has_verified_degree', 'has_verified_degree')
-        .addSelect('tp.rating_avg', 'rating_avg')
-        .addSelect('tp.rating_count', 'rating_count')
-        .where('p.id = :id', { id })
-        .andWhere(`p.status = 'open'`)
-        .andWhere('p.deletedAt IS NULL')
-        .andWhere('p.moderationHiddenAt IS NULL')
-        .andWhere(`tp.profile_status = 'verified'`)
-        .andWhere(`u.status = 'active'`)
-        .andWhere('u.deleted_at IS NULL')
-        .getRawAndEntities<{
-          display_name: string;
-          avatar_storage_key: string | null;
-          has_verified_degree: boolean;
-          rating_avg: string | null;
-          rating_count: number;
-        }>();
-      const post = result.entities[0];
-      const raw = result.raw[0];
-      if (!post || !raw) return null;
-      return {
-        post,
-        displayName: raw.display_name,
-        avatarStorageKey: raw.avatar_storage_key,
-        hasVerifiedDegree: raw.has_verified_degree,
-        ratingAvg: raw.rating_avg,
-        ratingCount: raw.rating_count,
-      };
+    async search(
+      filter: TutorPostSearchQuery,
+    ): Promise<{ rows: PublicTutorPostRow[]; total: number }> {
+      const query = publicPosts();
+      if (filter.subjectId !== undefined || filter.gradeLevelId !== undefined) {
+        const conds = ['ps.post_id = p.id'];
+        if (filter.subjectId !== undefined) conds.push('ps.subject_id = :subjectId');
+        if (filter.gradeLevelId !== undefined) conds.push('ps.grade_level_id = :gradeLevelId');
+        query.andWhere(
+          `EXISTS (SELECT 1 FROM tutor_post_subjects ps
+                     JOIN subjects s ON s.id = ps.subject_id AND s.is_active
+                     JOIN grade_levels g ON g.id = ps.grade_level_id AND g.is_active
+                    WHERE ${conds.join(' AND ')})`,
+          { subjectId: filter.subjectId, gradeLevelId: filter.gradeLevelId },
+        );
+      }
+      if (filter.mode === 'online') query.andWhere('p.teachesOnline');
+      if (filter.mode === 'in_person') query.andWhere('p.teachesInPerson');
+      // Khu vực chỉ có nghĩa với dạy trực tiếp; khu vực của bài là tỉnh hoặc xã.
+      if (filter.communeId !== undefined) {
+        query.andWhere(
+          `p.teachesInPerson AND EXISTS (SELECT 1 FROM tutor_post_areas pa
+             WHERE pa.post_id = p.id
+               AND (pa.area_id = :communeId
+                    OR pa.area_id = (SELECT parent_id FROM administrative_areas WHERE id = :communeId)))`,
+          { communeId: filter.communeId },
+        );
+      } else if (filter.provinceId !== undefined) {
+        query.andWhere(
+          `p.teachesInPerson AND EXISTS (SELECT 1 FROM tutor_post_areas pa
+             JOIN administrative_areas a ON a.id = pa.area_id
+            WHERE pa.post_id = p.id AND (a.id = :provinceId OR a.parent_id = :provinceId))`,
+          { provinceId: filter.provinceId },
+        );
+      }
+      if (filter.tutorId !== undefined)
+        query.andWhere('p.tutorId = :tutorId', { tutorId: filter.tutorId });
+      const tsQuery = `websearch_to_tsquery('simple', immutable_unaccent(lower(:q)))`;
+      if (filter.q !== undefined) {
+        query.andWhere(`p.search_vector @@ ${tsQuery}`, { q: filter.q });
+      }
+
+      const total = await query.getCount();
+      if (total === 0) return { rows: [], total };
+
+      if (filter.sort === 'relevance' && filter.q !== undefined) {
+        query
+          .addSelect(`ts_rank(p.search_vector, ${tsQuery})`, 'match_rank')
+          .orderBy('match_rank', 'DESC');
+      } else if (filter.sort === 'rate_asc') {
+        query.orderBy('p.rateAmountVnd', 'ASC', 'NULLS LAST');
+      } else if (filter.sort === 'rate_desc') {
+        query.orderBy('p.rateAmountVnd', 'DESC', 'NULLS LAST');
+      }
+      query
+        .addOrderBy('p.publishedAt', 'DESC')
+        .addOrderBy('p.id', 'DESC')
+        .offset((filter.page - 1) * filter.pageSize)
+        .limit(filter.pageSize);
+      return { rows: await toPublicRows(query), total };
     },
 
     /** Tăng lượt xem (không đổi `updated_at`: lượt xem không phải là sửa bài). */

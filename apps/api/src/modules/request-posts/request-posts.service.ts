@@ -12,6 +12,8 @@ import {
   type OwnRequestPostsQuery,
   POST_LIMITS,
   type RequestPostForTutor,
+  type RequestPostSearchQuery,
+  type RequestPostSearchResult,
   type RequestPostStatus,
   type UpdateRequestPostRequest,
   type AvailabilitySlot,
@@ -254,12 +256,36 @@ export function createRequestPostsService(deps: { dataSource: DataSource; logger
       }
       const post = await repo.findVisibleToTutors(postId);
       if (!post) throw notFound('Post');
+      return toTutorView(post, await repo.slots(postId));
+    },
+
+    /** Tìm nhu cầu cho gia sư đã xác minh (C8); chưa xác minh: 403 `tutor_not_verified`. */
+    async searchForTutor(
+      tutorUserId: string,
+      query: RequestPostSearchQuery,
+    ): Promise<RequestPostSearchResult> {
+      const repo = createRequestPostsRepository(dataSource.manager);
+      if (!(await repo.isVerifiedTutor(tutorUserId))) {
+        throw new AppError('tutor_not_verified', 'Identity verification is required');
+      }
+      const { rows, total } = await repo.search(tutorUserId, query);
+      const slots = await repo.slotsOf(rows.map((p) => p.id));
       return {
-        ...contentFields(post, await repo.slots(postId)),
-        id: post.id,
-        publishedAt: post.publishedAt!.toISOString(),
+        items: rows.map((p) => toTutorView(p, slots.get(p.id) ?? [])),
+        page: query.page,
+        pageSize: query.pageSize,
+        total,
       };
     },
+  };
+}
+
+/** Bản cho gia sư: chỉ nội dung nhu cầu, không hồ sơ con hay người đăng (§16.7, D16). */
+function toTutorView(post: RequestPost, slots: AvailabilitySlot[]): RequestPostForTutor {
+  return {
+    ...contentFields(post, slots),
+    id: post.id,
+    publishedAt: post.publishedAt!.toISOString(),
   };
 }
 

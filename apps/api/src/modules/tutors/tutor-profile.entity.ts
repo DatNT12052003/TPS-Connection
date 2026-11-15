@@ -74,6 +74,10 @@ export class TutorProfile {
   @Column({ name: 'rating_count', type: 'integer', default: 0 })
   ratingCount!: number;
 
+  /** Mã công khai cuối slug `/tutors/<slug>` (D56); database tự sinh, không đổi. */
+  @Column({ name: 'public_code', type: 'text', insert: false, update: false })
+  publicCode!: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
