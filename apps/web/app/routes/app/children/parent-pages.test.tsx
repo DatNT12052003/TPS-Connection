@@ -67,6 +67,9 @@ describe('parent overview', () => {
       learners: [],
       gradeLevels,
       deleted: false,
+      activity: { awaiting: [], unread: [] },
+      lessons: { todo: [], upcoming: [] },
+      subjects: [],
     });
     expect(await screen.findByRole('heading', { name: 'Chào Mai' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Tạo hồ sơ con' })).toHaveAttribute(
@@ -90,6 +93,9 @@ describe('parent overview', () => {
       ],
       gradeLevels,
       deleted: false,
+      activity: { awaiting: [], unread: [] },
+      lessons: { todo: [], upcoming: [] },
+      subjects: [],
     });
     const items = await screen.findAllByRole('listitem');
     expect(items).toHaveLength(2);

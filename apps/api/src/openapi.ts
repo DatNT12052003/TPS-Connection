@@ -35,7 +35,7 @@ import {
   PublicTutorProfile,
   SetAvatarRequest,
   TutorCredential,
-  TutorIdParams,
+  TutorRefParams,
   UpdateAccountRequest,
   UpdateTutorCredentialRequest,
   UpdateTutorProfileRequest,
@@ -65,6 +65,28 @@ import {
   PasswordResetConfirmRequest,
   RegisterRequest,
   VerifyEmailRequest,
+  ChangeRequestPostStatusRequest,
+  ChangeTutorPostStatusRequest,
+  CreateRequestPostRequest,
+  OwnRequestPost,
+  OwnRequestPostList,
+  OwnRequestPostsQuery,
+  OwnTutorPost,
+  OwnTutorPostList,
+  OwnTutorPostsQuery,
+  PublicTutorPost,
+  RequestPostForTutor,
+  RequestPostIdParams,
+  SaveTutorPostRequest,
+  TutorPostIdParams,
+  UpdateRequestPostRequest,
+  RequestPostSearchQuery,
+  RequestPostSearchResult,
+  TutorPostRefParams,
+  TutorPostSearchQuery,
+  TutorPostSearchResult,
+  TutorSearchQuery,
+  TutorSearchResult,
 } from '@tps/shared';
 import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
@@ -812,17 +834,250 @@ export function createOpenApiDocument() {
           },
         },
       },
-      '/api/v1/tutors/{tutorId}': {
+      '/api/v1/tutors': {
+        get: {
+          tags: ['tutors'],
+          summary:
+            'Tìm gia sư công khai (khách xem được): chỉ gia sư đã xác minh, đang hoạt động; môn, khối đang bật',
+          requestParams: { query: TutorSearchQuery },
+          responses: {
+            200: { description: 'OK', ...json(TutorSearchResult) },
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/tutors/{tutorRef}': {
         get: {
           tags: ['tutors'],
           summary:
             'Hồ sơ gia sư công khai (khách xem được; không có email, số điện thoại, họ tên thật)',
-          requestParams: { path: TutorIdParams },
+          requestParams: { path: TutorRefParams },
           responses: {
             200: { description: 'OK', ...json(PublicTutorProfile) },
             404: error(
               'not_found: không tồn tại, chưa xác minh danh tính, bị hạn chế/khóa hoặc đã xóa',
             ),
+          },
+        },
+      },
+
+      // ---- Bài tuyển học sinh của gia sư (G4) ----
+      '/api/v1/me/tutor-posts': {
+        get: {
+          tags: ['tutor-posts'],
+          summary: 'Bài tuyển học sinh của chính gia sư (mọi trạng thái, chưa xóa)',
+          security,
+          requestParams: { query: OwnTutorPostsQuery },
+          responses: { 200: { description: 'OK', ...json(OwnTutorPostList) }, ...roleErrors },
+        },
+        post: {
+          tags: ['tutor-posts'],
+          summary: 'Tạo bài nháp (gia sư chưa xác minh cũng tạo được)',
+          security,
+          requestBody: json(SaveTutorPostRequest),
+          responses: {
+            201: { description: 'Đã tạo nháp', ...json(OwnTutorPost) },
+            ...roleErrors,
+            409: error('conflict: quá số bài chưa đóng cho phép'),
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/me/tutor-posts/{postId}': {
+        get: {
+          tags: ['tutor-posts'],
+          summary: 'Chi tiết bài của chính gia sư',
+          security,
+          requestParams: { path: TutorPostIdParams },
+          responses: {
+            200: { description: 'OK', ...json(OwnTutorPost) },
+            ...roleErrors,
+            404: error('not_found'),
+          },
+        },
+        put: {
+          tags: ['tutor-posts'],
+          summary: 'Thay toàn bộ nội dung; bài đã đăng phải giữ đủ điều kiện đăng',
+          security,
+          requestParams: { path: TutorPostIdParams },
+          requestBody: json(SaveTutorPostRequest),
+          responses: {
+            200: { description: 'OK', ...json(OwnTutorPost) },
+            ...roleErrors,
+            404: error('not_found'),
+            409: error('invalid_state_transition: bài đã đóng'),
+            422: error('validation_failed'),
+          },
+        },
+        delete: {
+          tags: ['tutor-posts'],
+          summary: 'Xóa mềm bài',
+          security,
+          requestParams: { path: TutorPostIdParams },
+          responses: { 204: { description: 'Đã xóa' }, ...roleErrors, 404: error('not_found') },
+        },
+      },
+      '/api/v1/me/tutor-posts/{postId}/status': {
+        post: {
+          tags: ['tutor-posts'],
+          summary: 'Đổi trạng thái (B.2): đăng, tạm dừng, mở lại, đủ học sinh, đóng',
+          security,
+          requestParams: { path: TutorPostIdParams },
+          requestBody: json(ChangeTutorPostStatusRequest),
+          responses: {
+            200: { description: 'OK', ...json(OwnTutorPost) },
+            401: error('unauthenticated'),
+            403: error(
+              'forbidden (không phải gia sư), tutor_not_verified (chưa duyệt danh tính), account_restricted',
+            ),
+            404: error('not_found'),
+            409: error('invalid_state_transition'),
+            422: error('validation_failed: bài chưa đủ để đăng'),
+          },
+        },
+      },
+      '/api/v1/me/tutor-posts/{postId}/duplicate': {
+        post: {
+          tags: ['tutor-posts'],
+          summary: 'Nhân bản thành nháp mới (D33)',
+          security,
+          requestParams: { path: TutorPostIdParams },
+          responses: {
+            201: { description: 'Nháp mới', ...json(OwnTutorPost) },
+            ...roleErrors,
+            404: error('not_found'),
+            409: error('conflict: quá số bài chưa đóng cho phép'),
+          },
+        },
+      },
+      '/api/v1/tutor-posts': {
+        get: {
+          tags: ['tutor-posts'],
+          summary: 'Tìm bài tuyển học sinh đang mở (khách xem được)',
+          requestParams: { query: TutorPostSearchQuery },
+          responses: {
+            200: { description: 'OK', ...json(TutorPostSearchResult) },
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/tutor-posts/{postRef}': {
+        get: {
+          tags: ['tutor-posts'],
+          summary: 'Bài tuyển học sinh công khai theo slug hoặc id (khách xem được); tăng lượt xem',
+          requestParams: { path: TutorPostRefParams },
+          responses: {
+            200: { description: 'OK', ...json(PublicTutorPost) },
+            404: error(
+              'not_found: không tồn tại, chưa đăng, không mở, bị ẩn, hoặc gia sư không còn hiển thị',
+            ),
+          },
+        },
+      },
+
+      // ---- Bài tìm gia sư của phụ huynh (G4) ----
+      '/api/v1/me/request-posts': {
+        get: {
+          tags: ['request-posts'],
+          summary: 'Bài tìm gia sư của chính phụ huynh',
+          security,
+          requestParams: { query: OwnRequestPostsQuery },
+          responses: { 200: { description: 'OK', ...json(OwnRequestPostList) }, ...roleErrors },
+        },
+        post: {
+          tags: ['request-posts'],
+          summary: 'Tạo bài nháp cho một hồ sơ con và một môn (D25)',
+          security,
+          requestBody: json(CreateRequestPostRequest),
+          responses: {
+            201: { description: 'Đã tạo nháp', ...json(OwnRequestPost) },
+            ...roleErrors,
+            404: notVisible,
+            409: error('conflict: quá số bài chưa đóng cho phép'),
+            422: error(
+              'validation_failed (request_post_exists: con đã có bài chưa đóng cho môn này)',
+            ),
+          },
+        },
+      },
+      '/api/v1/me/request-posts/{postId}': {
+        get: {
+          tags: ['request-posts'],
+          summary: 'Chi tiết bài của chính phụ huynh',
+          security,
+          requestParams: { path: RequestPostIdParams },
+          responses: {
+            200: { description: 'OK', ...json(OwnRequestPost) },
+            ...roleErrors,
+            404: error('not_found'),
+          },
+        },
+        put: {
+          tags: ['request-posts'],
+          summary: 'Thay toàn bộ nội dung (hồ sơ con giữ nguyên)',
+          security,
+          requestParams: { path: RequestPostIdParams },
+          requestBody: json(UpdateRequestPostRequest),
+          responses: {
+            200: { description: 'OK', ...json(OwnRequestPost) },
+            ...roleErrors,
+            404: error('not_found'),
+            409: error('invalid_state_transition: bài đã đóng'),
+            422: error('validation_failed'),
+          },
+        },
+        delete: {
+          tags: ['request-posts'],
+          summary: 'Xóa mềm bài',
+          security,
+          requestParams: { path: RequestPostIdParams },
+          responses: { 204: { description: 'Đã xóa' }, ...roleErrors, 404: error('not_found') },
+        },
+      },
+      '/api/v1/me/request-posts/{postId}/status': {
+        post: {
+          tags: ['request-posts'],
+          summary: 'Đổi trạng thái (B.3): đăng, ẩn, hiện lại, đóng (kèm lý do)',
+          security,
+          requestParams: { path: RequestPostIdParams },
+          requestBody: json(ChangeRequestPostStatusRequest),
+          responses: {
+            200: { description: 'OK', ...json(OwnRequestPost) },
+            401: error('unauthenticated'),
+            403: error('forbidden (không phải phụ huynh), account_restricted'),
+            404: error('not_found'),
+            409: error('invalid_state_transition'),
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/request-posts': {
+        get: {
+          tags: ['request-posts'],
+          summary:
+            'Tìm nhu cầu đang mở cho gia sư đã xác minh (không có hồ sơ con, người đăng hay danh tính của trẻ)',
+          security,
+          requestParams: { query: RequestPostSearchQuery },
+          responses: {
+            200: { description: 'OK', ...json(RequestPostSearchResult) },
+            401: error('unauthenticated'),
+            403: error('forbidden (không phải gia sư), tutor_not_verified'),
+            422: error('validation_failed'),
+          },
+        },
+      },
+      '/api/v1/request-posts/{postId}': {
+        get: {
+          tags: ['request-posts'],
+          summary:
+            'Bài tìm gia sư cho gia sư đã xác minh (không có hồ sơ con, người đăng hay danh tính của trẻ)',
+          security,
+          requestParams: { path: RequestPostIdParams },
+          responses: {
+            200: { description: 'OK', ...json(RequestPostForTutor) },
+            401: error('unauthenticated'),
+            403: error('forbidden (không phải gia sư), tutor_not_verified'),
+            404: error('not_found: không tồn tại, chưa đăng, không mở hoặc bị ẩn'),
           },
         },
       },

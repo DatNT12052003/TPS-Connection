@@ -23,6 +23,21 @@ export const ErrorCode = z.enum([
   // Lời mời học sinh (D50): không tồn tại, đã dùng hoặc đã hủy / đã quá 7 ngày.
   'invitation_invalid',
   'invitation_expired',
+  // Bài đăng (G4): gia sư chưa được duyệt danh tính hoặc tài khoản không hoạt động (D5).
+  'tutor_not_verified',
+  // Giới hạn số bản ghi đang mở của một tài khoản (meta.limit).
+  'limit_reached',
+  // Yêu cầu kết nối (G5): đã có yêu cầu đang mở cho gia sư – con – môn này (D21); gia sư tạm ngừng nhận học sinh;
+  // xác nhận một phiên bản điều khoản không còn là bản mới nhất.
+  'connection_exists',
+  'tutor_not_accepting',
+  'terms_outdated',
+  // Nhắn tin (G5): hội thoại chỉ còn xem được (yêu cầu kết nối đã hủy, D32).
+  'conversation_closed',
+  // Lớp học (G6): hồ sơ con còn lớp đang học hoặc tạm nghỉ nên chưa xóa được (C2); đã có một đề xuất đổi học phí
+  // đang chờ phụ huynh trả lời (D17).
+  'learner_in_class',
+  'fee_change_pending',
   'internal_error',
   'service_unavailable',
 ]);
@@ -48,6 +63,14 @@ export const ERROR_HTTP_STATUS = {
   code_attempts_exceeded: 400,
   invitation_invalid: 404,
   invitation_expired: 410,
+  tutor_not_verified: 403,
+  limit_reached: 409,
+  connection_exists: 409,
+  tutor_not_accepting: 409,
+  terms_outdated: 409,
+  conversation_closed: 409,
+  learner_in_class: 409,
+  fee_change_pending: 409,
   internal_error: 500,
   service_unavailable: 503,
 } as const satisfies Record<ErrorCode, number>;

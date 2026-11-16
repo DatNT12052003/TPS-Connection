@@ -14,6 +14,14 @@ import type { VerificationReviewService } from '../src/modules/verification/veri
 import type { AdminAccountsService } from '../src/modules/admin/admin-accounts.service.js';
 import type { AdminCatalogService } from '../src/modules/admin/admin-catalog.service.js';
 import type { AccountService } from '../src/modules/users/account.service.js';
+import type { RequestPostsService } from '../src/modules/request-posts/request-posts.service.js';
+import type { TutorPostsService } from '../src/modules/tutor-posts/tutor-posts.service.js';
+import type { ConnectionsService } from '../src/modules/connections/connections.service.js';
+import type { MessagingService } from '../src/modules/messaging/messaging.service.js';
+import type { NotificationsService } from '../src/modules/notifications/notifications.service.js';
+import type { SafetyService } from '../src/modules/safety/safety.service.js';
+import type { ClassesService } from '../src/modules/classes/classes.service.js';
+import type { LessonsService } from '../src/modules/lessons/lessons.service.js';
 
 export const silentLogger = createLogger({ LOG_LEVEL: 'silent', NODE_ENV: 'test' });
 
@@ -54,5 +62,13 @@ export function createTestApp(health?: Partial<HealthService>, auth?: Partial<Au
     adminCatalog: {} as AdminCatalogService,
     account: {} as AccountService,
     catalog: {} as CatalogService,
+    tutorPosts: {} as TutorPostsService,
+    requestPosts: {} as RequestPostsService,
+    connections: {} as ConnectionsService,
+    messaging: {} as MessagingService,
+    notifications: {} as NotificationsService,
+    safety: {} as SafetyService,
+    classes: {} as ClassesService,
+    lessons: {} as LessonsService,
   });
 }

@@ -392,6 +392,12 @@ CREATE INDEX tutor_credentials_tutor_idx ON tutor_credentials (tutor_id);
 
 **Ghi chú triển khai (G2, migration `CreateTutorProfiles`):** cột `search_vector` chưa tạo; thêm ở G4 cùng index và truy vấn tìm kiếm (mục 14). Thêm các CHECK: `verified_at` có khi và chỉ khi `verification_status = 'verified'`; `rating_avg` trong khoảng 1–5, `rating_count >= 0`; `title` không rỗng. Thêm index `tutor_profiles_verified_idx` (partial, các hồ sơ đã xác minh) và `tutor_availability_slots_tutor_idx`. Hồ sơ gia sư được tạo (trạng thái `incomplete`) lần đầu gia sư mở hồ sơ của mình. Lịch rảnh không chồng nhau trong một ngày được kiểm tra ở API, chưa có exclusion constraint.
 
+**Ghi chú triển khai (G4, migration `AddMarketplaceSearch`):**
+
+- `search_vector` là cột `GENERATED ALWAYS ... STORED` từ các trường văn bản của chính bảng (giới thiệu ngắn, giới thiệu, nơi học/công tác, chuyên ngành, học vấn, phương pháp, thành tích), `to_tsvector('simple', immutable_unaccent(lower(...)))`, index GIN. Không chứa tên môn học (lọc môn bằng id) hay tên hiển thị (ở `users`, tìm bằng trigram `users_display_name_trgm_idx`). Họ tên thật và email không bao giờ được tìm từ trang công khai.
+- `public_code`: 10 ký tự hex ngẫu nhiên, unique, database tự sinh; cuối slug `/tutors/<tên-không-dấu>-<mã>` (D56). Phần chữ sinh lúc trả về nên đổi tên hiển thị không làm hỏng đường dẫn cũ. `tutor_posts` có cột `public_code` và `search_vector` (tiêu đề, mô tả) tương tự.
+- `tutor_profiles_ranking_idx` (partial, hồ sơ đã xác minh) theo đúng thứ tự "phù hợp nhất" khi không có từ khóa; `request_posts_open_idx` cho danh sách nhu cầu mới nhất khi gia sư chưa lọc.
+
 ### 5.2. Phụ huynh và người học
 
 ```sql
@@ -578,6 +584,8 @@ CREATE TABLE tutor_post_slots (
 
 Chỉ gia sư đã xác minh mới được chuyển bài sang `open` _(D5)_. Ràng buộc này kiểm tra ở service vì phụ thuộc bảng khác; có thể thêm trigger nếu muốn chặn cả ở database.
 
+**Bổ sung khi làm G4 (migration `CreateMarketplacePosts`):** bài đã đăng (khác `draft`) phải có ít nhất một hình thức dạy (`tutor_posts_published_mode_chk`) và có `published_at` (`tutor_posts_published_at_chk`); tiêu đề, mô tả không rỗng. Index `tutor_posts_tutor_idx` chỉ gồm bài chưa xóa. Cột `search_vector` và index tìm kiếm thêm ở đợt 2 của G4.
+
 ### 6.3. Bài tìm gia sư của phụ huynh
 
 ```sql
@@ -631,6 +639,13 @@ CREATE TABLE favorite_tutors (
 ```
 
 Mỗi bài tìm gia sư một môn: một nhu cầu dẫn tới một lớp. Phụ huynh cần nhiều môn thì đăng nhiều bài.
+
+**Bổ sung khi làm G4 (migration `CreateMarketplacePosts`):**
+
+- Mỗi hồ sơ con chỉ có một bài chưa đóng, chưa xóa cho mỗi môn: `UNIQUE (learner_id, subject_id) WHERE deleted_at IS NULL AND status <> 'closed'` (`request_posts_learner_subject_active_uq`).
+- `closed_reason` có giá trị khi và chỉ khi `status = 'closed'`; ngân sách có đơn vị khi và chỉ khi có ít nhất một mức; có xã thì phải có tỉnh; bài đã đăng có `published_at`.
+- Thêm index `request_posts_learner_idx` (xóa mềm bài khi xóa hồ sơ con). `request_posts_author_idx` chỉ gồm bài chưa xóa.
+- Bảng `favorite_tutors` chưa tạo: làm cùng tính năng yêu thích (D10, nếu kịp).
 
 ### 6.4. Yêu cầu kết nối
 
@@ -726,6 +741,15 @@ pending ──chấp nhận──► negotiating ──cả hai xác nhận cùn
 - Khi có phiên bản `connection_terms` mới, mọi xác nhận trên phiên bản cũ mất hiệu lực. Chỉ phiên bản lớn nhất được xác nhận. Khi phiên bản đó có đủ `tutor_confirmed_at` và `client_confirmed_at`, service trong **một transaction**: chuyển request sang `confirmed`, ghi `agreed_terms_id`, tạo lớp và ghi danh (mục 7.1), ghi `connection_events`.
 - Mọi chuyển trạng thái dùng `UPDATE ... WHERE id = $1 AND status = $old` để tránh hai thao tác đồng thời cùng thắng.
 
+**Đã làm ở G5 đợt 1 (migration `CreateConnections`), khác bản trên:**
+
+- `connection_requests` có thêm ảnh chụp nhu cầu lúc gửi: `grade_level_id`, `goal`, `goal_note`, `teaching_mode`, `province_id`, `commune_id` (cùng ràng buộc như `request_posts`). Gia sư chỉ đọc các cột này trong lúc trao đổi, không đọc `learners` (D16). `message` bắt buộc.
+- Ràng buộc thêm: `tutor_id <> client_user_id`; chiều `client_to_tutor` không có `request_post_id`, chiều `tutor_to_client` không có `tutor_post_id`; `closed_at` có khi và chỉ khi `rejected`/`cancelled`; `rejection_note` chỉ khi `rejected`.
+- Index danh sách là `(tutor_id, created_at DESC, id DESC)` và `(client_user_id, created_at DESC, id DESC)` (lọc trạng thái trên tập nhỏ của một người); thêm index một phần theo `request_post_id`, `tutor_post_id` và `learner_id` (đang mở).
+- `connection_terms`: `goal` là mã như `request_posts.goal` kèm `goal_note`; `schedule` (`[{weekday, startTime}]`) NOT NULL mặc định `[]`. Trigger chặn sửa nội dung và xóa dòng; chỉ `tutor_confirmed_at`, `client_confirmed_at` được ghi thêm.
+- `connection_events.event` có thêm `cancelled_by_system` (bài nguồn đóng D31, tài khoản bị khóa).
+- Thay cho `UPDATE ... WHERE status = $old`: service khóa dòng yêu cầu (`SELECT ... FOR UPDATE`) trong transaction rồi mới kiểm tra trạng thái. Job hết hạn dùng `FOR UPDATE SKIP LOCKED`.
+
 ### 6.5. Nhắn tin
 
 ```sql
@@ -777,6 +801,15 @@ CREATE TABLE message_attachments (
 - Khi mở cho học sinh (sau MVP), chỉ cần thêm dòng `participant_role = 'student'` cùng phụ huynh trong hội thoại; không đổi cấu trúc.
 - Trước khi gửi tin, service kiểm tra `user_blocks` theo cả hai chiều.
 - Manager chỉ xem tin nhắn nằm trong báo cáo (`violation_reports.message_id`) và các tin lân cận được cấu hình, không xem toàn bộ hội thoại _(C1)_.
+
+**Đã làm ở G5 đợt 2 (migration `CreateMessaging`), khác bản trên:**
+
+- `conversations` có thêm `updated_at`; `connection_request_id` unique có tên `conversations_connection_request_uq`. `class_id` chưa có khóa ngoại (thêm ở G6 cùng `tutoring_classes`). Không có cột trạng thái: gửi được hay chỉ xem (D32) suy ra từ `connection_requests.status` (`negotiating`, `confirmed` thì gửi được).
+- `conversation_participants.last_read_message_id` là khóa ngoại tới `messages` (tạo sau bảng `messages`).
+- `messages.id` mặc định `uuidv7()` (sắp theo thời gian; tin chưa đọc là tin của người khác có id lớn hơn `last_read_message_id`). Ràng buộc thêm: tin hệ thống khi và chỉ khi không có người gửi; tin `text` có nội dung khác rỗng; nội dung tối đa 4000 ký tự. Tin có tệp là `attachment`, nội dung là chú thích (có thể rỗng).
+- `message_attachments.file_id` unique: một tệp chỉ thuộc một tin.
+- Dữ liệu: tạo hội thoại (thời điểm `accepted_at`) và hai người tham gia cho mọi yêu cầu đã được chấp nhận trước migration.
+- Gửi tin khóa chia sẻ (`FOR SHARE`) dòng yêu cầu kết nối nên không chen được với thao tác hủy (khóa ghi cùng dòng).
 
 ---
 

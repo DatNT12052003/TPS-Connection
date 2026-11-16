@@ -211,6 +211,9 @@ describe('email through the BullMQ queue (Mailpit)', () => {
       maintenance: {
         'purge-verification-documents': async () => 0,
         'cleanup-stale-uploads': async () => 0,
+        'expire-connection-requests': async () => 0,
+        'generate-lessons': async () => 0,
+        'lessons-maintenance': async () => 0,
       },
     });
   });

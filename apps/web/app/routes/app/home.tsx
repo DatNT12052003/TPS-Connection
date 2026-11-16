@@ -1,8 +1,18 @@
-// /app: trang tổng quan theo vai trò. Bản tối thiểu của G2 (ke_hoach_trien_khai.md, "Còn lại của G2"):
+// /app: trang tổng quan theo vai trò. G6: buổi cần điểm danh / cần xác nhận và lịch 7 ngày tới cho cả ba vai trò.
+// Bản tối thiểu của G2 (ke_hoach_trien_khai.md, "Còn lại của G2"):
 // phụ huynh thấy thẻ "Con của tôi" của canvas ParentHome; học sinh thấy hồ sơ của mình (canvas StudentHome
 // chưa có lịch, điểm: G6, G7); gia sư thấy trạng thái hồ sơ, việc còn thiếu để xác minh và công tắc "Đang
 // nhận học sinh" (canvas TutorHome; lớp, lịch dạy, yêu cầu kết nối: G4 đến G7).
-import { type Learner, LearnerList, OwnTutorProfile } from '@tps/shared';
+import {
+  ConnectionRequestList,
+  ConversationList,
+  type Learner,
+  LearnerList,
+  LessonList,
+  OwnTutorProfile,
+} from '@tps/shared';
+import { LessonCards, type LessonActivity } from '~/components/classes/lesson-cards';
+import { ActivityCards, type ConnectionsActivity } from '~/components/connections/activity-cards';
 import { ChevronRight, Plus, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { data, Form, Link, useNavigation } from 'react-router';
@@ -13,7 +23,7 @@ import { Badge } from '~/components/ui/badge';
 import { Button, buttonVariants } from '~/components/ui/button';
 import { Card, CardHeader } from '~/components/ui/card';
 import { type CatalogOption, labelOf } from '~/lib/catalog';
-import { loadCommunes, loadGradeLevels, loadProvinces } from '~/lib/catalog.server';
+import { loadCommunes, loadGradeLevels, loadProvinces, loadSubjects } from '~/lib/catalog.server';
 import { formatDate } from '~/lib/format';
 import { initialOf, learnerName } from '~/lib/learners';
 import { messagesFromMatches } from '~/lib/meta';
@@ -33,19 +43,67 @@ export function meta({ matches }: Route.MetaArgs) {
   return [{ title: `${m.appHome.title} – ${m.common.appName}` }];
 }
 
+/**
+ * Yêu cầu đang chờ người xem và cuộc trò chuyện có tin chưa đọc (G5). Chỉ là khối phụ của trang: API lỗi thì để trống.
+ */
+async function loadActivity(context: Route.LoaderArgs['context']): Promise<ConnectionsActivity> {
+  const api = getServerApi(context);
+  const [requests, conversations] = await Promise.all([
+    api
+      .call('/api/v1/connection-requests?state=open&pageSize=50', { schema: ConnectionRequestList })
+      .then((list) => list.items.filter((r) => r.awaitingMe))
+      .catch(() => []),
+    api
+      .call('/api/v1/conversations?pageSize=10', { schema: ConversationList })
+      .then((list) => list.items.filter((c) => c.unreadCount > 0))
+      .catch(() => []),
+  ]);
+  return { awaiting: requests, unread: conversations };
+}
+
+/** Buổi cần làm và buổi 7 ngày tới (G6). Khối phụ: API lỗi thì để trống. */
+async function loadLessons(
+  context: Route.LoaderArgs['context'],
+  withTodo: boolean,
+): Promise<LessonActivity> {
+  const api = getServerApi(context);
+  const now = Date.now();
+  const range = new URLSearchParams({
+    from: new Date(now).toISOString(),
+    to: new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  });
+  const [todo, upcoming] = await Promise.all([
+    withTodo
+      ? api
+          .call('/api/v1/lessons/todo', { schema: LessonList })
+          .then((list) => list.items)
+          .catch(() => [])
+      : Promise.resolve([]),
+    api
+      .call(`/api/v1/lessons?${range.toString()}`, { schema: LessonList })
+      .then((list) => list.items.filter((l) => l.status === 'scheduled'))
+      .catch(() => []),
+  ]);
+  return { todo, upcoming };
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, context);
   const role = appRoleOf(user);
   const greeting = { displayName: user.displayName };
+  const { locale } = await readPreferences(request);
   if (role === 'tutor') {
-    const profile = await getServerApi(context).call('/api/v1/me/tutor-profile', {
-      schema: OwnTutorProfile,
-    });
-    return { view: 'tutor' as const, ...greeting, profile };
+    const [profile, activity, subjects, grades, lessons] = await Promise.all([
+      getServerApi(context).call('/api/v1/me/tutor-profile', { schema: OwnTutorProfile }),
+      loadActivity(context),
+      loadSubjects(context, locale),
+      loadGradeLevels(context, locale),
+      loadLessons(context, true),
+    ]);
+    return { view: 'tutor' as const, ...greeting, profile, activity, subjects, grades, lessons };
   }
   if (role !== 'parent' && role !== 'student') throw data(null, { status: 404 });
 
-  const { locale } = await readPreferences(request);
   const [{ items }, gradeLevels] = await Promise.all([
     getServerApi(context).call('/api/v1/learners', { schema: LearnerList }),
     loadGradeLevels(context, locale),
@@ -54,15 +112,40 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   if (role === 'parent') {
     const learners = items.filter((learner) => learner.viewer === 'guardian');
     const deleted = new URL(request.url).searchParams.get('deleted') === '1';
-    return { view: 'parent' as const, ...greeting, learners, gradeLevels, deleted };
+    const [activity, subjects, lessons] = await Promise.all([
+      loadActivity(context),
+      loadSubjects(context, locale),
+      loadLessons(context, true),
+    ]);
+    return {
+      view: 'parent' as const,
+      ...greeting,
+      learners,
+      gradeLevels,
+      deleted,
+      activity,
+      subjects,
+      lessons,
+    };
   }
 
   const own = items.find((learner) => learner.viewer === 'student') ?? null;
-  const [provinces, communes] = await Promise.all([
+  const [provinces, communes, subjects, lessons] = await Promise.all([
     loadProvinces(context, locale),
     loadCommunes(context, locale, own?.provinceId ?? null),
+    loadSubjects(context, locale),
+    loadLessons(context, false),
   ]);
-  return { view: 'student' as const, ...greeting, own, gradeLevels, provinces, communes };
+  return {
+    view: 'student' as const,
+    ...greeting,
+    own,
+    gradeLevels,
+    provinces,
+    communes,
+    subjects,
+    lessons,
+  };
 }
 
 /** Gia sư bật/tắt "Đang nhận học sinh" (API chỉ có PUT cả hồ sơ: đọc hồ sơ rồi gửi lại với giá trị mới). */
@@ -105,10 +188,18 @@ function TutorHome({
   displayName,
   profile,
   formError,
+  activity,
+  subjects,
+  grades,
+  lessons,
 }: {
   displayName: string;
   profile: OwnTutorProfile;
   formError: Message | undefined;
+  activity: ConnectionsActivity;
+  subjects: CatalogOption[];
+  grades: CatalogOption[];
+  lessons: LessonActivity;
 }) {
   const { t } = useTranslation();
   const tr = useMessage();
@@ -176,6 +267,10 @@ function TutorHome({
         </Card>
       )}
 
+      <LessonCards activity={lessons} role="tutor" subjects={subjects} />
+
+      <ActivityCards activity={activity} subjects={subjects} grades={grades} />
+
       <Card className="gap-3 sm:p-6">
         <CardHeader>
           <h2 className="text-h3">{t('tutorHome.profileTitle')}</h2>
@@ -195,11 +290,17 @@ function ParentHome({
   learners,
   gradeLevels,
   deleted,
+  activity,
+  subjects,
+  lessons,
 }: {
   displayName: string;
   learners: Learner[];
   gradeLevels: CatalogOption[];
   deleted: boolean;
+  activity: ConnectionsActivity;
+  subjects: CatalogOption[];
+  lessons: LessonActivity;
 }) {
   const { t } = useTranslation();
   return (
@@ -210,6 +311,10 @@ function ParentHome({
           {t('learnerForm.deleted')}
         </Alert>
       )}
+
+      <LessonCards activity={lessons} role="parent" subjects={subjects} />
+
+      <ActivityCards activity={activity} subjects={subjects} grades={gradeLevels} />
 
       <Card className="max-w-3xl">
         <CardHeader>
@@ -237,6 +342,28 @@ function ParentHome({
             ))}
           </ul>
         )}
+      </Card>
+
+      {/* Tìm gia sư (G4): tìm theo hồ sơ, hoặc đăng bài để gia sư chủ động ứng tuyển. */}
+      <Card className="max-w-3xl">
+        <CardHeader>
+          <h2 className="text-h3">{t('requestPosts.homeTitle')}</h2>
+          <Link to={PATHS.myRequests} className={buttonVariants({ variant: 'ghost' })}>
+            {t('requestPosts.homeMine')}
+          </Link>
+        </CardHeader>
+        <p className="text-muted-foreground">{t('requestPosts.homeBody')}</p>
+        <div className="flex flex-wrap gap-2">
+          <Link to={PATHS.findTutors} className={buttonVariants({ variant: 'secondary' })}>
+            {t('nav.findTutors')}
+          </Link>
+          {learners.length > 0 && (
+            <Link to={PATHS.newRequest} className={buttonVariants({ variant: 'secondary' })}>
+              <Plus aria-hidden="true" />
+              {t('requestPosts.create')}
+            </Link>
+          )}
+        </div>
       </Card>
     </PageContainer>
   );
@@ -286,12 +413,16 @@ function StudentHome({
   gradeLevels,
   provinces,
   communes,
+  subjects,
+  lessons,
 }: {
   displayName: string;
   own: Learner | null;
   gradeLevels: CatalogOption[];
   provinces: CatalogOption[];
   communes: CatalogOption[];
+  subjects: CatalogOption[];
+  lessons: LessonActivity;
 }) {
   const { t, i18n } = useTranslation();
   const area = [labelOf(provinces, own?.provinceId), labelOf(communes, own?.communeId)]
@@ -314,6 +445,7 @@ function StudentHome({
   return (
     <PageContainer>
       <h1 className="text-h1">{t('appHome.hello', { name: displayName })}</h1>
+      <LessonCards activity={lessons} role="student" subjects={subjects} />
       <Card className="max-w-2xl">
         <h2 className="text-h3">{t('studentHome.profileTitle')}</h2>
         {own ? (

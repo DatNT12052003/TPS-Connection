@@ -4,15 +4,28 @@
 //   - Nơi bạn sống (chỉ phụ huynh): tỉnh, xã, địa chỉ; chỉ phụ huynh thấy.
 //   - Giao diện và ngôn ngữ: lưu cookie; ngôn ngữ cũng lưu vào tài khoản (ngôn ngữ email), xem /preferences.
 //   - Bảo mật: đổi mật khẩu (đăng xuất thiết bị khác), thiết bị đang đăng nhập.
-// Chưa có API cho "Đã chặn", "Xóa tài khoản", "Thông báo" (xem docs/ke_hoach_trien_khai.md).
+//   - Thông báo (gia sư, phụ huynh, G5): bật/tắt theo loại, trong ứng dụng và email.
+//   - Người đã chặn (gia sư, phụ huynh, G5): bỏ chặn.
+// Chưa có API cho "Xóa tài khoản" (xem docs/ke_hoach_trien_khai.md).
 // Mỗi form gửi `intent` riêng; kết quả action mang theo intent để hiện thông báo đúng thẻ.
-import { AccountProfile, ActiveSession, ParentProfile } from '@tps/shared';
+import {
+  AccountProfile,
+  ActiveSession,
+  BlockList,
+  NotificationPreferences,
+  ParentProfile,
+} from '@tps/shared';
 import { Laptop, LogOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { data, Form, Link, useNavigation } from 'react-router';
 import { z } from 'zod';
 import { AvatarField } from '~/components/account/avatar-field';
+import { BlockedUsersCard } from '~/components/account/blocked-users';
+import {
+  NotificationSettingsCard,
+  notificationPreferencesBody,
+} from '~/components/account/notification-settings';
 import { LocationFields } from '~/components/forms/location-fields';
 import { PageContainer } from '~/components/layout/page';
 import { PreferencesControls } from '~/components/layout/preferences-controls';
@@ -62,7 +75,11 @@ type ActionResult =
   | { intent: 'avatar-remove'; ok: true }
   | ({ intent: 'avatar-remove' } & Failure<never>)
   | { intent: 'revoke-sessions'; ok: true }
-  | ({ intent: 'revoke-sessions' } & Failure<never>);
+  | ({ intent: 'revoke-sessions' } & Failure<never>)
+  | { intent: 'notifications'; ok: true }
+  | ({ intent: 'notifications' } & Failure<never>)
+  | { intent: 'unblock'; ok: true; name: string }
+  | ({ intent: 'unblock' } & Failure<never>);
 
 const SessionList = z.object({ items: z.array(ActiveSession) });
 
@@ -101,12 +118,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     return { profile, provinces, communes };
   };
 
-  const [account, sessions, area] = await Promise.all([
+  // Thông báo và chặn: chỉ gia sư, phụ huynh (học sinh chưa chat, C7).
+  const social = user.roles.some((r) => r === 'tutor' || r === 'parent');
+  const [account, sessions, area, notificationPreferences, blocks] = await Promise.all([
     api.call('/api/v1/me', { schema: AccountProfile }),
     api.call('/api/v1/auth/sessions', { schema: SessionList }),
     user.roles.includes('parent') ? loadArea() : Promise.resolve(null),
+    social
+      ? api.call('/api/v1/me/notification-preferences', { schema: NotificationPreferences })
+      : Promise.resolve(null),
+    social ? api.call('/api/v1/me/blocks', { schema: BlockList }) : Promise.resolve(null),
   ]);
-  return { account, sessions: sessions.items, area };
+  return { account, sessions: sessions.items, area, notificationPreferences, blocks };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -198,6 +221,31 @@ export async function action({ request, context }: Route.ActionArgs) {
         return data<ActionResult>({ intent, ...buttonFailure(error) });
       }
 
+    case 'notifications':
+      try {
+        const current = await api.call('/api/v1/me/notification-preferences', {
+          schema: NotificationPreferences,
+        });
+        await api.call('/api/v1/me/notification-preferences', {
+          method: 'PUT',
+          body: notificationPreferencesBody(form, current),
+          schema: NotificationPreferences,
+        });
+        return data<ActionResult>({ intent, ok: true });
+      } catch (error) {
+        return data<ActionResult>({ intent, ...buttonFailure(error) });
+      }
+
+    case 'unblock':
+      try {
+        await api.call(`/api/v1/me/blocks/${encodeURIComponent(formText(form, 'userId'))}`, {
+          method: 'DELETE',
+        });
+        return data<ActionResult>({ intent, ok: true, name: formText(form, 'name') });
+      } catch (error) {
+        return data<ActionResult>({ intent, ...buttonFailure(error) });
+      }
+
     default:
       throw data(null, { status: 400 });
   }
@@ -207,7 +255,9 @@ const SECTIONS = [
   { id: 'profile', label: 'account.profileTitle' },
   { id: 'area', label: 'account.areaTitle' },
   { id: 'display', label: 'account.displayTitle' },
+  { id: 'notifications', label: 'notificationSettings.title' },
   { id: 'security', label: 'account.securityTitle' },
+  { id: 'blocked', label: 'blockedUsers.title' },
 ] as const;
 
 export default function AccountPage({ loaderData, actionData }: Route.ComponentProps) {
@@ -217,14 +267,20 @@ export default function AccountPage({ loaderData, actionData }: Route.ComponentP
     navigation.state !== 'idle' && navigation.formMethod === 'POST'
       ? formText(navigation.formData ?? new FormData(), 'intent')
       : null;
-  const { account, sessions, area } = loaderData;
-  const sections = SECTIONS.filter((section) => section.id !== 'area' || area);
+  const { account, sessions, area, notificationPreferences, blocks } = loaderData;
+  const sections = SECTIONS.filter(
+    (section) =>
+      (section.id !== 'area' || area) &&
+      (section.id !== 'notifications' || notificationPreferences) &&
+      (section.id !== 'blocked' || blocks),
+  );
+  const unblocking =
+    pendingIntent === 'unblock' ? formText(navigation.formData ?? new FormData(), 'userId') : null;
   const [activeSection, setActiveSection] = useActiveSection(sections.map((s) => s.id));
 
   return (
     <PageContainer>
-      {/* Tiêu đề chỉ cho trình đọc màn hình; trên màn hình menu bên trái đã đủ rõ. */}
-      <h1 className="sr-only">{t('account.title')}</h1>
+      <h1 className="text-h1">{t('account.title')}</h1>
       <div className="grid items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
         <nav
           aria-label={t('account.sections')}
@@ -267,6 +323,22 @@ export default function AccountPage({ loaderData, actionData }: Route.ComponentP
             </div>
             <PreferencesControls layout="stacked" />
           </Card>
+          {notificationPreferences && (
+            <NotificationSettingsCard
+              preferences={notificationPreferences}
+              result={
+                actionData?.intent === 'notifications'
+                  ? actionData.ok
+                    ? { ok: true }
+                    : {
+                        ok: false,
+                        formError: actionData.formError ?? { key: 'errors.bad_request' },
+                      }
+                  : undefined
+              }
+              submitting={pendingIntent === 'notifications'}
+            />
+          )}
           <SecurityCard
             sessions={sessions}
             result={
@@ -276,6 +348,22 @@ export default function AccountPage({ loaderData, actionData }: Route.ComponentP
             }
             pendingIntent={pendingIntent}
           />
+          {blocks && (
+            <BlockedUsersCard
+              blocks={blocks}
+              result={
+                actionData?.intent === 'unblock'
+                  ? actionData.ok
+                    ? { ok: true, name: actionData.name }
+                    : {
+                        ok: false,
+                        formError: actionData.formError ?? { key: 'errors.bad_request' },
+                      }
+                  : undefined
+              }
+              pendingUserId={unblocking}
+            />
+          )}
         </div>
       </div>
     </PageContainer>

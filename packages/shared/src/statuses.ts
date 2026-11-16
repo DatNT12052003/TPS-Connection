@@ -162,6 +162,14 @@ export type RequestPostStatus = z.infer<typeof RequestPostStatus>;
 export const RequestPostClosedReason = z.enum(['found_tutor', 'no_longer_needed', 'other']);
 export type RequestPostClosedReason = z.infer<typeof RequestPostClosedReason>;
 
+/** `request_posts.goal`: mục tiêu học của nhu cầu (§4.2). */
+export const RequestPostGoal = z.enum(['reinforce', 'exam_prep', 'advanced', 'other']);
+export type RequestPostGoal = z.infer<typeof RequestPostGoal>;
+
+/** `request_posts.budget_unit`: ngân sách dự kiến theo giờ, buổi hoặc tháng. */
+export const BudgetUnit = z.enum(['hour', 'session', 'month']);
+export type BudgetUnit = z.infer<typeof BudgetUnit>;
+
 /** Hình thức học. */
 export const TeachingMode = z.enum(['online', 'in_person', 'hybrid']);
 export type TeachingMode = z.infer<typeof TeachingMode>;
@@ -192,7 +200,47 @@ export const ConnectionCancelReason = z.enum([
 ]);
 export type ConnectionCancelReason = z.infer<typeof ConnectionCancelReason>;
 
+/**
+ * `connection_events.event`: lịch sử của một yêu cầu kết nối (§5.3). `cancelled_by_system` là hủy do việc khác
+ * (bài nguồn đóng D31, hồ sơ con bị xóa, tài khoản bị khóa); `expired` là quá hạn (C3).
+ */
+export const ConnectionEventType = z.enum([
+  'created',
+  'accepted',
+  'rejected',
+  'withdrawn',
+  'terms_proposed',
+  'confirmed_by_tutor',
+  'confirmed_by_client',
+  'confirmed',
+  'cancelled_by_party',
+  'cancelled_by_system',
+  'expiry_reminded',
+  'expired',
+]);
+export type ConnectionEventType = z.infer<typeof ConnectionEventType>;
+
+/** Vai trò của một người trong yêu cầu kết nối: gia sư hay client (phụ huynh). */
+export const ConnectionParty = z.enum(['tutor', 'client']);
+export type ConnectionParty = z.infer<typeof ConnectionParty>;
+
+/** `conversations.kind`. Bản đầu chỉ có hội thoại của một yêu cầu kết nối (D14); `class`, `support` để dành. */
+export const ConversationKind = z.enum(['connection', 'class', 'support']);
+export type ConversationKind = z.infer<typeof ConversationKind>;
+
+/** `conversation_participants.participant_role`. Bản đầu chỉ gia sư và client (C7). */
+export const ConversationParticipantRole = z.enum(['tutor', 'client', 'student', 'staff']);
+export type ConversationParticipantRole = z.infer<typeof ConversationParticipantRole>;
+
+/** `messages.kind`. `system`: tin của hệ thống, không có người gửi. */
+export const MessageKind = z.enum(['text', 'attachment', 'system']);
+export type MessageKind = z.infer<typeof MessageKind>;
+
 // ---- Lớp học ----------------------------------------------------------------------------------
+
+/** Vai trò của người xem trong một lớp: gia sư của lớp, client (phụ huynh đang quản lý học sinh) hoặc chính học sinh. */
+export const ClassRole = z.enum(['tutor', 'client', 'student']);
+export type ClassRole = z.infer<typeof ClassRole>;
 
 /** `tutoring_classes.status` (B.5.1). Chỉ gia sư chuyển (D35). */
 export const TutoringClassStatus = z.enum(['active', 'paused', 'ended']);
@@ -206,7 +254,35 @@ export type EnrollmentStatus = z.infer<typeof EnrollmentStatus>;
 export const FeeRateStatus = z.enum(['proposed', 'active', 'rejected', 'superseded', 'withdrawn']);
 export type FeeRateStatus = z.infer<typeof FeeRateStatus>;
 
+/** `learning_goals.period_type`: mục tiêu theo tháng, học kỳ hoặc khoảng tự chọn (§6). */
+export const LearningGoalPeriod = z.enum(['month', 'term', 'custom']);
+export type LearningGoalPeriod = z.infer<typeof LearningGoalPeriod>;
+
+/** `learning_goals.status`. */
+export const LearningGoalStatus = z.enum([
+  'active',
+  'achieved',
+  'partially_achieved',
+  'not_achieved',
+]);
+export type LearningGoalStatus = z.infer<typeof LearningGoalStatus>;
+
 // ---- Buổi học, điểm danh, khiếu nại ------------------------------------------------------------
+
+/** `class_schedules.status`: lịch lặp hằng tuần còn sinh buổi hay đã dừng. */
+export const ClassScheduleStatus = z.enum(['active', 'ended']);
+export type ClassScheduleStatus = z.infer<typeof ClassScheduleStatus>;
+
+/** Hình thức của một buổi học cụ thể (lớp "kết hợp" thì từng buổi chọn một). */
+export const LessonMode = z.enum(['online', 'in_person']);
+export type LessonMode = z.infer<typeof LessonMode>;
+
+/**
+ * `lessons.cancel_kind`: ai / việc gì hủy buổi. `party`: gia sư hoặc client báo hủy (có thể là hủy muộn, C5);
+ * `class_paused`, `class_ended`: hệ thống hủy khi lớp tạm nghỉ, kết thúc (B.5.1, không tính hủy muộn).
+ */
+export const LessonCancelKind = z.enum(['party', 'class_paused', 'class_ended']);
+export type LessonCancelKind = z.infer<typeof LessonCancelKind>;
 
 /** `lessons.status` (B.6). */
 export const LessonStatus = z.enum(['scheduled', 'held', 'cancelled', 'tutor_absent']);
@@ -248,6 +324,10 @@ export const AttendanceDisputeStatus = z.enum([
 ]);
 export type AttendanceDisputeStatus = z.infer<typeof AttendanceDisputeStatus>;
 
+/** `assessments.kind`: điểm theo buổi, bài kiểm tra ngắn, bài kiểm tra (§9). `assignment` thêm ở bản 3 cùng bài tập. */
+export const AssessmentKind = z.enum(['lesson', 'quiz', 'test']);
+export type AssessmentKind = z.infer<typeof AssessmentKind>;
+
 // ---- Học phí ----------------------------------------------------------------------------------
 
 /** `fee_statements.status` (B.10.1). `draft` có trong thiết kế nhưng chưa dùng ở bản đầu (D40). */
@@ -273,6 +353,46 @@ export type PaymentMethod = z.infer<typeof PaymentMethod>;
 /** `violation_reports.status` (B.9.1). */
 export const ViolationReportStatus = z.enum(['open', 'linked', 'closed']);
 export type ViolationReportStatus = z.infer<typeof ViolationReportStatus>;
+
+/** `violation_reports.reason_code`. */
+export const ReportReason = z.enum([
+  'spam',
+  'harassment',
+  'inappropriate_content',
+  'fake_profile',
+  'child_safety',
+  'fraud',
+  'other',
+]);
+export type ReportReason = z.infer<typeof ReportReason>;
+
+/**
+ * `notifications.type` (§12, bản đầu). Thêm loại mới: sửa ở đây, `NOTIFICATION_DEFAULTS`, cả hai file ngôn ngữ và
+ * CHECK của bảng `notifications`.
+ */
+export const NotificationType = z.enum([
+  'connection_received',
+  'connection_accepted',
+  'connection_rejected',
+  'connection_expiring',
+  'connection_confirmed',
+  'message_new',
+  'verification_result',
+  // Lớp học (G6)
+  'class_status',
+  'fee_change',
+  'lesson_upcoming',
+  'lesson_changed',
+  'attendance_reminder',
+  'lesson_to_confirm',
+  'lesson_dispute',
+  'assessment_new',
+]);
+export type NotificationType = z.infer<typeof NotificationType>;
+
+/** `notification_preferences.channel`. `push` thêm khi có app mobile. */
+export const NotificationChannel = z.enum(['in_app', 'email']);
+export type NotificationChannel = z.infer<typeof NotificationChannel>;
 
 /** `moderation_cases.case_type`. `appeal` do Admin xử lý (C1). */
 export const ModerationCaseType = z.enum(['violation', 'session_dispute', 'appeal']);
@@ -321,21 +441,32 @@ export const LABELLED_ENUMS = {
   tutorPostStatus: TutorPostStatus,
   requestPostStatus: RequestPostStatus,
   requestPostClosedReason: RequestPostClosedReason,
+  requestPostGoal: RequestPostGoal,
+  budgetUnit: BudgetUnit,
   teachingMode: TeachingMode,
   connectionDirection: ConnectionDirection,
   connectionRequestStatus: ConnectionRequestStatus,
   connectionCancelReason: ConnectionCancelReason,
+  connectionEventType: ConnectionEventType,
   tutoringClassStatus: TutoringClassStatus,
   enrollmentStatus: EnrollmentStatus,
   feeRateStatus: FeeRateStatus,
+  learningGoalPeriod: LearningGoalPeriod,
+  learningGoalStatus: LearningGoalStatus,
+  classScheduleStatus: ClassScheduleStatus,
+  lessonMode: LessonMode,
+  lessonCancelKind: LessonCancelKind,
   lessonStatus: LessonStatus,
   attendanceStatus: AttendanceStatus,
   attendanceConfirmationStatus: AttendanceConfirmationStatus,
   attendanceDisputeStatus: AttendanceDisputeStatus,
+  assessmentKind: AssessmentKind,
   feeStatementStatus: FeeStatementStatus,
   paymentStatus: PaymentStatus,
   paymentMethod: PaymentMethod,
   violationReportStatus: ViolationReportStatus,
+  reportReason: ReportReason,
+  notificationType: NotificationType,
   moderationCaseType: ModerationCaseType,
   moderationCaseStatus: ModerationCaseStatus,
   moderationDecision: ModerationDecision,

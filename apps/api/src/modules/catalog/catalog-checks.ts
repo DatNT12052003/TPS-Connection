@@ -40,8 +40,15 @@ const fieldError = (path: string, code: string, message: string): FieldError => 
   message,
 });
 
-/** Ném 422 `validation_failed` (kèm lỗi từng ô) nếu một mã danh mục không hợp lệ. */
-export async function assertCatalogRefs(manager: EntityManager, refs: CatalogRefs): Promise<void> {
+/**
+ * Ném 422 `validation_failed` (kèm lỗi từng ô) nếu một mã danh mục không hợp lệ. `paths` đổi tên ô trong lỗi khi
+ * request dùng tên khác, ví dụ `{ teachingSubjects: 'subjects' }`.
+ */
+export async function assertCatalogRefs(
+  manager: EntityManager,
+  refs: CatalogRefs,
+  options: { paths?: Partial<Record<string, string>> } = {},
+): Promise<void> {
   const errors: FieldError[] = [];
 
   const gradeLevelId = refs.gradeLevelId;
@@ -102,6 +109,7 @@ export async function assertCatalogRefs(manager: EntityManager, refs: CatalogRef
   }
 
   if (errors.length > 0) {
-    throw new AppError('validation_failed', 'Invalid catalog reference', errors);
+    const renamed = errors.map((e) => ({ ...e, path: options.paths?.[e.path] ?? e.path }));
+    throw new AppError('validation_failed', 'Invalid catalog reference', renamed);
   }
 }

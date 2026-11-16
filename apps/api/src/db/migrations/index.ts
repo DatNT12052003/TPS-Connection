@@ -9,6 +9,13 @@ import { CreateTutorProfiles1794970400000 } from './1794970400000-CreateTutorPro
 import { CreateVerification1794970500000 } from './1794970500000-CreateVerification.js';
 import { CreateAuditLogs1794970600000 } from './1794970600000-CreateAuditLogs.js';
 import { CreateAccountSanctions1794970700000 } from './1794970700000-CreateAccountSanctions.js';
+import { CreateMarketplacePosts1794970800000 } from './1794970800000-CreateMarketplacePosts.js';
+import { AddMarketplaceSearch1794970900000 } from './1794970900000-AddMarketplaceSearch.js';
+import { CreateConnections1794971000000 } from './1794971000000-CreateConnections.js';
+import { CreateMessaging1794971100000 } from './1794971100000-CreateMessaging.js';
+import { CreateNotificationsAndReports1794971200000 } from './1794971200000-CreateNotificationsAndReports.js';
+import { CreateTeachingClasses1794971300000 } from './1794971300000-CreateTeachingClasses.js';
+import { CreateLessons1794971400000 } from './1794971400000-CreateLessons.js';
 
 export const MIGRATIONS = [
   InitExtensions1794960000000,
@@ -20,4 +27,11 @@ export const MIGRATIONS = [
   CreateVerification1794970500000,
   CreateAuditLogs1794970600000,
   CreateAccountSanctions1794970700000,
+  CreateMarketplacePosts1794970800000,
+  AddMarketplaceSearch1794970900000,
+  CreateConnections1794971000000,
+  CreateMessaging1794971100000,
+  CreateNotificationsAndReports1794971200000,
+  CreateTeachingClasses1794971300000,
+  CreateLessons1794971400000,
 ];

@@ -11,9 +11,12 @@ import {
   type UpdateLearnerRequest,
 } from '@tps/shared';
 import type { DataSource } from 'typeorm';
-import { conflict, notFound } from '../../lib/app-error.js';
+import { AppError, conflict, notFound } from '../../lib/app-error.js';
 import type { Logger } from '../../lib/logger.js';
 import { assertCatalogRefs } from '../catalog/catalog-checks.js';
+import { createClassesRepository } from '../classes/classes.repository.js';
+import { createConnectionsRepository } from '../connections/connections.repository.js';
+import { createRequestPostsRepository } from '../request-posts/request-posts.repository.js';
 import { createUsersRepository } from '../users/users.repository.js';
 import { createLearnerAccess, type LearnerViewer } from './learner-access.js';
 import type { Learner } from './learner.entity.js';
@@ -216,8 +219,9 @@ export function createLearnersService(deps: {
     },
 
     /**
-     * Xóa mềm hồ sơ con: ẩn ngay, rút lại đồng ý xử lý dữ liệu, hủy lời mời đang mở. Dữ liệu cá nhân được
-     * ẩn danh hóa sau 6 tháng bằng job (C2). Hồ sơ đã có tài khoản học sinh thì chưa xóa được ở bản này.
+     * Xóa mềm hồ sơ con: ẩn ngay, rút lại đồng ý xử lý dữ liệu, hủy lời mời đang mở, xóa mềm các bài tìm gia sư
+     * của con. Dữ liệu cá nhân được ẩn danh hóa sau 6 tháng bằng job (C2). Hồ sơ đã có tài khoản học sinh thì chưa
+     * xóa được ở bản này. Con còn lớp đang học hoặc tạm nghỉ: 409 `learner_in_class`.
      */
     async remove(actorId: string, learnerId: string): Promise<void> {
       await dataSource.transaction(async (manager) => {
@@ -228,9 +232,18 @@ export function createLearnersService(deps: {
         if (learner.accountUserId) {
           throw conflict('Learner has a student account; it cannot be deleted yet');
         }
+        // Yêu cầu kết nối đang mở của con hủy theo. Làm trước khi kiểm tra lớp: câu lệnh này chờ khóa của một lần xác
+        // nhận hợp tác đang chạy (lần đó tạo lớp), nên kiểm tra bên dưới thấy được lớp vừa tạo.
+        await createConnectionsRepository(manager).cancelOpenForLearner(learnerId, actorId);
+        // Lịch sử học tập không bao giờ bị xóa (C2): còn lớp đang học hoặc tạm nghỉ thì chưa xóa được hồ sơ. Lớp đã
+        // kết thúc vẫn giữ nguyên, gia sư vẫn tra cứu được.
+        if (await createClassesRepository(manager).learnerHasOpenClass(learnerId)) {
+          throw new AppError('learner_in_class', 'Learner still has an active or paused class');
+        }
         await repo.softDelete(learnerId);
         await createStudentInvitationsRepository(manager).revokeOpen(learnerId);
         await createUsersRepository(manager).withdrawChildDataConsent(learnerId);
+        await createRequestPostsRepository(manager).softDeleteForLearner(learnerId);
       });
       logger.info({ userId: actorId, learnerId }, 'Learner profile deleted');
     },

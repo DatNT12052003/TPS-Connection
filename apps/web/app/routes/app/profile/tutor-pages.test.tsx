@@ -259,8 +259,15 @@ describe('tutor overview', () => {
       view: 'tutor',
       displayName: 'Thầy A',
       profile: tutorProfile({ missingForVerification: ['rate'] }),
+      activity: { awaiting: [], unread: [] },
+      lessons: { todo: [], upcoming: [] },
+      subjects: [],
+      grades: [],
     });
     expect(await screen.findByRole('heading', { name: 'Chào Thầy A' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Yêu cầu kết nối' })).toBeInTheDocument();
+    expect(screen.getByText('Không có yêu cầu nào đang chờ bạn.')).toBeInTheDocument();
+    expect(screen.getByText('Không có tin nhắn chưa đọc.')).toBeInTheDocument();
     expect(screen.getByText('Hồ sơ chưa hiển thị công khai')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Tạm ngừng nhận học sinh' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Hoàn thiện hồ sơ' })).toHaveAttribute(

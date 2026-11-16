@@ -1,13 +1,21 @@
-// Tải một giấy tờ xác minh (CCCD, thẻ sinh viên, bằng cấp) từ trình duyệt lên kho riêng tư, hai bước:
-//   1. Xin vé qua route web /app/profile/documents/ticket (server web gọi API POST /files/uploads).
+// Tải một giấy tờ xác minh (CCCD, thẻ sinh viên, bằng cấp) hoặc tệp đính kèm tin nhắn (G5) từ trình duyệt lên kho
+// riêng tư, hai bước:
+//   1. Xin vé qua route web (/app/profile/documents/ticket hoặc /app/messages/attachments/ticket; server web gọi API
+//      POST /files/uploads).
 //   2. PUT tệp thẳng lên kho bằng URL trong vé.
-// Kết quả là `fileId`; form nộp xác minh gửi id này, API kiểm tra tệp đã thật sự lên kho.
+// Kết quả là `fileId`; form nộp xác minh hoặc gửi tin gửi id này, API kiểm tra tệp đã thật sự lên kho.
 import { FILE_RULES, UploadTicketResponse } from '@tps/shared';
 import { z } from 'zod';
 import type { Message } from './form';
 import { PATHS } from './navigation';
 
-export type DocumentPurpose = 'verification_document' | 'credential';
+export type DocumentPurpose = 'verification_document' | 'credential' | 'message_attachment';
+
+const TICKET_PATH: Record<DocumentPurpose, string> = {
+  verification_document: PATHS.documentTicket,
+  credential: PATHS.documentTicket,
+  message_attachment: PATHS.messageAttachmentTicket,
+};
 
 export type DocumentUploadResult =
   | { ok: true; fileId: string; fileName: string; sizeBytes: number }
@@ -37,7 +45,7 @@ export async function uploadDocument(
   const invalid = checkDocumentFile(file, purpose);
   if (invalid) return { ok: false, message: invalid };
   try {
-    const ticketResponse = await fetch(PATHS.documentTicket, {
+    const ticketResponse = await fetch(TICKET_PATH[purpose], {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
