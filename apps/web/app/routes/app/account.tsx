@@ -223,8 +223,7 @@ export default function AccountPage({ loaderData, actionData }: Route.ComponentP
 
   return (
     <PageContainer>
-      {/* Tiêu đề chỉ cho trình đọc màn hình; trên màn hình menu bên trái đã đủ rõ. */}
-      <h1 className="sr-only">{t('account.title')}</h1>
+      <h1 className="text-h1">{t('account.title')}</h1>
       <div className="grid items-start gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
         <nav
           aria-label={t('account.sections')}
