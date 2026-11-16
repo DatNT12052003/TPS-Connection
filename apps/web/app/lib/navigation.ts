@@ -64,6 +64,12 @@ export const PATHS = {
   documentTicket: '/app/profile/documents/ticket',
   admin: '/admin',
   notifications: '/app/notifications',
+  // Bài đăng (G4): gia sư quản lý bài tuyển, tìm học sinh; phụ huynh đăng bài tìm gia sư.
+  myPosts: '/app/posts',
+  newPost: '/app/posts/new',
+  findStudents: '/app/find-students',
+  myRequests: '/app/requests',
+  newRequest: '/app/requests/new',
 } as const;
 
 export const PUBLIC_NAV: NavItem[] = [
@@ -92,8 +98,8 @@ export const APP_NAV: Record<AppRole, NavConfig> = {
       item('/app/schedule', 'nav.teachSchedule', Calendar),
       item('/app/classes', 'nav.classes', BookOpen),
       item('/app/connections', 'nav.connections', MessageSquare),
-      item('/app/posts', 'nav.posts', FileText),
-      item('/app/find-students', 'nav.findStudents', Search),
+      item(PATHS.myPosts, 'nav.posts', FileText),
+      item(PATHS.findStudents, 'nav.findStudents', Search),
     ],
     mobile: [
       item('/app', 'nav.overview', Home, true),

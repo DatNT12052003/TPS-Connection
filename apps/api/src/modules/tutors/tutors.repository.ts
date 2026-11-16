@@ -155,14 +155,16 @@ export function createTutorsRepository(manager: EntityManager) {
      * Hồ sơ hiển thị công khai (D5, C8): đã xác minh danh tính, tài khoản đang hoạt động, chưa xóa.
      * Chỉ đọc tên hiển thị và ảnh đại diện từ `users`; không đọc email, số điện thoại, họ tên thật.
      */
-    async findPublic(tutorId: string): Promise<PublicTutorRow | null> {
-      const result = await profiles
+    async findPublic(ref: { id: string } | { code: string }): Promise<PublicTutorRow | null> {
+      const query = profiles
         .createQueryBuilder('p')
         .innerJoin('users', 'u', 'u.id = p.user_id')
         .leftJoin('files', 'f', `f.id = u.avatar_file_id AND f.status = 'ready'`)
         .addSelect('u.display_name', 'display_name')
-        .addSelect('f.storage_key', 'avatar_storage_key')
-        .where('p.userId = :tutorId', { tutorId })
+        .addSelect('f.storage_key', 'avatar_storage_key');
+      if ('id' in ref) query.where('p.userId = :id', { id: ref.id });
+      else query.where('p.publicCode = :code', { code: ref.code });
+      const result = await query
         .andWhere(`p.profileStatus = 'verified'`)
         .andWhere(`u.status = 'active'`)
         .andWhere('u.deleted_at IS NULL')

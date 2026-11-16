@@ -41,6 +41,18 @@ import { adminRouter } from './modules/admin/admin.router.js';
 import { createAccountController } from './modules/users/account.controller.js';
 import { accountRouter, filesRouter } from './modules/users/account.router.js';
 import type { AccountService } from './modules/users/account.service.js';
+import { createRequestPostsController } from './modules/request-posts/request-posts.controller.js';
+import {
+  ownRequestPostsRouter,
+  tutorRequestPostsRouter,
+} from './modules/request-posts/request-posts.router.js';
+import type { RequestPostsService } from './modules/request-posts/request-posts.service.js';
+import { createTutorPostsController } from './modules/tutor-posts/tutor-posts.controller.js';
+import {
+  ownTutorPostsRouter,
+  publicTutorPostsRouter,
+} from './modules/tutor-posts/tutor-posts.router.js';
+import type { TutorPostsService } from './modules/tutor-posts/tutor-posts.service.js';
 import { createOpenApiDocument } from './openapi.js';
 
 export interface AppDeps {
@@ -60,6 +72,8 @@ export interface AppDeps {
   adminCatalog: AdminCatalogService;
   account: AccountService;
   catalog: CatalogService;
+  tutorPosts: TutorPostsService;
+  requestPosts: RequestPostsService;
 }
 
 /** "true"/"false" -> boolean, số -> số hop proxy, còn lại (loopback, dải IP) giữ nguyên chuỗi. */
@@ -136,6 +150,13 @@ export function createApp(deps: AppDeps): Express {
     ),
   );
   api.use('/tutors', publicTutorsRouter(tutorsController));
+  // Bài đăng (G4). Trước router /me: router đó chỉ khớp /me và /me/avatar nhưng gắn authenticate cho /me/*.
+  const tutorPostsController = createTutorPostsController(deps.tutorPosts);
+  api.use('/me/tutor-posts', ownTutorPostsRouter(tutorPostsController, authenticate()));
+  api.use('/tutor-posts', publicTutorPostsRouter(tutorPostsController));
+  const requestPostsController = createRequestPostsController(deps.requestPosts);
+  api.use('/me/request-posts', ownRequestPostsRouter(requestPostsController, authenticate()));
+  api.use('/request-posts', tutorRequestPostsRouter(requestPostsController, authenticate()));
   const accountController = createAccountController(deps.account);
   // Sau /me/parent-profile, /me/tutor-profile: router này chỉ khớp /me và /me/avatar.
   api.use('/me', accountRouter(accountController, authenticate()));

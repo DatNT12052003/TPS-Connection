@@ -131,22 +131,26 @@ export const UpdateTutorProfileRequest = z
         message: 'service_areas_need_in_person',
       });
     }
-    // Khung giờ cùng ngày không được chồng nhau.
-    const byDay = new Map<number, AvailabilitySlot[]>();
-    for (const slot of value.availability) {
-      byDay.set(slot.weekday, [...(byDay.get(slot.weekday) ?? []), slot]);
-    }
-    for (const slots of byDay.values()) {
-      const sorted = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
-      for (let i = 1; i < sorted.length; i += 1) {
-        if (sorted[i]!.startTime < sorted[i - 1]!.endTime) {
-          ctx.addIssue({ code: 'custom', path: ['availability'], message: 'slot_overlap' });
-          return;
-        }
-      }
+    if (slotsOverlap(value.availability)) {
+      ctx.addIssue({ code: 'custom', path: ['availability'], message: 'slot_overlap' });
     }
   });
 export type UpdateTutorProfileRequest = z.infer<typeof UpdateTutorProfileRequest>;
+
+/** Có hai khung giờ cùng ngày chồng nhau không (dùng cho lịch rảnh và lịch của bài đăng). */
+export function slotsOverlap(slots: readonly AvailabilitySlot[]): boolean {
+  const byDay = new Map<number, AvailabilitySlot[]>();
+  for (const slot of slots) {
+    byDay.set(slot.weekday, [...(byDay.get(slot.weekday) ?? []), slot]);
+  }
+  for (const daySlots of byDay.values()) {
+    const sorted = [...daySlots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    for (let i = 1; i < sorted.length; i += 1) {
+      if (sorted[i]!.startTime < sorted[i - 1]!.endTime) return true;
+    }
+  }
+  return false;
+}
 
 // ---- Bằng cấp, chứng chỉ ------------------------------------------------------------------------
 
@@ -237,6 +241,8 @@ export type OwnTutorProfile = z.infer<typeof OwnTutorProfile>;
 export const PublicTutorProfile = z.object({
   ...TutorProfileFields,
   id: Id,
+  /** Đường dẫn `/tutors/<slug>` (D56): tên hiển thị không dấu + mã công khai. */
+  slug: z.string(),
   displayName: z.string(),
   avatarUrl: z.string().nullable(),
   /** Luôn true: chỉ gia sư đã xác minh danh tính mới công khai (D5). */
@@ -255,5 +261,11 @@ export const PublicTutorProfile = z.object({
 });
 export type PublicTutorProfile = z.infer<typeof PublicTutorProfile>;
 
-export const TutorIdParams = z.object({ tutorId: Id });
-export type TutorIdParams = z.infer<typeof TutorIdParams>;
+/**
+ * Định danh trong đường dẫn công khai: slug (`thay-nam-a1b2c3d4e5`) hoặc id. Chuỗi không đọc được thì API trả 404
+ * như gia sư không tồn tại.
+ */
+export const PublicRef = z.string().trim().min(1).max(200);
+
+export const TutorRefParams = z.object({ tutorRef: PublicRef });
+export type TutorRefParams = z.infer<typeof TutorRefParams>;

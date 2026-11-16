@@ -17,6 +17,13 @@ import {
   TutorTeachingSubject,
 } from '../modules/tutors/tutor-profile-items.entity.js';
 import { TutorProfile } from '../modules/tutors/tutor-profile.entity.js';
+import { RequestPost, RequestPostSlot } from '../modules/request-posts/request-post.entity.js';
+import {
+  TutorPost,
+  TutorPostArea,
+  TutorPostSlot,
+  TutorPostSubject,
+} from '../modules/tutor-posts/tutor-post.entity.js';
 import { Role } from '../modules/users/role.entity.js';
 import { AccountSanction } from '../modules/users/account-sanction.entity.js';
 import { UserBlock } from '../modules/users/user-block.entity.js';
@@ -56,4 +63,11 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   VerificationDocument,
   // Nhật ký kiểm toán
   AuditLog,
+  // Bài đăng marketplace (G4)
+  TutorPost,
+  TutorPostSubject,
+  TutorPostArea,
+  TutorPostSlot,
+  RequestPost,
+  RequestPostSlot,
 ];

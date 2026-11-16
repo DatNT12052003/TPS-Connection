@@ -1,7 +1,8 @@
 import type {
   CreateTutorCredentialRequest,
   CredentialIdParams,
-  TutorIdParams,
+  TutorRefParams,
+  TutorSearchQuery,
   UpdateTutorCredentialRequest,
   UpdateTutorProfileRequest,
 } from '@tps/shared';
@@ -44,11 +45,23 @@ export function createTutorsController(service: TutorsService) {
     res.status(204).end();
   };
 
-  const getPublic: RequestHandler<TutorIdParams> = async (req, res) => {
-    res.json(await service.getPublic(req.params.tutorId));
+  const getPublic: RequestHandler<TutorRefParams> = async (req, res) => {
+    res.json(await service.getPublic(req.params.tutorRef));
   };
 
-  return { getOwn, replaceOwn, addCredential, updateCredential, removeCredential, getPublic };
+  const search: RequestHandler = async (req, res) => {
+    res.json(await service.search(req.query as unknown as TutorSearchQuery));
+  };
+
+  return {
+    getOwn,
+    replaceOwn,
+    addCredential,
+    updateCredential,
+    removeCredential,
+    getPublic,
+    search,
+  };
 }
 
 export type TutorsController = ReturnType<typeof createTutorsController>;

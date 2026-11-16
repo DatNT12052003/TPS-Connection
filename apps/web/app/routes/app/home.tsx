@@ -238,6 +238,28 @@ function ParentHome({
           </ul>
         )}
       </Card>
+
+      {/* Tìm gia sư (G4): tìm theo hồ sơ, hoặc đăng bài để gia sư chủ động ứng tuyển. */}
+      <Card className="max-w-3xl">
+        <CardHeader>
+          <h2 className="text-h3">{t('requestPosts.homeTitle')}</h2>
+          <Link to={PATHS.myRequests} className={buttonVariants({ variant: 'ghost' })}>
+            {t('requestPosts.homeMine')}
+          </Link>
+        </CardHeader>
+        <p className="text-muted-foreground">{t('requestPosts.homeBody')}</p>
+        <div className="flex flex-wrap gap-2">
+          <Link to={PATHS.findTutors} className={buttonVariants({ variant: 'secondary' })}>
+            {t('nav.findTutors')}
+          </Link>
+          {learners.length > 0 && (
+            <Link to={PATHS.newRequest} className={buttonVariants({ variant: 'secondary' })}>
+              <Plus aria-hidden="true" />
+              {t('requestPosts.create')}
+            </Link>
+          )}
+        </div>
+      </Card>
     </PageContainer>
   );
 }

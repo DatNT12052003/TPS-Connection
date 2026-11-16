@@ -392,6 +392,12 @@ CREATE INDEX tutor_credentials_tutor_idx ON tutor_credentials (tutor_id);
 
 **Ghi chú triển khai (G2, migration `CreateTutorProfiles`):** cột `search_vector` chưa tạo; thêm ở G4 cùng index và truy vấn tìm kiếm (mục 14). Thêm các CHECK: `verified_at` có khi và chỉ khi `verification_status = 'verified'`; `rating_avg` trong khoảng 1–5, `rating_count >= 0`; `title` không rỗng. Thêm index `tutor_profiles_verified_idx` (partial, các hồ sơ đã xác minh) và `tutor_availability_slots_tutor_idx`. Hồ sơ gia sư được tạo (trạng thái `incomplete`) lần đầu gia sư mở hồ sơ của mình. Lịch rảnh không chồng nhau trong một ngày được kiểm tra ở API, chưa có exclusion constraint.
 
+**Ghi chú triển khai (G4, migration `AddMarketplaceSearch`):**
+
+- `search_vector` là cột `GENERATED ALWAYS ... STORED` từ các trường văn bản của chính bảng (giới thiệu ngắn, giới thiệu, nơi học/công tác, chuyên ngành, học vấn, phương pháp, thành tích), `to_tsvector('simple', immutable_unaccent(lower(...)))`, index GIN. Không chứa tên môn học (lọc môn bằng id) hay tên hiển thị (ở `users`, tìm bằng trigram `users_display_name_trgm_idx`). Họ tên thật và email không bao giờ được tìm từ trang công khai.
+- `public_code`: 10 ký tự hex ngẫu nhiên, unique, database tự sinh; cuối slug `/tutors/<tên-không-dấu>-<mã>` (D56). Phần chữ sinh lúc trả về nên đổi tên hiển thị không làm hỏng đường dẫn cũ. `tutor_posts` có cột `public_code` và `search_vector` (tiêu đề, mô tả) tương tự.
+- `tutor_profiles_ranking_idx` (partial, hồ sơ đã xác minh) theo đúng thứ tự "phù hợp nhất" khi không có từ khóa; `request_posts_open_idx` cho danh sách nhu cầu mới nhất khi gia sư chưa lọc.
+
 ### 5.2. Phụ huynh và người học
 
 ```sql
@@ -578,6 +584,8 @@ CREATE TABLE tutor_post_slots (
 
 Chỉ gia sư đã xác minh mới được chuyển bài sang `open` _(D5)_. Ràng buộc này kiểm tra ở service vì phụ thuộc bảng khác; có thể thêm trigger nếu muốn chặn cả ở database.
 
+**Bổ sung khi làm G4 (migration `CreateMarketplacePosts`):** bài đã đăng (khác `draft`) phải có ít nhất một hình thức dạy (`tutor_posts_published_mode_chk`) và có `published_at` (`tutor_posts_published_at_chk`); tiêu đề, mô tả không rỗng. Index `tutor_posts_tutor_idx` chỉ gồm bài chưa xóa. Cột `search_vector` và index tìm kiếm thêm ở đợt 2 của G4.
+
 ### 6.3. Bài tìm gia sư của phụ huynh
 
 ```sql
@@ -631,6 +639,13 @@ CREATE TABLE favorite_tutors (
 ```
 
 Mỗi bài tìm gia sư một môn: một nhu cầu dẫn tới một lớp. Phụ huynh cần nhiều môn thì đăng nhiều bài.
+
+**Bổ sung khi làm G4 (migration `CreateMarketplacePosts`):**
+
+- Mỗi hồ sơ con chỉ có một bài chưa đóng, chưa xóa cho mỗi môn: `UNIQUE (learner_id, subject_id) WHERE deleted_at IS NULL AND status <> 'closed'` (`request_posts_learner_subject_active_uq`).
+- `closed_reason` có giá trị khi và chỉ khi `status = 'closed'`; ngân sách có đơn vị khi và chỉ khi có ít nhất một mức; có xã thì phải có tỉnh; bài đã đăng có `published_at`.
+- Thêm index `request_posts_learner_idx` (xóa mềm bài khi xóa hồ sơ con). `request_posts_author_idx` chỉ gồm bài chưa xóa.
+- Bảng `favorite_tutors` chưa tạo: làm cùng tính năng yêu thích (D10, nếu kịp).
 
 ### 6.4. Yêu cầu kết nối
 

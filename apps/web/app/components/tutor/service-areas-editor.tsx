@@ -17,10 +17,16 @@ export function ServiceAreasEditor({
   provinces,
   initial,
   error,
+  name = 'serviceAreaIds',
+  max = TUTOR_PROFILE_LIMITS.serviceAreas,
 }: {
   provinces: readonly CatalogOption[];
   initial: readonly AreaRef[];
   error?: string | undefined;
+  /** Tên ô ẩn gửi JSON (hồ sơ: `serviceAreaIds`, bài đăng: `areaIds`). */
+  name?: string;
+  /** Số khu vực tối đa. */
+  max?: number;
 }) {
   const { t } = useTranslation();
   const [areas, setAreas] = useState<AreaRef[]>([...initial]);
@@ -29,7 +35,7 @@ export function ServiceAreasEditor({
   const fetcher = useFetcher<{ items: CatalogOption[] }>();
   const communes = provinceId ? (fetcher.data?.items ?? []) : [];
   const provinceLabel = (id: number) => provinces.find((p) => p.id === id)?.label ?? '';
-  const full = areas.length >= TUTOR_PROFILE_LIMITS.serviceAreas;
+  const full = areas.length >= max;
 
   function chipLabel(area: AreaRef) {
     return area.level === 'province'
@@ -54,7 +60,7 @@ export function ServiceAreasEditor({
 
   return (
     <div className="flex flex-col gap-3">
-      <input type="hidden" name="serviceAreaIds" value={JSON.stringify(areas.map((a) => a.id))} />
+      <input type="hidden" name={name} value={JSON.stringify(areas.map((a) => a.id))} />
       <span className="text-label">{t('tutorProfile.areasLabel')}</span>
       {areas.length > 0 ? (
         <ul className="flex flex-wrap gap-2" aria-label={t('tutorProfile.areasLabel')}>
