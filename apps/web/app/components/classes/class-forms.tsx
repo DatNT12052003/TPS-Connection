@@ -26,7 +26,7 @@ import { useMessage } from '~/lib/use-message';
 const dateRange = () => ({ min: addDays(todayIso(), -730), max: addDays(todayIso(), 730) });
 
 /** Giá trị và lỗi của một form theo kết quả action gần nhất (chỉ khi đúng intent). */
-function useFormState(intent: string, failure: IntentFailure | undefined) {
+export function useFormState(intent: string, failure: IntentFailure | undefined) {
   const tr = useMessage();
   const mine = failure?.intent === intent ? failure : undefined;
   return {
@@ -40,7 +40,7 @@ function useFormState(intent: string, failure: IntentFailure | undefined) {
   };
 }
 
-function FormFooter({
+export function FormFooter({
   cancelTo,
   submitLabel,
   busy,
@@ -62,7 +62,7 @@ function FormFooter({
   );
 }
 
-function FormShell({
+export function FormShell({
   intent,
   title,
   lead,

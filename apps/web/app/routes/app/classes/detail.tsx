@@ -291,6 +291,7 @@ export default function ClassDetailPage({ loaderData, actionData }: Route.Compon
   const enrollment = cls.enrollments[0];
   const isTutor = cls.myRole === 'tutor';
   const isClient = cls.myRole === 'client';
+  const isStudentView = cls.myRole === 'student';
   const ended = cls.status === 'ended';
   const title = classTitle({ ...cls, learnerName: cls.learner.name }, catalogs.subjects);
   const subject = labelOf(catalogs.subjects, cls.subjectId) ?? '';
@@ -671,6 +672,14 @@ export default function ClassDetailPage({ loaderData, actionData }: Route.Compon
                   ))}
               </ul>
               <p className="text-small text-muted-foreground">{t('classes.feeRule')}</p>
+              {!isStudentView && (
+                <Link
+                  to={`${PATHS.fees}/${enrollment.id}`}
+                  className={buttonVariants({ variant: 'secondary', className: 'self-start' })}
+                >
+                  {t('fees.classFeesLink')}
+                </Link>
+              )}
             </Card>
           )}
         </div>

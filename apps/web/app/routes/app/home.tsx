@@ -6,12 +6,15 @@
 import {
   ConnectionRequestList,
   ConversationList,
+  FeeOverview,
   type Learner,
   LearnerList,
   LessonList,
   OwnTutorProfile,
 } from '@tps/shared';
 import { LessonCards, type LessonActivity } from '~/components/classes/lesson-cards';
+import { FeeHomeCard } from '~/components/fees/fee-home-card';
+import { currentMonth } from '~/lib/fees';
 import { ActivityCards, type ConnectionsActivity } from '~/components/connections/activity-cards';
 import { ChevronRight, Plus, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -87,20 +90,40 @@ async function loadLessons(
   return { todo, upcoming };
 }
 
+/** Học phí tháng này (G7). Khối phụ: API lỗi thì không hiện. */
+function loadFees(
+  context: Route.LoaderArgs['context'],
+  as: 'tutor' | 'client',
+): Promise<FeeOverview | null> {
+  return getServerApi(context)
+    .call(`/api/v1/fees/overview?month=${currentMonth()}&as=${as}`, { schema: FeeOverview })
+    .catch(() => null);
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, context);
   const role = appRoleOf(user);
   const greeting = { displayName: user.displayName };
   const { locale } = await readPreferences(request);
   if (role === 'tutor') {
-    const [profile, activity, subjects, grades, lessons] = await Promise.all([
+    const [profile, activity, subjects, grades, lessons, fees] = await Promise.all([
       getServerApi(context).call('/api/v1/me/tutor-profile', { schema: OwnTutorProfile }),
       loadActivity(context),
       loadSubjects(context, locale),
       loadGradeLevels(context, locale),
       loadLessons(context, true),
+      loadFees(context, 'tutor'),
     ]);
-    return { view: 'tutor' as const, ...greeting, profile, activity, subjects, grades, lessons };
+    return {
+      view: 'tutor' as const,
+      ...greeting,
+      profile,
+      activity,
+      subjects,
+      grades,
+      lessons,
+      fees,
+    };
   }
   if (role !== 'parent' && role !== 'student') throw data(null, { status: 404 });
 
@@ -112,10 +135,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   if (role === 'parent') {
     const learners = items.filter((learner) => learner.viewer === 'guardian');
     const deleted = new URL(request.url).searchParams.get('deleted') === '1';
-    const [activity, subjects, lessons] = await Promise.all([
+    const [activity, subjects, lessons, fees] = await Promise.all([
       loadActivity(context),
       loadSubjects(context, locale),
       loadLessons(context, true),
+      loadFees(context, 'client'),
     ]);
     return {
       view: 'parent' as const,
@@ -126,6 +150,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       activity,
       subjects,
       lessons,
+      fees,
     };
   }
 
@@ -192,6 +217,7 @@ function TutorHome({
   subjects,
   grades,
   lessons,
+  fees,
 }: {
   displayName: string;
   profile: OwnTutorProfile;
@@ -200,6 +226,7 @@ function TutorHome({
   subjects: CatalogOption[];
   grades: CatalogOption[];
   lessons: LessonActivity;
+  fees: FeeOverview | null;
 }) {
   const { t } = useTranslation();
   const tr = useMessage();
@@ -269,6 +296,8 @@ function TutorHome({
 
       <LessonCards activity={lessons} role="tutor" subjects={subjects} />
 
+      <FeeHomeCard overview={fees} role="tutor" />
+
       <ActivityCards activity={activity} subjects={subjects} grades={grades} />
 
       <Card className="gap-3 sm:p-6">
@@ -293,6 +322,7 @@ function ParentHome({
   activity,
   subjects,
   lessons,
+  fees,
 }: {
   displayName: string;
   learners: Learner[];
@@ -301,6 +331,7 @@ function ParentHome({
   activity: ConnectionsActivity;
   subjects: CatalogOption[];
   lessons: LessonActivity;
+  fees: FeeOverview | null;
 }) {
   const { t } = useTranslation();
   return (
@@ -313,6 +344,8 @@ function ParentHome({
       )}
 
       <LessonCards activity={lessons} role="parent" subjects={subjects} />
+
+      <FeeHomeCard overview={fees} role="client" />
 
       <ActivityCards activity={activity} subjects={subjects} grades={gradeLevels} />
 

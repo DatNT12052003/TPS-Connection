@@ -4,6 +4,9 @@ import { type Locale, messages, type NotificationContent } from '@tps/shared';
 import type { EmailMessage } from '../../lib/email/email-sender.js';
 import { escapeHtml, interpolate } from '../../lib/email/template.js';
 
+/** `YYYY-MM` → `MM/YYYY` (cùng cách viết cho cả hai ngôn ngữ). */
+const monthLabel = (month: string) => `${month.slice(5, 7)}/${month.slice(0, 4)}`;
+
 /** Tiêu đề và nội dung theo loại; null nếu loại này không gửi email từ đây. */
 function texts(
   locale: Locale,
@@ -78,6 +81,32 @@ function texts(
         subject: t.assessmentSubject,
         body: interpolate(t.assessmentBody, name(content.data.counterpartName)),
       };
+    // Học phí (G7): tháng và tên bên kia, không có số tiền hay tên học sinh.
+    case 'fee_statement': {
+      const values = {
+        ...name(content.data.counterpartName),
+        month: monthLabel(content.data.month),
+      };
+      const pick = (subject: string, body: string) => ({
+        subject: interpolate(subject, values),
+        body: interpolate(body, values),
+      });
+      switch (content.data.event) {
+        case 'issued':
+          return pick(t.feeIssuedSubject, t.feeIssuedBody);
+        case 'due':
+          return pick(t.feeDueSubject, t.feeDueBody);
+        case 'voided':
+          return pick(t.feeVoidedSubject, t.feeVoidedBody);
+        case 'payment_recorded':
+          return pick(t.paymentRecordedSubject, t.paymentRecordedBody);
+        case 'payment_acknowledged':
+        case 'payment_declined':
+          return pick(t.paymentDecidedSubject, t.paymentDecidedBody);
+        case 'payment_voided':
+          return null;
+      }
+    }
   }
 }
 

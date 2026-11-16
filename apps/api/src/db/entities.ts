@@ -38,6 +38,7 @@ import { StoredFile } from '../modules/files/stored-file.entity.js';
 import { LearnerGuardian } from '../modules/learners/learner-guardian.entity.js';
 import { Learner } from '../modules/learners/learner.entity.js';
 import { StudentInvitation } from '../modules/learners/student-invitation.entity.js';
+import { FeeStatementItemRow, FeeStatementRow, PaymentRow } from '../modules/fees/fee.entity.js';
 import { ParentProfile } from '../modules/parents/parent-profile.entity.js';
 import { TutorCredential } from '../modules/tutors/tutor-credential.entity.js';
 import {
@@ -123,4 +124,8 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   LessonAttendanceRow,
   AttendanceDisputeRow,
   AssessmentRow,
+  // Học phí (G7)
+  FeeStatementRow,
+  FeeStatementItemRow,
+  PaymentRow,
 ];

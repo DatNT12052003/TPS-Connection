@@ -74,6 +74,9 @@ import type { ClassesService } from './modules/classes/classes.service.js';
 import { createLessonsController } from './modules/lessons/lessons.controller.js';
 import { disputeReviewRouter, lessonsRouter } from './modules/lessons/lessons.router.js';
 import type { LessonsService } from './modules/lessons/lessons.service.js';
+import { createFeesController } from './modules/fees/fees.controller.js';
+import { feesRouter } from './modules/fees/fees.router.js';
+import type { FeesService } from './modules/fees/fees.service.js';
 import { createOpenApiDocument } from './openapi.js';
 
 export interface AppDeps {
@@ -101,6 +104,8 @@ export interface AppDeps {
   safety: SafetyService;
   classes: ClassesService;
   lessons: LessonsService;
+  /** Học phí (G7). Không có: không gắn /fees (test của các module khác). */
+  fees?: FeesService;
 }
 
 /** "true"/"false" -> boolean, số -> số hop proxy, còn lại (loopback, dải IP) giữ nguyên chuỗi. */
@@ -226,6 +231,8 @@ export function createApp(deps: AppDeps): Express {
     classesRouter(createClassesController(deps.classes), authenticate(), lessonsController),
   );
   api.use('/lessons', lessonsRouter(lessonsController, authenticate()));
+  // Học phí (G7).
+  if (deps.fees) api.use('/fees', feesRouter(createFeesController(deps.fees), authenticate()));
   const accountController = createAccountController(deps.account);
   // Sau /me/parent-profile, /me/tutor-profile: router này chỉ khớp /me và /me/avatar.
   api.use('/me', accountRouter(accountController, authenticate()));

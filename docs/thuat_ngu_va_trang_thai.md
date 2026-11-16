@@ -416,7 +416,7 @@ Trạng thái `draft` có trong thiết kế nhưng chưa dùng ở bản đầu
 
 ### B.10.2. Thanh toán (`payments.status`)
 
-`recorded` (một bên ghi nhận) → `acknowledged` (bên còn lại xác nhận) hoặc `voided` (bên ghi nhận hủy khi chưa được xác nhận). Chỉ thanh toán `acknowledged` mới được cộng vào `paid_amount_vnd` _(D41)_: tránh trường hợp một bên tự ghi "đã trả" mà bên kia không nhận được.
+`recorded` (một bên ghi nhận) → `acknowledged` (bên còn lại xác nhận), `declined` (bên còn lại báo "chưa nhận được", theo canvas TuitionTutor; G7) hoặc `voided` (bên ghi nhận hủy khi chưa được xác nhận, hoặc bảng học phí bị hủy để lập lại). Chỉ thanh toán `acknowledged` mới được cộng vào `paid_amount_vnd` _(D41)_: tránh trường hợp một bên tự ghi "đã trả" mà bên kia không nhận được.
 
 ---
 

@@ -214,6 +214,7 @@ describe('email through the BullMQ queue (Mailpit)', () => {
         'expire-connection-requests': async () => 0,
         'generate-lessons': async () => 0,
         'lessons-maintenance': async () => 0,
+        'fee-statements': async () => 0,
       },
     });
   });
