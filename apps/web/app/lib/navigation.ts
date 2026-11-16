@@ -76,6 +76,11 @@ export const PATHS = {
   findStudents: '/app/find-students',
   myRequests: '/app/requests',
   newRequest: '/app/requests/new',
+  // Lớp học, lịch, điểm (G6).
+  classes: '/app/classes',
+  schedule: '/app/schedule',
+  grades: '/app/grades',
+  adminDisputes: '/admin/disputes',
 } as const;
 
 export const PUBLIC_NAV: NavItem[] = [
@@ -101,17 +106,17 @@ export const APP_NAV: Record<AppRole, NavConfig> = {
   tutor: {
     desktop: [
       item('/app', 'nav.overview', Home, true),
-      item('/app/schedule', 'nav.teachSchedule', Calendar),
-      item('/app/classes', 'nav.classes', BookOpen),
+      item(PATHS.schedule, 'nav.teachSchedule', Calendar),
+      item(PATHS.classes, 'nav.classes', BookOpen),
       item(PATHS.connections, 'nav.connections', MessageSquare),
       item(PATHS.myPosts, 'nav.posts', FileText),
       item(PATHS.findStudents, 'nav.findStudents', Search),
     ],
     mobile: [
       item('/app', 'nav.overview', Home, true),
-      item('/app/schedule', 'nav.teachSchedule', Calendar),
+      item(PATHS.schedule, 'nav.teachSchedule', Calendar),
       item(PATHS.connections, 'nav.connectionsShort', MessageSquare),
-      item('/app/classes', 'nav.classes', BookOpen),
+      item(PATHS.classes, 'nav.classes', BookOpen),
       item(PATHS.tutorProfile, 'nav.profile', User),
     ],
   },
@@ -120,27 +125,27 @@ export const APP_NAV: Record<AppRole, NavConfig> = {
       item('/app', 'nav.home', Home, true),
       item(PATHS.findTutors, 'nav.findTutors', Search),
       item(PATHS.connections, 'nav.connections', MessageSquare),
-      item('/app/classes', 'nav.classes', BookOpen),
+      item(PATHS.classes, 'nav.classes', BookOpen),
       item('/app/fees', 'nav.fees', FileText),
     ],
     mobile: [
       item('/app', 'nav.home', Home, true),
       item(PATHS.findTutors, 'nav.findTutors', Search),
       item(PATHS.connections, 'nav.connectionsShort', MessageSquare),
-      item('/app/classes', 'nav.classes', BookOpen),
+      item(PATHS.classes, 'nav.classes', BookOpen),
       item('/app/account', 'nav.account', User),
     ],
   },
   student: {
     desktop: [
       item('/app', 'nav.home', Home, true),
-      item('/app/schedule', 'nav.learnSchedule', Calendar),
-      item('/app/grades', 'nav.grades', Star),
+      item(PATHS.schedule, 'nav.learnSchedule', Calendar),
+      item(PATHS.grades, 'nav.grades', Star),
     ],
     mobile: [
       item('/app', 'nav.home', Home, true),
-      item('/app/schedule', 'nav.learnSchedule', Calendar),
-      item('/app/grades', 'nav.gradesShort', Star),
+      item(PATHS.schedule, 'nav.learnSchedule', Calendar),
+      item(PATHS.grades, 'nav.gradesShort', Star),
     ],
   },
 };
@@ -150,7 +155,7 @@ export const ADMIN_NAV: Record<StaffRole, NavItem[]> = {
   manager: [
     item('/admin/verifications', 'nav.verifications', ClipboardCheck),
     item('/admin/reports', 'nav.reports', Flag),
-    item('/admin/disputes', 'nav.disputes', Scale),
+    item(PATHS.adminDisputes, 'nav.disputes', Scale),
     item('/admin/posts', 'nav.moderatePosts', FileText),
   ],
   admin: [

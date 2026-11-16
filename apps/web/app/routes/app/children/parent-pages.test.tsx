@@ -68,6 +68,7 @@ describe('parent overview', () => {
       gradeLevels,
       deleted: false,
       activity: { awaiting: [], unread: [] },
+      lessons: { todo: [], upcoming: [] },
       subjects: [],
     });
     expect(await screen.findByRole('heading', { name: 'Chào Mai' })).toBeInTheDocument();
@@ -93,6 +94,7 @@ describe('parent overview', () => {
       gradeLevels,
       deleted: false,
       activity: { awaiting: [], unread: [] },
+      lessons: { todo: [], upcoming: [] },
       subjects: [],
     });
     const items = await screen.findAllByRole('listitem');

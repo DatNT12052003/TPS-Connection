@@ -360,6 +360,14 @@ export const Lesson = z.object({
    * Đang chờ người xem: gia sư chưa điểm danh buổi đã bắt đầu; phụ huynh chưa xác nhận điểm danh. Học sinh: false.
    */
   awaitingMe: z.boolean(),
+  /** Điểm danh và xác nhận của từng học sinh người xem thấy (không có học phí). Rỗng khi chưa điểm danh. */
+  attendanceStates: z.array(
+    z.object({
+      enrollmentId: Id,
+      status: AttendanceStatus,
+      confirmationStatus: AttendanceConfirmationStatus,
+    }),
+  ),
 });
 export type Lesson = z.infer<typeof Lesson>;
 

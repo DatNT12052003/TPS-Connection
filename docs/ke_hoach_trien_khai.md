@@ -355,7 +355,15 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
     - Gia sư vẫn điểm danh, phụ huynh vẫn xác nhận / khiếu nại được các buổi đã diễn ra của lớp đã kết thúc (để đối chiếu học phí).
     - Dừng hoặc sửa lịch lặp không gửi thông báo (lịch trên web tự cập nhật); dời và hủy từng buổi thì có.
   - Chưa làm, chuyển sau: kiểm tra trùng giờ giữa các buổi của cùng gia sư; `moderation_cases` cho khiếu nại đã chuyển (G8, hiện Manager xử lý thẳng trên `attendance_disputes`); khiếu nại lại quyết định của Manager lên Admin (G8, D39); OpenAPI cho endpoint G6.
-- **Đợt 3, trang web:** chưa làm (trang lớp, lịch, điểm danh, xác nhận buổi, khiếu nại, kết quả; khối trên trang tổng quan; liên kết "Đi tới lớp" ở yêu cầu kết nối đã xác nhận).
+- **Đợt 3, trang web:** **xong ngày 2026-11-16** (type-check, lint, test, build đều qua; chưa thử tay trên trình duyệt). Theo canvas ClassList, TutorClass, ClassDetail, TeachSchedule, Attendance, Dispute, FeeChange, MakeupLesson, Disputes:
+  - `/app/classes` (đang học / đã kết thúc), `/app/classes/:classId` (thẻ lớp với liên hệ, học phí đang áp dụng; tab buổi học trong khoảng một tháng trước và sau hôm nay, điểm và nhận xét, mục tiêu, học phí; cột bên: lịch lặp, trạng thái lớp, ghi chú của gia sư, đặt tên lớp). Form mở bằng tham số URL (`?schedule=`, `?lesson=new&for=`, `?fee=new`, `?goal=`, `?assessment=`, `?end=1`), lưu xong về trang lớp.
+  - `/app/classes/:classId/lessons/:lessonId` (trang đích của thông báo buổi học): gia sư điểm danh / sửa điểm danh, dời giờ, hủy, tạo buổi bù, ghi điểm cho buổi; phụ huynh hủy, xác nhận, khiếu nại, đồng ý / rút khiếu nại; một bên chuyển Manager.
+  - `/app/schedule` lịch theo tuần hoặc tháng (`?view=week|month&date=`), lưới 7 cột từ 1024 px, danh sách theo ngày trên điện thoại. `/app/grades` điểm, nhận xét, mục tiêu qua mọi lớp (học sinh, phụ huynh).
+  - Manager: `/admin/disputes` (đã chuyển / đã quyết định) và `/admin/disputes/:disputeId` (bản ghi gia sư, khiếu nại phụ huynh, quyết định).
+  - Trang tổng quan: gia sư "Cần điểm danh" và lịch dạy 7 ngày tới; phụ huynh "Cần bạn xác nhận" và lịch học 7 ngày tới; học sinh lịch 7 ngày tới. Yêu cầu kết nối đã xác nhận có nút "Đi tới lớp học". Trung tâm thông báo hiện nội dung 8 loại thông báo của lớp.
+  - API thêm `attendanceStates` (điểm danh và xác nhận, không có học phí) vào mỗi buổi trên lịch để bảng buổi học hiện được cột điểm danh.
+  - Test: `apps/web/app/routes/app/classes/class-pages.test.ts`, `apps/web/app/lib/classes.test.ts`.
+  - Chưa làm, chuyển sau: tab và khối học phí tháng (G7, canvas Tuition, TuitionTutor); phụ huynh chưa có mục "Lịch" trên thanh điều hướng (canvas không có; xem qua trang tổng quan và trang lớp); bảng buổi học trên trang lớp chỉ hiện một tháng trước và sau hôm nay (lịch sử xa hơn xem ở `/app/schedule` theo tháng); kiểm tra trùng giờ khi tạo buổi bù (canvas MakeupLesson có dòng "Không trùng lịch").
 - **Chưa làm, chuyển sau:** OpenAPI chưa có endpoint G6 (như G5); ẩn danh hóa tên học sinh trong lớp khi hồ sơ bị xóa quá 6 tháng làm cùng job ẩn danh hóa (C2, D19).
 
 ### Giai đoạn 7. Ghi nhận học phí

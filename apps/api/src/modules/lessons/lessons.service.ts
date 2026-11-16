@@ -214,6 +214,13 @@ export function createLessonsService(deps: {
       cancelReason: lesson.cancelReason,
       isLateCancellation: lesson.isLateCancellation,
       awaitingMe,
+      attendanceStates: attendances
+        .filter((a) => a.lessonId === lesson.id && view.learnerNames.has(a.enrollmentId))
+        .map((a) => ({
+          enrollmentId: a.enrollmentId,
+          status: a.status,
+          confirmationStatus: a.confirmationStatus,
+        })),
     };
   }
 
