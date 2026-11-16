@@ -53,6 +53,21 @@ import {
   publicTutorPostsRouter,
 } from './modules/tutor-posts/tutor-posts.router.js';
 import type { TutorPostsService } from './modules/tutor-posts/tutor-posts.service.js';
+import { createConnectionsController } from './modules/connections/connections.controller.js';
+import { connectionsRouter } from './modules/connections/connections.router.js';
+import type { ConnectionsService } from './modules/connections/connections.service.js';
+import { createMessagingController } from './modules/messaging/messaging.controller.js';
+import { messagingRouter } from './modules/messaging/messaging.router.js';
+import type { MessagingService } from './modules/messaging/messaging.service.js';
+import { createNotificationsController } from './modules/notifications/notifications.controller.js';
+import {
+  notificationPreferencesRouter,
+  notificationsRouter,
+} from './modules/notifications/notifications.router.js';
+import type { NotificationsService } from './modules/notifications/notifications.service.js';
+import { createSafetyController } from './modules/safety/safety.controller.js';
+import { blocksRouter, reportsRouter } from './modules/safety/safety.router.js';
+import type { SafetyService } from './modules/safety/safety.service.js';
 import { createOpenApiDocument } from './openapi.js';
 
 export interface AppDeps {
@@ -74,6 +89,10 @@ export interface AppDeps {
   catalog: CatalogService;
   tutorPosts: TutorPostsService;
   requestPosts: RequestPostsService;
+  connections: ConnectionsService;
+  messaging: MessagingService;
+  notifications: NotificationsService;
+  safety: SafetyService;
 }
 
 /** "true"/"false" -> boolean, số -> số hop proxy, còn lại (loopback, dải IP) giữ nguyên chuỗi. */
@@ -157,6 +176,30 @@ export function createApp(deps: AppDeps): Express {
   const requestPostsController = createRequestPostsController(deps.requestPosts);
   api.use('/me/request-posts', ownRequestPostsRouter(requestPostsController, authenticate()));
   api.use('/request-posts', tutorRequestPostsRouter(requestPostsController, authenticate()));
+  // Yêu cầu kết nối (G5).
+  api.use(
+    '/connection-requests',
+    connectionsRouter(
+      createConnectionsController(deps.connections),
+      deps.rateLimiter,
+      authenticate(),
+    ),
+  );
+  // Nhắn tin (G5).
+  api.use(
+    '/conversations',
+    messagingRouter(createMessagingController(deps.messaging), deps.rateLimiter, authenticate()),
+  );
+  // Thông báo, chặn, báo cáo (G5). Trước router /me (router đó gắn authenticate cho /me/*).
+  const notificationsController = createNotificationsController(deps.notifications);
+  api.use('/notifications', notificationsRouter(notificationsController, authenticate()));
+  api.use(
+    '/me/notification-preferences',
+    notificationPreferencesRouter(notificationsController, authenticate()),
+  );
+  const safetyController = createSafetyController(deps.safety);
+  api.use('/me/blocks', blocksRouter(safetyController, deps.rateLimiter, authenticate()));
+  api.use('/reports', reportsRouter(safetyController, deps.rateLimiter, authenticate()));
   const accountController = createAccountController(deps.account);
   // Sau /me/parent-profile, /me/tutor-profile: router này chỉ khớp /me và /me/avatar.
   api.use('/me', accountRouter(accountController, authenticate()));

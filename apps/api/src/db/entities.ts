@@ -2,6 +2,22 @@
 // Quy ước: mọi @Column ghi rõ `type` (không dựa vào emitDecoratorMetadata, xem tsconfig.json).
 import { AuditLog } from '../modules/audit/audit-log.entity.js';
 import { AuthSession } from '../modules/auth/auth-session.entity.js';
+import {
+  ConnectionEventRow,
+  ConnectionRequest,
+  ConnectionTermsVersion,
+} from '../modules/connections/connection.entity.js';
+import {
+  Conversation,
+  ConversationParticipant,
+  MessageAttachmentRow,
+  MessageRow,
+} from '../modules/messaging/conversation.entity.js';
+import {
+  NotificationPreferenceRow,
+  NotificationRow,
+} from '../modules/notifications/notification.entity.js';
+import { ViolationReport } from '../modules/safety/violation-report.entity.js';
 import { AdministrativeArea } from '../modules/catalog/administrative-area.entity.js';
 import { GradeLevel } from '../modules/catalog/grade-level.entity.js';
 import { Subject } from '../modules/catalog/subject.entity.js';
@@ -70,4 +86,17 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   TutorPostSlot,
   RequestPost,
   RequestPostSlot,
+  // Kết nối (G5)
+  ConnectionRequest,
+  ConnectionTermsVersion,
+  ConnectionEventRow,
+  // Nhắn tin (G5)
+  Conversation,
+  ConversationParticipant,
+  MessageRow,
+  MessageAttachmentRow,
+  // Thông báo, báo cáo vi phạm (G5)
+  NotificationRow,
+  NotificationPreferenceRow,
+  ViolationReport,
 ];

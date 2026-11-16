@@ -2,8 +2,8 @@
 // (D25). Chỉ gia sư đã xác minh và đã đăng nhập xem được (C8); bản cho gia sư không có hồ sơ con, người đăng hay
 // thông tin nhận dạng nào của trẻ (§16.7, D16). Không phụ thuộc Express.
 //
-// Việc chuyển sang G5: ẩn hoặc đóng bài thì hủy các ứng tuyển còn `pending` (D31); xác nhận hợp tác từ bài thì hệ
-// thống đóng bài với lý do `found_tutor`.
+// Ẩn, đóng hoặc xóa bài thì các ứng tuyển còn `pending` tự hủy (D31); xác nhận hợp tác từ một ứng tuyển thì hệ thống
+// đóng bài với lý do `found_tutor` (connections.service.ts).
 import {
   type ChangeRequestPostStatusRequest,
   type CreateRequestPostRequest,
@@ -22,6 +22,7 @@ import type { DataSource, EntityManager } from 'typeorm';
 import { AppError, conflict, invalidStateTransition, notFound } from '../../lib/app-error.js';
 import type { Logger } from '../../lib/logger.js';
 import { assertCatalogRefs } from '../catalog/catalog-checks.js';
+import { createConnectionsRepository } from '../connections/connections.repository.js';
 import { createLearnerAccess } from '../learners/learner-access.js';
 import type { PostActor } from '../tutor-posts/tutor-posts.service.js';
 import type { RequestPost } from './request-post.entity.js';
@@ -230,6 +231,9 @@ export function createRequestPostsService(deps: { dataSource: DataSource; logger
           closedReason: input.status === 'closed' ? (input.closedReason ?? null) : null,
           ...(input.status === 'open' && !post.publishedAt ? { publishedAt: new Date() } : {}),
         });
+        if (input.status === 'hidden' || input.status === 'closed') {
+          await createConnectionsRepository(manager).cancelPendingApplications(postId);
+        }
       });
       logger.info(
         { userId: actor.userId, postId, status: input.status },
@@ -238,10 +242,13 @@ export function createRequestPostsService(deps: { dataSource: DataSource; logger
       return loadOwn(actor.userId, postId);
     },
 
-    /** Xóa mềm (mọi trạng thái). */
+    /** Xóa mềm (mọi trạng thái); các ứng tuyển còn chờ tự hủy (D31). */
     async remove(userId: string, postId: string): Promise<void> {
-      await findOwn(dataSource.manager, userId, postId);
-      await createRequestPostsRepository(dataSource.manager).softDelete(postId);
+      await dataSource.transaction(async (manager) => {
+        await findOwn(manager, userId, postId, { lock: true });
+        await createRequestPostsRepository(manager).softDelete(postId);
+        await createConnectionsRepository(manager).cancelPendingApplications(postId);
+      });
       logger.info({ userId, postId }, 'Request post deleted');
     },
 

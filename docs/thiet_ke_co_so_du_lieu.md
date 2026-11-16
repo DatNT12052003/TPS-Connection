@@ -741,6 +741,15 @@ pending ──chấp nhận──► negotiating ──cả hai xác nhận cùn
 - Khi có phiên bản `connection_terms` mới, mọi xác nhận trên phiên bản cũ mất hiệu lực. Chỉ phiên bản lớn nhất được xác nhận. Khi phiên bản đó có đủ `tutor_confirmed_at` và `client_confirmed_at`, service trong **một transaction**: chuyển request sang `confirmed`, ghi `agreed_terms_id`, tạo lớp và ghi danh (mục 7.1), ghi `connection_events`.
 - Mọi chuyển trạng thái dùng `UPDATE ... WHERE id = $1 AND status = $old` để tránh hai thao tác đồng thời cùng thắng.
 
+**Đã làm ở G5 đợt 1 (migration `CreateConnections`), khác bản trên:**
+
+- `connection_requests` có thêm ảnh chụp nhu cầu lúc gửi: `grade_level_id`, `goal`, `goal_note`, `teaching_mode`, `province_id`, `commune_id` (cùng ràng buộc như `request_posts`). Gia sư chỉ đọc các cột này trong lúc trao đổi, không đọc `learners` (D16). `message` bắt buộc.
+- Ràng buộc thêm: `tutor_id <> client_user_id`; chiều `client_to_tutor` không có `request_post_id`, chiều `tutor_to_client` không có `tutor_post_id`; `closed_at` có khi và chỉ khi `rejected`/`cancelled`; `rejection_note` chỉ khi `rejected`.
+- Index danh sách là `(tutor_id, created_at DESC, id DESC)` và `(client_user_id, created_at DESC, id DESC)` (lọc trạng thái trên tập nhỏ của một người); thêm index một phần theo `request_post_id`, `tutor_post_id` và `learner_id` (đang mở).
+- `connection_terms`: `goal` là mã như `request_posts.goal` kèm `goal_note`; `schedule` (`[{weekday, startTime}]`) NOT NULL mặc định `[]`. Trigger chặn sửa nội dung và xóa dòng; chỉ `tutor_confirmed_at`, `client_confirmed_at` được ghi thêm.
+- `connection_events.event` có thêm `cancelled_by_system` (bài nguồn đóng D31, tài khoản bị khóa).
+- Thay cho `UPDATE ... WHERE status = $old`: service khóa dòng yêu cầu (`SELECT ... FOR UPDATE`) trong transaction rồi mới kiểm tra trạng thái. Job hết hạn dùng `FOR UPDATE SKIP LOCKED`.
+
 ### 6.5. Nhắn tin
 
 ```sql
@@ -792,6 +801,15 @@ CREATE TABLE message_attachments (
 - Khi mở cho học sinh (sau MVP), chỉ cần thêm dòng `participant_role = 'student'` cùng phụ huynh trong hội thoại; không đổi cấu trúc.
 - Trước khi gửi tin, service kiểm tra `user_blocks` theo cả hai chiều.
 - Manager chỉ xem tin nhắn nằm trong báo cáo (`violation_reports.message_id`) và các tin lân cận được cấu hình, không xem toàn bộ hội thoại _(C1)_.
+
+**Đã làm ở G5 đợt 2 (migration `CreateMessaging`), khác bản trên:**
+
+- `conversations` có thêm `updated_at`; `connection_request_id` unique có tên `conversations_connection_request_uq`. `class_id` chưa có khóa ngoại (thêm ở G6 cùng `tutoring_classes`). Không có cột trạng thái: gửi được hay chỉ xem (D32) suy ra từ `connection_requests.status` (`negotiating`, `confirmed` thì gửi được).
+- `conversation_participants.last_read_message_id` là khóa ngoại tới `messages` (tạo sau bảng `messages`).
+- `messages.id` mặc định `uuidv7()` (sắp theo thời gian; tin chưa đọc là tin của người khác có id lớn hơn `last_read_message_id`). Ràng buộc thêm: tin hệ thống khi và chỉ khi không có người gửi; tin `text` có nội dung khác rỗng; nội dung tối đa 4000 ký tự. Tin có tệp là `attachment`, nội dung là chú thích (có thể rỗng).
+- `message_attachments.file_id` unique: một tệp chỉ thuộc một tin.
+- Dữ liệu: tạo hội thoại (thời điểm `accepted_at`) và hai người tham gia cho mọi yêu cầu đã được chấp nhận trước migration.
+- Gửi tin khóa chia sẻ (`FOR SHARE`) dòng yêu cầu kết nối nên không chen được với thao tác hủy (khóa ghi cùng dòng).
 
 ---
 

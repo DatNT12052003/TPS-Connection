@@ -200,6 +200,42 @@ export const ConnectionCancelReason = z.enum([
 ]);
 export type ConnectionCancelReason = z.infer<typeof ConnectionCancelReason>;
 
+/**
+ * `connection_events.event`: lịch sử của một yêu cầu kết nối (§5.3). `cancelled_by_system` là hủy do việc khác
+ * (bài nguồn đóng D31, hồ sơ con bị xóa, tài khoản bị khóa); `expired` là quá hạn (C3).
+ */
+export const ConnectionEventType = z.enum([
+  'created',
+  'accepted',
+  'rejected',
+  'withdrawn',
+  'terms_proposed',
+  'confirmed_by_tutor',
+  'confirmed_by_client',
+  'confirmed',
+  'cancelled_by_party',
+  'cancelled_by_system',
+  'expiry_reminded',
+  'expired',
+]);
+export type ConnectionEventType = z.infer<typeof ConnectionEventType>;
+
+/** Vai trò của một người trong yêu cầu kết nối: gia sư hay client (phụ huynh). */
+export const ConnectionParty = z.enum(['tutor', 'client']);
+export type ConnectionParty = z.infer<typeof ConnectionParty>;
+
+/** `conversations.kind`. Bản đầu chỉ có hội thoại của một yêu cầu kết nối (D14); `class`, `support` để dành. */
+export const ConversationKind = z.enum(['connection', 'class', 'support']);
+export type ConversationKind = z.infer<typeof ConversationKind>;
+
+/** `conversation_participants.participant_role`. Bản đầu chỉ gia sư và client (C7). */
+export const ConversationParticipantRole = z.enum(['tutor', 'client', 'student', 'staff']);
+export type ConversationParticipantRole = z.infer<typeof ConversationParticipantRole>;
+
+/** `messages.kind`. `system`: tin của hệ thống, không có người gửi. */
+export const MessageKind = z.enum(['text', 'attachment', 'system']);
+export type MessageKind = z.infer<typeof MessageKind>;
+
 // ---- Lớp học ----------------------------------------------------------------------------------
 
 /** `tutoring_classes.status` (B.5.1). Chỉ gia sư chuyển (D35). */
@@ -282,6 +318,37 @@ export type PaymentMethod = z.infer<typeof PaymentMethod>;
 export const ViolationReportStatus = z.enum(['open', 'linked', 'closed']);
 export type ViolationReportStatus = z.infer<typeof ViolationReportStatus>;
 
+/** `violation_reports.reason_code`. */
+export const ReportReason = z.enum([
+  'spam',
+  'harassment',
+  'inappropriate_content',
+  'fake_profile',
+  'child_safety',
+  'fraud',
+  'other',
+]);
+export type ReportReason = z.infer<typeof ReportReason>;
+
+/**
+ * `notifications.type` (§12, bản đầu). Thêm loại mới: sửa ở đây, `NOTIFICATION_DEFAULTS`, cả hai file ngôn ngữ và
+ * CHECK của bảng `notifications`.
+ */
+export const NotificationType = z.enum([
+  'connection_received',
+  'connection_accepted',
+  'connection_rejected',
+  'connection_expiring',
+  'connection_confirmed',
+  'message_new',
+  'verification_result',
+]);
+export type NotificationType = z.infer<typeof NotificationType>;
+
+/** `notification_preferences.channel`. `push` thêm khi có app mobile. */
+export const NotificationChannel = z.enum(['in_app', 'email']);
+export type NotificationChannel = z.infer<typeof NotificationChannel>;
+
 /** `moderation_cases.case_type`. `appeal` do Admin xử lý (C1). */
 export const ModerationCaseType = z.enum(['violation', 'session_dispute', 'appeal']);
 export type ModerationCaseType = z.infer<typeof ModerationCaseType>;
@@ -335,6 +402,7 @@ export const LABELLED_ENUMS = {
   connectionDirection: ConnectionDirection,
   connectionRequestStatus: ConnectionRequestStatus,
   connectionCancelReason: ConnectionCancelReason,
+  connectionEventType: ConnectionEventType,
   tutoringClassStatus: TutoringClassStatus,
   enrollmentStatus: EnrollmentStatus,
   feeRateStatus: FeeRateStatus,
@@ -346,6 +414,8 @@ export const LABELLED_ENUMS = {
   paymentStatus: PaymentStatus,
   paymentMethod: PaymentMethod,
   violationReportStatus: ViolationReportStatus,
+  reportReason: ReportReason,
+  notificationType: NotificationType,
   moderationCaseType: ModerationCaseType,
   moderationCaseStatus: ModerationCaseStatus,
   moderationDecision: ModerationDecision,

@@ -31,6 +31,10 @@ import { createLearnersService } from '../../src/modules/learners/learners.servi
 import { createStudentInvitationsService } from '../../src/modules/learners/student-invitations.service.js';
 import { createParentsService } from '../../src/modules/parents/parents.service.js';
 import type { RequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
+import type { ConnectionsService } from '../../src/modules/connections/connections.service.js';
+import type { MessagingService } from '../../src/modules/messaging/messaging.service.js';
+import type { NotificationsService } from '../../src/modules/notifications/notifications.service.js';
+import type { SafetyService } from '../../src/modules/safety/safety.service.js';
 import type { TutorPostsService } from '../../src/modules/tutor-posts/tutor-posts.service.js';
 import type { CatalogService } from '../../src/modules/catalog/catalog.service.js';
 import type { TutorsService } from '../../src/modules/tutors/tutors.service.js';
@@ -129,6 +133,10 @@ beforeAll(async () => {
     catalog: {} as CatalogService,
     tutorPosts: {} as TutorPostsService,
     requestPosts: {} as RequestPostsService,
+    connections: {} as ConnectionsService,
+    messaging: {} as MessagingService,
+    notifications: {} as NotificationsService,
+    safety: {} as SafetyService,
   });
 });
 

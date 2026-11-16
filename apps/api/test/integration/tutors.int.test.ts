@@ -33,6 +33,14 @@ import { createMemoryRateLimiter } from '../../src/lib/rate-limiter.js';
 import { buildStorageKey, type Storage } from '../../src/lib/storage.js';
 import type { AuthService } from '../../src/modules/auth/auth.service.js';
 import type { RequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
+import type { ConnectionsService } from '../../src/modules/connections/connections.service.js';
+import type { MessagingService } from '../../src/modules/messaging/messaging.service.js';
+import {
+  createNotificationsService,
+  type NotificationsService,
+} from '../../src/modules/notifications/notifications.service.js';
+import { noopRealtime } from '../../src/realtime/realtime.js';
+import type { SafetyService } from '../../src/modules/safety/safety.service.js';
 import type { TutorPostsService } from '../../src/modules/tutor-posts/tutor-posts.service.js';
 import { createCatalogService } from '../../src/modules/catalog/catalog.service.js';
 import { createFilesService } from '../../src/modules/files/files.service.js';
@@ -160,6 +168,15 @@ beforeAll(async () => {
       },
       webUrl: 'http://web.test',
       logger: silentLogger,
+      notifier: createNotificationsService({
+        dataSource: db,
+        realtime: noopRealtime,
+        sendEmail: async (message) => {
+          sentEmails.push(message);
+        },
+        webUrl: 'http://web.test',
+        logger: silentLogger,
+      }).notifier,
     }),
     adminAccounts: createAdminAccountsService({ dataSource: db, logger: silentLogger }),
     adminCatalog: createAdminCatalogService({ dataSource: db, logger: silentLogger }),
@@ -168,6 +185,10 @@ beforeAll(async () => {
     // Bài đăng: test riêng ở posts.int.test.ts.
     tutorPosts: {} as TutorPostsService,
     requestPosts: {} as RequestPostsService,
+    connections: {} as ConnectionsService,
+    messaging: {} as MessagingService,
+    notifications: {} as NotificationsService,
+    safety: {} as SafetyService,
   });
 });
 
@@ -1026,6 +1047,15 @@ async function submittedTutor(occupation = 'teacher') {
   return { tutor, requestId: OwnIdentityVerification.parse(res.body).latest!.id };
 }
 
+/** Dữ liệu các thông báo kết quả xác minh của gia sư (G5). */
+const verificationNotices = async (user: { id: string }) =>
+  (
+    await db.query<{ data: unknown }[]>(
+      `SELECT data FROM notifications WHERE user_id = $1 AND type = 'verification_result'`,
+      [user.id],
+    )
+  ).map((r) => r.data);
+
 const auditRows = (entityId: string) =>
   db.query<
     {
@@ -1119,6 +1149,11 @@ describe('verification review (manager)', () => {
     const email = sentEmails.find((m) => m.to === tutor.email);
     expect(email?.subject).toBe('Danh tính của bạn đã được xác minh');
     expect(email?.text).toContain('http://web.test/app/profile');
+    // Thông báo trong app (G5); email vẫn chỉ một (từ quy trình xác minh).
+    expect(await verificationNotices(tutor)).toEqual([
+      { kind: 'identity', outcome: 'approved', credentialTitle: null },
+    ]);
+    expect(sentEmails.filter((m) => m.to === tutor.email)).toHaveLength(1);
     expect((await auditRows(requestId)).map((r) => r.action)).toEqual(['verification.approved']);
 
     // Đã quyết định: không duyệt lại, không xem ảnh nữa.
@@ -1157,6 +1192,9 @@ describe('verification review (manager)', () => {
     expect(await profileStatusOf(tutor)).toBe('incomplete');
     const email = sentEmails.find((m) => m.to === tutor.email);
     expect(email?.subject).toBe('Giấy tờ xác minh danh tính chưa được duyệt');
+    expect(await verificationNotices(tutor)).toEqual([
+      { kind: 'identity', outcome: 'rejected', credentialTitle: null },
+    ]);
     expect(email?.text).toContain('Lý do: Ảnh mờ, bị lóa hoặc thiếu góc');
     expect(email?.text).toContain('Ảnh mặt sau bị lóa.');
 

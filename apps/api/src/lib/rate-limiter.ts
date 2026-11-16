@@ -104,3 +104,30 @@ export function rateLimitByIp(
     next();
   };
 }
+
+/**
+ * Như `rateLimitByIp` nhưng đếm theo tài khoản đã đăng nhập (đặt SAU authenticate). Chưa đăng nhập thì cho qua để
+ * middleware xác thực trả 401.
+ */
+export function rateLimitByUser(
+  limiter: RateLimiter,
+  options: { name: string; limit: number; windowSeconds: number },
+): RequestHandler {
+  return async (req: Request, _res, next) => {
+    const userId = req.auth?.user.id;
+    if (!userId) {
+      next();
+      return;
+    }
+    const result = await limiter.hit(
+      `user:${options.name}:${userId}`,
+      options.limit,
+      options.windowSeconds,
+    );
+    if (!result.allowed) {
+      next(rateLimited(result.retryAfterSeconds));
+      return;
+    }
+    next();
+  };
+}

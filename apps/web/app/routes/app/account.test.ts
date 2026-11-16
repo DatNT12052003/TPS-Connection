@@ -34,6 +34,26 @@ function mockAccount(roles: string[]) {
     http.get(`${API}/api/v1/me/parent-profile`, () =>
       HttpResponse.json({ provinceId: 1, communeId: 10, addressLine: null, updatedAt: null }),
     ),
+    http.get(`${API}/api/v1/me/notification-preferences`, () =>
+      HttpResponse.json({
+        items: [
+          { type: 'connection_received', inApp: true, email: true },
+          { type: 'message_new', inApp: true, email: false },
+        ],
+      }),
+    ),
+    http.get(`${API}/api/v1/me/blocks`, () =>
+      HttpResponse.json({
+        items: [
+          {
+            userId: '0193a1b2-0000-7000-8000-0000000000d1',
+            displayName: 'Người bị chặn',
+            avatarUrl: null,
+            blockedAt: '2026-11-14T08:00:00.000Z',
+          },
+        ],
+      }),
+    ),
   );
 }
 
@@ -50,6 +70,8 @@ describe('account loader', () => {
       profile: { provinceId: 1 },
       communes: [{ id: 10, label: 'Phường Ba Đình' }],
     });
+    expect(result.notificationPreferences).toMatchObject({ items: [{}, {}] });
+    expect(result.blocks).toMatchObject({ items: [{ displayName: 'Người bị chặn' }] });
   });
 
   it('has no area section for tutors', async () => {

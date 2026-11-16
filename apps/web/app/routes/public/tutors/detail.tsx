@@ -1,11 +1,12 @@
 // /tutors/:tutorRef: hồ sơ gia sư công khai (canvas TutorDetail, TutorDetailMobile). Khách xem được (C8); SSR cho
 // SEO. Đường dẫn là slug `<tên-không-dấu>-<mã>` (D56); vào bằng slug cũ hoặc id thì chuyển hướng 301 về slug đúng.
-// Chỉ tên hiển thị, không email, số điện thoại, họ tên thật (D16). Gửi yêu cầu kết nối làm ở G5.
+// Chỉ tên hiển thị, không email, số điện thoại, họ tên thật (D16). Phụ huynh gửi yêu cầu kết nối từ đây (G5).
 import { PublicTutorProfile, TutorPostSearchResult } from '@tps/shared';
 import { Award, ExternalLink, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { data, Link, redirect, useRouteLoaderData } from 'react-router';
+import { data, Link, redirect } from 'react-router';
 import { AvatarImage } from '~/components/account/avatar-field';
+import { ConnectCta } from '~/components/connections/connect-cta';
 import { PageContainer } from '~/components/layout/page';
 import { Breadcrumbs } from '~/components/marketplace/breadcrumbs';
 import { KeyValue, KeyValueList } from '~/components/marketplace/key-value';
@@ -20,7 +21,6 @@ import { messagesFromMatches } from '~/lib/meta';
 import { PATHS } from '~/lib/navigation';
 import { readPreferences } from '~/lib/preferences';
 import { getServerApi } from '~/lib/server-api.server';
-import type { loader as rootLoader } from '~/root';
 import type { Route } from './+types/detail';
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
@@ -57,7 +57,6 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 export default function TutorDetailPage({ loaderData }: Route.ComponentProps) {
   const { t, i18n } = useTranslation();
   const { tutor, catalogs, areas, posts } = loaderData;
-  const signedIn = Boolean(useRouteLoaderData<typeof rootLoader>('root')?.user);
   const subline = [
     tutor.occupation && t(`tutorOccupation.${tutor.occupation}`),
     tutor.experienceYears !== null &&
@@ -248,24 +247,10 @@ export default function TutorDetailPage({ loaderData }: Route.ComponentProps) {
               <p className="text-small text-muted-foreground">{t('tutorPublic.connectLead')}</p>
             </div>
             <Alert variant="info">{t('tutorPublic.childPrivacy')}</Alert>
-            {signedIn ? (
-              <p className="text-small text-muted-foreground">{t('tutorPublic.connectSoon')}</p>
-            ) : (
-              <>
-                <Link
-                  to={`${PATHS.login}?redirectTo=${encodeURIComponent(`/tutors/${tutor.slug}`)}`}
-                  className={buttonVariants({ size: 'lg', block: true })}
-                >
-                  {t('tutorPublic.loginToConnect')}
-                </Link>
-                <Link
-                  to={PATHS.register}
-                  className={buttonVariants({ variant: 'secondary', block: true })}
-                >
-                  {t('layout.register')}
-                </Link>
-              </>
+            {!tutor.acceptingStudents && (
+              <p className="text-small text-muted-foreground">{t('errors.tutor_not_accepting')}</p>
             )}
+            <ConnectCta tutorSlug={tutor.slug} returnTo={`/tutors/${tutor.slug}`} showRegister />
           </Card>
           <Card className="gap-2">
             <span className="text-label">{t('tutorPublic.contact')}</span>

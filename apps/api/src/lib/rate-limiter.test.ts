@@ -1,5 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
-import { createMemoryRateLimiter } from './rate-limiter.js';
+import type { Request } from 'express';
+import { createMemoryRateLimiter, rateLimitByUser } from './rate-limiter.js';
 
 describe('memory rate limiter', () => {
   it('allows up to the limit within a window, then reports when to retry', async () => {
@@ -25,5 +26,29 @@ describe('memory rate limiter', () => {
     expect((await limiter.hit('a', 1, 60)).allowed).toBe(false);
     await limiter.reset('a');
     expect((await limiter.peek('a')).count).toBe(0);
+  });
+});
+
+describe('rateLimitByUser', () => {
+  const run = async (middleware: ReturnType<typeof rateLimitByUser>, userId?: string) => {
+    const req = { auth: userId ? { user: { id: userId } } : undefined } as unknown as Request;
+    let passed: unknown = 'not called';
+    await middleware(req, {} as never, (err?: unknown) => {
+      passed = err;
+    });
+    return passed;
+  };
+
+  it('counts per account and lets anonymous requests through to authentication', async () => {
+    const middleware = rateLimitByUser(createMemoryRateLimiter(), {
+      name: 'test',
+      limit: 2,
+      windowSeconds: 60,
+    });
+    expect(await run(middleware, 'a')).toBeUndefined();
+    expect(await run(middleware, 'a')).toBeUndefined();
+    expect(await run(middleware, 'a')).toMatchObject({ code: 'rate_limited' });
+    expect(await run(middleware, 'b')).toBeUndefined();
+    expect(await run(middleware)).toBeUndefined();
   });
 });

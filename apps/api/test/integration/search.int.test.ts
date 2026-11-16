@@ -33,6 +33,10 @@ import { createLearnersService } from '../../src/modules/learners/learners.servi
 import type { StudentInvitationsService } from '../../src/modules/learners/student-invitations.service.js';
 import type { ParentsService } from '../../src/modules/parents/parents.service.js';
 import { createRequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
+import type { ConnectionsService } from '../../src/modules/connections/connections.service.js';
+import type { MessagingService } from '../../src/modules/messaging/messaging.service.js';
+import type { NotificationsService } from '../../src/modules/notifications/notifications.service.js';
+import type { SafetyService } from '../../src/modules/safety/safety.service.js';
 import { createTutorPostsService } from '../../src/modules/tutor-posts/tutor-posts.service.js';
 import { createTutorsService } from '../../src/modules/tutors/tutors.service.js';
 import type { AccountService } from '../../src/modules/users/account.service.js';
@@ -224,6 +228,10 @@ beforeAll(async () => {
     catalog: {} as CatalogService,
     tutorPosts: createTutorPostsService({ dataSource: db, logger: silentLogger, publicFileUrl }),
     requestPosts: createRequestPostsService({ dataSource: db, logger: silentLogger }),
+    connections: {} as ConnectionsService,
+    messaging: {} as MessagingService,
+    notifications: {} as NotificationsService,
+    safety: {} as SafetyService,
   });
 
   t.a = await seedTutor({

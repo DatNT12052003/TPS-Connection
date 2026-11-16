@@ -1,0 +1,84 @@
+# Thử tay yêu cầu kết nối (G5 đợt 1) bằng extension REST Client (humao.rest-client) trong VS Code.
+# Cần hai tài khoản: một phụ huynh có hồ sơ con và một gia sư đã được duyệt danh tính (dạy môn @subjectId).
+# REST Client giữ cookie chung cho mọi yêu cầu, nên ở đây đăng nhập bằng `Authorization: Bearer`: lấy access token
+# của từng người (cookie tps_at sau khi đăng nhập trên web, hoặc từ auth.http) rồi dán vào @parentToken, @tutorToken.
+#
+# Cần chạy trước: npm run infra:up  và  npm run dev -w @tps/api
+
+@api = http://127.0.0.1:3000/api/v1
+@parentToken = dán-access-token-của-phụ-huynh
+@tutorToken = dán-access-token-của-gia-sư
+@tutorId = 00000000-0000-0000-0000-000000000000
+@learnerId = 00000000-0000-0000-0000-000000000000
+@subjectId = 1
+@gradeLevelId = 8
+@requestId = dán-id-từ-bước-1
+
+### 1. Phụ huynh gửi gia sư -> 201 pending (trùng: 409 connection_exists)
+POST {{api}}/connection-requests
+Authorization: Bearer {{parentToken}}
+Content-Type: application/json
+
+{
+  "direction": "client_to_tutor",
+  "tutorId": "{{tutorId}}",
+  "learnerId": "{{learnerId}}",
+  "subjectId": {{subjectId}},
+  "gradeLevelId": {{gradeLevelId}},
+  "goal": "exam_prep",
+  "teachingMode": "online",
+  "message": "Chào thầy, con tôi cần ôn thi vào lớp 10."
+}
+
+### 2. Gia sư xem yêu cầu đã nhận (không có tên con, email, số điện thoại)
+GET {{api}}/connection-requests?box=received&state=open
+Authorization: Bearer {{tutorToken}}
+
+### 3. Gia sư chấp nhận -> negotiating, hạn 30 ngày
+POST {{api}}/connection-requests/{{requestId}}/accept
+Authorization: Bearer {{tutorToken}}
+
+### 4. Gia sư đề xuất điều kiện hợp tác -> 201, phiên bản 1
+POST {{api}}/connection-requests/{{requestId}}/terms
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{
+  "gradeLevelId": {{gradeLevelId}},
+  "goal": "exam_prep",
+  "teachingMode": "online",
+  "sessionPriceVnd": 250000,
+  "sessionMinutes": 90,
+  "sessionsPerWeek": 2,
+  "schedule": [{ "weekday": 2, "startTime": "18:00" }, { "weekday": 5, "startTime": "18:00" }],
+  "startDate": "2026-12-01"
+}
+
+### 5. Gia sư xác nhận phiên bản 1 (vẫn negotiating)
+POST {{api}}/connection-requests/{{requestId}}/confirm
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "version": 1 }
+
+### 6. Phụ huynh xác nhận phiên bản 1 -> confirmed; có contact và (với gia sư) learnerIdentity
+POST {{api}}/connection-requests/{{requestId}}/confirm
+Authorization: Bearer {{parentToken}}
+Content-Type: application/json
+
+{ "version": 1 }
+
+### 7. Gia sư xem chi tiết sau khi xác nhận hợp tác
+GET {{api}}/connection-requests/{{requestId}}
+Authorization: Bearer {{tutorToken}}
+
+### 8. (Thay cho 3–6) Gia sư từ chối kèm lời nhắn
+POST {{api}}/connection-requests/{{requestId}}/reject
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "note": "Lịch của tôi đã kín." }
+
+### 9. (Thay cho 3–6) Phụ huynh rút yêu cầu đang chờ / một bên hủy khi đang trao đổi
+POST {{api}}/connection-requests/{{requestId}}/cancel
+Authorization: Bearer {{parentToken}}

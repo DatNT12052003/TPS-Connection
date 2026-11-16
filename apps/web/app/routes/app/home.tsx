@@ -2,7 +2,14 @@
 // phụ huynh thấy thẻ "Con của tôi" của canvas ParentHome; học sinh thấy hồ sơ của mình (canvas StudentHome
 // chưa có lịch, điểm: G6, G7); gia sư thấy trạng thái hồ sơ, việc còn thiếu để xác minh và công tắc "Đang
 // nhận học sinh" (canvas TutorHome; lớp, lịch dạy, yêu cầu kết nối: G4 đến G7).
-import { type Learner, LearnerList, OwnTutorProfile } from '@tps/shared';
+import {
+  ConnectionRequestList,
+  ConversationList,
+  type Learner,
+  LearnerList,
+  OwnTutorProfile,
+} from '@tps/shared';
+import { ActivityCards, type ConnectionsActivity } from '~/components/connections/activity-cards';
 import { ChevronRight, Plus, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { data, Form, Link, useNavigation } from 'react-router';
@@ -13,7 +20,7 @@ import { Badge } from '~/components/ui/badge';
 import { Button, buttonVariants } from '~/components/ui/button';
 import { Card, CardHeader } from '~/components/ui/card';
 import { type CatalogOption, labelOf } from '~/lib/catalog';
-import { loadCommunes, loadGradeLevels, loadProvinces } from '~/lib/catalog.server';
+import { loadCommunes, loadGradeLevels, loadProvinces, loadSubjects } from '~/lib/catalog.server';
 import { formatDate } from '~/lib/format';
 import { initialOf, learnerName } from '~/lib/learners';
 import { messagesFromMatches } from '~/lib/meta';
@@ -33,19 +40,40 @@ export function meta({ matches }: Route.MetaArgs) {
   return [{ title: `${m.appHome.title} – ${m.common.appName}` }];
 }
 
+/**
+ * Yêu cầu đang chờ người xem và cuộc trò chuyện có tin chưa đọc (G5). Chỉ là khối phụ của trang: API lỗi thì để trống.
+ */
+async function loadActivity(context: Route.LoaderArgs['context']): Promise<ConnectionsActivity> {
+  const api = getServerApi(context);
+  const [requests, conversations] = await Promise.all([
+    api
+      .call('/api/v1/connection-requests?state=open&pageSize=50', { schema: ConnectionRequestList })
+      .then((list) => list.items.filter((r) => r.awaitingMe))
+      .catch(() => []),
+    api
+      .call('/api/v1/conversations?pageSize=10', { schema: ConversationList })
+      .then((list) => list.items.filter((c) => c.unreadCount > 0))
+      .catch(() => []),
+  ]);
+  return { awaiting: requests, unread: conversations };
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, context);
   const role = appRoleOf(user);
   const greeting = { displayName: user.displayName };
+  const { locale } = await readPreferences(request);
   if (role === 'tutor') {
-    const profile = await getServerApi(context).call('/api/v1/me/tutor-profile', {
-      schema: OwnTutorProfile,
-    });
-    return { view: 'tutor' as const, ...greeting, profile };
+    const [profile, activity, subjects, grades] = await Promise.all([
+      getServerApi(context).call('/api/v1/me/tutor-profile', { schema: OwnTutorProfile }),
+      loadActivity(context),
+      loadSubjects(context, locale),
+      loadGradeLevels(context, locale),
+    ]);
+    return { view: 'tutor' as const, ...greeting, profile, activity, subjects, grades };
   }
   if (role !== 'parent' && role !== 'student') throw data(null, { status: 404 });
 
-  const { locale } = await readPreferences(request);
   const [{ items }, gradeLevels] = await Promise.all([
     getServerApi(context).call('/api/v1/learners', { schema: LearnerList }),
     loadGradeLevels(context, locale),
@@ -54,7 +82,19 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   if (role === 'parent') {
     const learners = items.filter((learner) => learner.viewer === 'guardian');
     const deleted = new URL(request.url).searchParams.get('deleted') === '1';
-    return { view: 'parent' as const, ...greeting, learners, gradeLevels, deleted };
+    const [activity, subjects] = await Promise.all([
+      loadActivity(context),
+      loadSubjects(context, locale),
+    ]);
+    return {
+      view: 'parent' as const,
+      ...greeting,
+      learners,
+      gradeLevels,
+      deleted,
+      activity,
+      subjects,
+    };
   }
 
   const own = items.find((learner) => learner.viewer === 'student') ?? null;
@@ -105,10 +145,16 @@ function TutorHome({
   displayName,
   profile,
   formError,
+  activity,
+  subjects,
+  grades,
 }: {
   displayName: string;
   profile: OwnTutorProfile;
   formError: Message | undefined;
+  activity: ConnectionsActivity;
+  subjects: CatalogOption[];
+  grades: CatalogOption[];
 }) {
   const { t } = useTranslation();
   const tr = useMessage();
@@ -176,6 +222,8 @@ function TutorHome({
         </Card>
       )}
 
+      <ActivityCards activity={activity} subjects={subjects} grades={grades} />
+
       <Card className="gap-3 sm:p-6">
         <CardHeader>
           <h2 className="text-h3">{t('tutorHome.profileTitle')}</h2>
@@ -195,11 +243,15 @@ function ParentHome({
   learners,
   gradeLevels,
   deleted,
+  activity,
+  subjects,
 }: {
   displayName: string;
   learners: Learner[];
   gradeLevels: CatalogOption[];
   deleted: boolean;
+  activity: ConnectionsActivity;
+  subjects: CatalogOption[];
 }) {
   const { t } = useTranslation();
   return (
@@ -210,6 +262,8 @@ function ParentHome({
           {t('learnerForm.deleted')}
         </Alert>
       )}
+
+      <ActivityCards activity={activity} subjects={subjects} grades={gradeLevels} />
 
       <Card className="max-w-3xl">
         <CardHeader>

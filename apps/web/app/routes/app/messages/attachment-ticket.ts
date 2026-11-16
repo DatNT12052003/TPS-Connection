@@ -1,0 +1,42 @@
+// POST /app/messages/attachments/ticket (chỉ có action, trả JSON): xin URL tải một tệp đính kèm tin nhắn lên kho riêng
+// tư (G5, D55: ảnh hoặc PDF, tối đa 10 MB), gọi từ `lib/document-upload.ts`. Tệp không đi qua đây: trình duyệt PUT
+// thẳng lên kho bằng URL trong vé, rồi gửi `fileId` cùng tin nhắn.
+//   { fileName, contentType, sizeBytes } → vé (API POST /files/uploads, purpose message_attachment)
+// Lỗi: { message } (khóa i18n) với mã HTTP của API.
+import { UploadTicketResponse } from '@tps/shared';
+import { z } from 'zod';
+import { ApiError } from '~/lib/api';
+import { fieldErrorsFrom, formErrorFrom, type Message } from '~/lib/form';
+import { getServerApi } from '~/lib/server-api.server';
+import { requireUser } from '~/lib/session.server';
+import type { Route } from './+types/attachment-ticket';
+
+const Body = z.object({
+  fileName: z.string(),
+  contentType: z.string(),
+  sizeBytes: z.number(),
+});
+
+const failure = (message: Message, status: number) => Response.json({ message }, { status });
+
+export async function action({ request, context }: Route.ActionArgs) {
+  await requireUser(request, context, { roles: ['tutor', 'parent'] });
+  const body = Body.safeParse(await request.json().catch(() => null));
+  if (!body.success) return failure({ key: 'errors.bad_request' }, 400);
+  try {
+    const ticket = await getServerApi(context).call('/api/v1/files/uploads', {
+      method: 'POST',
+      body: { ...body.data, purpose: 'message_attachment' },
+      schema: UploadTicketResponse,
+    });
+    return Response.json(ticket);
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status === 0 || error.status >= 500) throw error;
+    const fields = fieldErrorsFrom(error, ['contentType', 'sizeBytes']);
+    return failure(fields.contentType ?? fields.sizeBytes ?? formErrorFrom(error), error.status);
+  }
+}
+
+export function loader() {
+  return new Response(null, { status: 405 });
+}

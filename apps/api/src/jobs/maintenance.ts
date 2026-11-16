@@ -10,6 +10,8 @@ export const MAINTENANCE_QUEUE = 'maintenance';
 export interface MaintenanceTasks {
   'purge-verification-documents': () => Promise<number>;
   'cleanup-stale-uploads': () => Promise<number>;
+  /** Nhắc và tự hủy yêu cầu kết nối quá hạn (C3, D30). */
+  'expire-connection-requests': () => Promise<number>;
 }
 export type MaintenanceTaskName = keyof MaintenanceTasks;
 
@@ -17,6 +19,8 @@ export type MaintenanceTaskName = keyof MaintenanceTasks;
 export const MAINTENANCE_SCHEDULE: Record<MaintenanceTaskName, string> = {
   'purge-verification-documents': '0 3 * * *',
   'cleanup-stale-uploads': '30 3 * * *',
+  // Mỗi 15 phút (docs/thiet_ke_co_so_du_lieu.md mục 13).
+  'expire-connection-requests': '*/15 * * * *',
 };
 
 export function createMaintenanceQueue(connection: ConnectionOptions): Queue {

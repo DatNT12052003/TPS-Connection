@@ -27,6 +27,16 @@ import { createFilesMaintenanceService } from './modules/files/files-maintenance
 import { createAdminAccountsService } from './modules/admin/admin-accounts.service.js';
 import { createAdminCatalogService } from './modules/admin/admin-catalog.service.js';
 import { createAccountService } from './modules/users/account.service.js';
+import { createConnectionsMaintenance } from './modules/connections/connections-maintenance.js';
+import { createConnectionsService } from './modules/connections/connections.service.js';
+import { createMessagingService } from './modules/messaging/messaging.service.js';
+import { createNotificationsService } from './modules/notifications/notifications.service.js';
+import { createSafetyService } from './modules/safety/safety.service.js';
+import {
+  createRealtimeServer,
+  type RealtimePublisher,
+  type RealtimeServer,
+} from './realtime/realtime.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -82,6 +92,24 @@ async function main() {
   }
   const emailSender = createSmtpEmailSender(env);
   const filesMaintenance = createFilesMaintenanceService({ dataSource, storage, logger });
+
+  // Realtime (G5): Socket.IO gắn vào HTTP server sau khi listen (để Express nhận request trước, Socket.IO chỉ lấy
+  // đường dẫn /socket.io). Service đẩy sự kiện qua `realtime` (null trước khi server sẵn sàng: bỏ qua).
+  let realtimeServer: RealtimeServer | null = null;
+  const realtime: RealtimePublisher = {
+    emitToUser: (userId, event, payload) =>
+      realtimeServer?.publisher.emitToUser(userId, event, payload),
+  };
+  // Thông báo (G5): module nào phát sinh sự kiện thì nhận `notifier`. `jobs` tạo ngay dưới (chỉ gọi khi gửi).
+  const notifications = createNotificationsService({
+    dataSource,
+    realtime,
+    sendEmail: (message) => jobs.enqueueEmail(message),
+    webUrl: env.WEB_URL,
+    logger,
+  });
+  const { notifier } = notifications;
+  const connectionsMaintenance = createConnectionsMaintenance({ dataSource, notifier });
   const jobs = createJobs({
     redisUrl: env.REDIS_URL,
     emailSender,
@@ -90,6 +118,7 @@ async function main() {
     maintenance: {
       'purge-verification-documents': () => filesMaintenance.purgeVerificationDocuments(),
       'cleanup-stale-uploads': () => filesMaintenance.cleanupStaleUploads(),
+      'expire-connection-requests': () => connectionsMaintenance.run(),
     },
   });
   jobs
@@ -145,6 +174,7 @@ async function main() {
     sendEmail: (message) => jobs.enqueueEmail(message),
     webUrl: env.WEB_URL,
     logger,
+    notifier,
   });
   const catalog = createCatalogService({ dataSource });
 
@@ -168,9 +198,36 @@ async function main() {
     // Bài đăng (G4).
     tutorPosts: createTutorPostsService({ dataSource, logger, publicFileUrl }),
     requestPosts: createRequestPostsService({ dataSource, logger }),
+    // Kết nối (G5).
+    connections: createConnectionsService({
+      dataSource,
+      logger,
+      publicFileUrl,
+      realtime,
+      notifier,
+    }),
+    messaging: createMessagingService({
+      dataSource,
+      files,
+      storage,
+      realtime,
+      notifier,
+      logger,
+      publicFileUrl,
+    }),
+    notifications,
+    safety: createSafetyService({ dataSource, logger, publicFileUrl }),
   });
   const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API chạy tại http://${env.HOST}:${env.PORT} (môi trường ${env.NODE_ENV})`);
+  });
+  realtimeServer = createRealtimeServer({
+    httpServer: server,
+    corsOrigins: env.CORS_ORIGINS,
+    tokens,
+    loadUser: (userId) => auth.getAuthUser(userId),
+    logger,
+    redisUrl: env.REDIS_URL,
   });
   // Request (kể cả upload body) quá 30 giây thì đóng; đọc header tối đa 20 giây.
   server.requestTimeout = 30_000;
@@ -189,7 +246,9 @@ async function main() {
     }, SHUTDOWN_TIMEOUT_MS);
     force.unref();
 
-    // Ngừng nhận request mới, chờ request đang chạy xong, rồi đóng kết nối.
+    // Ngắt socket realtime (không thì server.close chờ mãi), ngừng nhận request mới, chờ request đang chạy xong,
+    // rồi đóng kết nối.
+    void realtimeServer?.close();
     server.close(() => {
       // Worker chờ job đang chạy xong trước, rồi mới đóng các kết nối.
       void jobs

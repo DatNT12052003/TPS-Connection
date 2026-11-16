@@ -1,17 +1,17 @@
 // /tutor-posts/:postRef: một bài tuyển học sinh (canvas PostDetail, PostDetailMobile). Khách xem được (C8); SSR.
 // Slug `<tiêu-đề-không-dấu>-<mã>` (D56); vào bằng slug cũ hoặc id thì chuyển hướng 301 về slug đúng. Đăng ký học từ
-// bài (gửi yêu cầu kết nối) làm ở G5.
+// bài: phụ huynh gửi yêu cầu kết nối từ bài (G5).
 import { PublicTutorPost } from '@tps/shared';
 import { ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { data, Link, redirect, useRouteLoaderData } from 'react-router';
+import { data, Link, redirect } from 'react-router';
 import { AvatarImage } from '~/components/account/avatar-field';
+import { ConnectCta } from '~/components/connections/connect-cta';
 import { PageContainer } from '~/components/layout/page';
 import { Breadcrumbs } from '~/components/marketplace/breadcrumbs';
 import { KeyValue, KeyValueList } from '~/components/marketplace/key-value';
 import { Alert } from '~/components/ui/alert';
 import { Badge } from '~/components/ui/badge';
-import { buttonVariants } from '~/components/ui/button';
 import { Card, cardVariants } from '~/components/ui/card';
 import { ApiError } from '~/lib/api';
 import { loadAreaRefs, loadCatalogs } from '~/lib/catalog.server';
@@ -22,7 +22,6 @@ import { PATHS } from '~/lib/navigation';
 import { readPreferences } from '~/lib/preferences';
 import { getServerApi } from '~/lib/server-api.server';
 import { cn } from '~/lib/utils';
-import type { loader as rootLoader } from '~/root';
 import type { Route } from './+types/detail';
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
@@ -54,7 +53,6 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 export default function TutorPostDetailPage({ loaderData }: Route.ComponentProps) {
   const { t, i18n } = useTranslation();
   const { post, catalogs, areas } = loaderData;
-  const signedIn = Boolean(useRouteLoaderData<typeof rootLoader>('root')?.user);
 
   return (
     <PageContainer>
@@ -150,16 +148,11 @@ export default function TutorPostDetailPage({ loaderData }: Route.ComponentProps
           <Card className="gap-4 sm:p-6">
             <h2 className="text-h3">{t('postPublic.applyTitle')}</h2>
             <Alert variant="info">{t('tutorPublic.childPrivacy')}</Alert>
-            {signedIn ? (
-              <p className="text-small text-muted-foreground">{t('tutorPublic.connectSoon')}</p>
-            ) : (
-              <Link
-                to={`${PATHS.login}?redirectTo=${encodeURIComponent(`/tutor-posts/${post.slug}`)}`}
-                className={buttonVariants({ size: 'lg', block: true })}
-              >
-                {t('tutorPublic.loginToConnect')}
-              </Link>
-            )}
+            <ConnectCta
+              tutorSlug={post.tutor.slug}
+              postSlug={post.slug}
+              returnTo={`/tutor-posts/${post.slug}`}
+            />
           </Card>
         </aside>
       </div>
