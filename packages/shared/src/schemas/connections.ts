@@ -284,6 +284,8 @@ export const ConnectionRequestSummary = z.object({
   expiresAt: z.iso.datetime().nullable(),
   /** Hội thoại của yêu cầu, có từ khi bên nhận chấp nhận (D14). */
   conversationId: Id.nullable(),
+  /** Lớp hệ thống tạo khi hai bên xác nhận hợp tác (D9, G6). */
+  classId: Id.nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });

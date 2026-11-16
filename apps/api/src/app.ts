@@ -68,6 +68,12 @@ import type { NotificationsService } from './modules/notifications/notifications
 import { createSafetyController } from './modules/safety/safety.controller.js';
 import { blocksRouter, reportsRouter } from './modules/safety/safety.router.js';
 import type { SafetyService } from './modules/safety/safety.service.js';
+import { createClassesController } from './modules/classes/classes.controller.js';
+import { classesRouter } from './modules/classes/classes.router.js';
+import type { ClassesService } from './modules/classes/classes.service.js';
+import { createLessonsController } from './modules/lessons/lessons.controller.js';
+import { disputeReviewRouter, lessonsRouter } from './modules/lessons/lessons.router.js';
+import type { LessonsService } from './modules/lessons/lessons.service.js';
 import { createOpenApiDocument } from './openapi.js';
 
 export interface AppDeps {
@@ -93,6 +99,8 @@ export interface AppDeps {
   messaging: MessagingService;
   notifications: NotificationsService;
   safety: SafetyService;
+  classes: ClassesService;
+  lessons: LessonsService;
 }
 
 /** "true"/"false" -> boolean, số -> số hop proxy, còn lại (loopback, dải IP) giữ nguyên chuỗi. */
@@ -161,6 +169,14 @@ export function createApp(deps: AppDeps): Express {
       authenticate(),
     ),
   );
+  // Trước router /admin (router đó chỉ cho admin).
+  api.use(
+    '/admin/attendance-disputes',
+    disputeReviewRouter(
+      createLessonsController({ lessons: deps.lessons, classes: deps.classes }),
+      authenticate(),
+    ),
+  );
   api.use(
     '/admin',
     adminRouter(
@@ -200,6 +216,16 @@ export function createApp(deps: AppDeps): Express {
   const safetyController = createSafetyController(deps.safety);
   api.use('/me/blocks', blocksRouter(safetyController, deps.rateLimiter, authenticate()));
   api.use('/reports', reportsRouter(safetyController, deps.rateLimiter, authenticate()));
+  // Lớp học, lịch, buổi học (G6).
+  const lessonsController = createLessonsController({
+    lessons: deps.lessons,
+    classes: deps.classes,
+  });
+  api.use(
+    '/classes',
+    classesRouter(createClassesController(deps.classes), authenticate(), lessonsController),
+  );
+  api.use('/lessons', lessonsRouter(lessonsController, authenticate()));
   const accountController = createAccountController(deps.account);
   // Sau /me/parent-profile, /me/tutor-profile: router này chỉ khớp /me và /me/avatar.
   api.use('/me', accountRouter(accountController, authenticate()));

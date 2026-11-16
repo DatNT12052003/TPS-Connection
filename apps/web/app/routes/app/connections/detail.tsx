@@ -512,7 +512,16 @@ export default function ConnectionDetailPage({ loaderData, actionData }: Route.C
                   <LearnerIdentity identity={detail.learnerIdentity} />
                 </>
               )}
-              <p className="text-small text-muted-foreground">{t('connections.classNext')}</p>
+              {detail.classId ? (
+                <Link
+                  to={`${PATHS.classes}/${detail.classId}`}
+                  className={buttonVariants({ className: 'self-start' })}
+                >
+                  {t('connections.goToClass')}
+                </Link>
+              ) : (
+                <p className="text-small text-muted-foreground">{t('connections.classNext')}</p>
+              )}
             </Card>
           )}
 

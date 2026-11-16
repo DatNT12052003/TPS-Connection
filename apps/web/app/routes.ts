@@ -56,6 +56,12 @@ export default [
     route('requests', 'routes/app/requests/index.tsx'),
     route('requests/new', 'routes/app/requests/new.tsx'),
     route('requests/:postId/edit', 'routes/app/requests/edit.tsx'),
+    // Lớp học, lịch, buổi học, điểm (G6).
+    route('classes', 'routes/app/classes/index.tsx'),
+    route('classes/:classId', 'routes/app/classes/detail.tsx'),
+    route('classes/:classId/lessons/:lessonId', 'routes/app/classes/lesson.tsx'),
+    route('schedule', 'routes/app/schedule.tsx'),
+    route('grades', 'routes/app/grades.tsx'),
     route('*', 'routes/app/not-found.tsx'),
   ]),
 
@@ -73,6 +79,9 @@ export default [
       route(':userId', 'routes/admin/accounts/detail.tsx'),
     ]),
     route('catalog', 'routes/admin/catalog/index.tsx'),
+    // Manager: tranh chấp buổi học (G6).
+    route('disputes', 'routes/admin/disputes/index.tsx'),
+    route('disputes/:disputeId', 'routes/admin/disputes/detail.tsx'),
     route('*', 'routes/admin/not-found.tsx'),
   ]),
 

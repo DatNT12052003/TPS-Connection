@@ -41,6 +41,8 @@ import {
 } from '../../src/modules/notifications/notifications.service.js';
 import { noopRealtime } from '../../src/realtime/realtime.js';
 import type { SafetyService } from '../../src/modules/safety/safety.service.js';
+import type { ClassesService } from '../../src/modules/classes/classes.service.js';
+import type { LessonsService } from '../../src/modules/lessons/lessons.service.js';
 import type { TutorPostsService } from '../../src/modules/tutor-posts/tutor-posts.service.js';
 import { createCatalogService } from '../../src/modules/catalog/catalog.service.js';
 import { createFilesService } from '../../src/modules/files/files.service.js';
@@ -189,6 +191,8 @@ beforeAll(async () => {
     messaging: {} as MessagingService,
     notifications: {} as NotificationsService,
     safety: {} as SafetyService,
+    classes: {} as ClassesService,
+    lessons: {} as LessonsService,
   });
 });
 

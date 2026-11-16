@@ -1,4 +1,5 @@
-// /app: trang tổng quan theo vai trò. Bản tối thiểu của G2 (ke_hoach_trien_khai.md, "Còn lại của G2"):
+// /app: trang tổng quan theo vai trò. G6: buổi cần điểm danh / cần xác nhận và lịch 7 ngày tới cho cả ba vai trò.
+// Bản tối thiểu của G2 (ke_hoach_trien_khai.md, "Còn lại của G2"):
 // phụ huynh thấy thẻ "Con của tôi" của canvas ParentHome; học sinh thấy hồ sơ của mình (canvas StudentHome
 // chưa có lịch, điểm: G6, G7); gia sư thấy trạng thái hồ sơ, việc còn thiếu để xác minh và công tắc "Đang
 // nhận học sinh" (canvas TutorHome; lớp, lịch dạy, yêu cầu kết nối: G4 đến G7).
@@ -7,8 +8,10 @@ import {
   ConversationList,
   type Learner,
   LearnerList,
+  LessonList,
   OwnTutorProfile,
 } from '@tps/shared';
+import { LessonCards, type LessonActivity } from '~/components/classes/lesson-cards';
 import { ActivityCards, type ConnectionsActivity } from '~/components/connections/activity-cards';
 import { ChevronRight, Plus, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -58,19 +61,46 @@ async function loadActivity(context: Route.LoaderArgs['context']): Promise<Conne
   return { awaiting: requests, unread: conversations };
 }
 
+/** Buổi cần làm và buổi 7 ngày tới (G6). Khối phụ: API lỗi thì để trống. */
+async function loadLessons(
+  context: Route.LoaderArgs['context'],
+  withTodo: boolean,
+): Promise<LessonActivity> {
+  const api = getServerApi(context);
+  const now = Date.now();
+  const range = new URLSearchParams({
+    from: new Date(now).toISOString(),
+    to: new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  });
+  const [todo, upcoming] = await Promise.all([
+    withTodo
+      ? api
+          .call('/api/v1/lessons/todo', { schema: LessonList })
+          .then((list) => list.items)
+          .catch(() => [])
+      : Promise.resolve([]),
+    api
+      .call(`/api/v1/lessons?${range.toString()}`, { schema: LessonList })
+      .then((list) => list.items.filter((l) => l.status === 'scheduled'))
+      .catch(() => []),
+  ]);
+  return { todo, upcoming };
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, context);
   const role = appRoleOf(user);
   const greeting = { displayName: user.displayName };
   const { locale } = await readPreferences(request);
   if (role === 'tutor') {
-    const [profile, activity, subjects, grades] = await Promise.all([
+    const [profile, activity, subjects, grades, lessons] = await Promise.all([
       getServerApi(context).call('/api/v1/me/tutor-profile', { schema: OwnTutorProfile }),
       loadActivity(context),
       loadSubjects(context, locale),
       loadGradeLevels(context, locale),
+      loadLessons(context, true),
     ]);
-    return { view: 'tutor' as const, ...greeting, profile, activity, subjects, grades };
+    return { view: 'tutor' as const, ...greeting, profile, activity, subjects, grades, lessons };
   }
   if (role !== 'parent' && role !== 'student') throw data(null, { status: 404 });
 
@@ -82,9 +112,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   if (role === 'parent') {
     const learners = items.filter((learner) => learner.viewer === 'guardian');
     const deleted = new URL(request.url).searchParams.get('deleted') === '1';
-    const [activity, subjects] = await Promise.all([
+    const [activity, subjects, lessons] = await Promise.all([
       loadActivity(context),
       loadSubjects(context, locale),
+      loadLessons(context, true),
     ]);
     return {
       view: 'parent' as const,
@@ -94,15 +125,27 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       deleted,
       activity,
       subjects,
+      lessons,
     };
   }
 
   const own = items.find((learner) => learner.viewer === 'student') ?? null;
-  const [provinces, communes] = await Promise.all([
+  const [provinces, communes, subjects, lessons] = await Promise.all([
     loadProvinces(context, locale),
     loadCommunes(context, locale, own?.provinceId ?? null),
+    loadSubjects(context, locale),
+    loadLessons(context, false),
   ]);
-  return { view: 'student' as const, ...greeting, own, gradeLevels, provinces, communes };
+  return {
+    view: 'student' as const,
+    ...greeting,
+    own,
+    gradeLevels,
+    provinces,
+    communes,
+    subjects,
+    lessons,
+  };
 }
 
 /** Gia sư bật/tắt "Đang nhận học sinh" (API chỉ có PUT cả hồ sơ: đọc hồ sơ rồi gửi lại với giá trị mới). */
@@ -148,6 +191,7 @@ function TutorHome({
   activity,
   subjects,
   grades,
+  lessons,
 }: {
   displayName: string;
   profile: OwnTutorProfile;
@@ -155,6 +199,7 @@ function TutorHome({
   activity: ConnectionsActivity;
   subjects: CatalogOption[];
   grades: CatalogOption[];
+  lessons: LessonActivity;
 }) {
   const { t } = useTranslation();
   const tr = useMessage();
@@ -222,6 +267,8 @@ function TutorHome({
         </Card>
       )}
 
+      <LessonCards activity={lessons} role="tutor" subjects={subjects} />
+
       <ActivityCards activity={activity} subjects={subjects} grades={grades} />
 
       <Card className="gap-3 sm:p-6">
@@ -245,6 +292,7 @@ function ParentHome({
   deleted,
   activity,
   subjects,
+  lessons,
 }: {
   displayName: string;
   learners: Learner[];
@@ -252,6 +300,7 @@ function ParentHome({
   deleted: boolean;
   activity: ConnectionsActivity;
   subjects: CatalogOption[];
+  lessons: LessonActivity;
 }) {
   const { t } = useTranslation();
   return (
@@ -262,6 +311,8 @@ function ParentHome({
           {t('learnerForm.deleted')}
         </Alert>
       )}
+
+      <LessonCards activity={lessons} role="parent" subjects={subjects} />
 
       <ActivityCards activity={activity} subjects={subjects} grades={gradeLevels} />
 
@@ -362,12 +413,16 @@ function StudentHome({
   gradeLevels,
   provinces,
   communes,
+  subjects,
+  lessons,
 }: {
   displayName: string;
   own: Learner | null;
   gradeLevels: CatalogOption[];
   provinces: CatalogOption[];
   communes: CatalogOption[];
+  subjects: CatalogOption[];
+  lessons: LessonActivity;
 }) {
   const { t, i18n } = useTranslation();
   const area = [labelOf(provinces, own?.provinceId), labelOf(communes, own?.communeId)]
@@ -390,6 +445,7 @@ function StudentHome({
   return (
     <PageContainer>
       <h1 className="text-h1">{t('appHome.hello', { name: displayName })}</h1>
+      <LessonCards activity={lessons} role="student" subjects={subjects} />
       <Card className="max-w-2xl">
         <h2 className="text-h3">{t('studentHome.profileTitle')}</h2>
         {own ? (

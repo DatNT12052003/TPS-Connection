@@ -47,4 +47,5 @@ export type AuditAction =
   | 'catalog.subject_created'
   | 'catalog.subject_updated'
   | 'catalog.grade_level_created'
-  | 'catalog.grade_level_updated';
+  | 'catalog.grade_level_updated'
+  | 'attendance_dispute.resolved';

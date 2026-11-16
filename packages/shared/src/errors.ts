@@ -34,6 +34,10 @@ export const ErrorCode = z.enum([
   'terms_outdated',
   // Nhắn tin (G5): hội thoại chỉ còn xem được (yêu cầu kết nối đã hủy, D32).
   'conversation_closed',
+  // Lớp học (G6): hồ sơ con còn lớp đang học hoặc tạm nghỉ nên chưa xóa được (C2); đã có một đề xuất đổi học phí
+  // đang chờ phụ huynh trả lời (D17).
+  'learner_in_class',
+  'fee_change_pending',
   'internal_error',
   'service_unavailable',
 ]);
@@ -65,6 +69,8 @@ export const ERROR_HTTP_STATUS = {
   tutor_not_accepting: 409,
   terms_outdated: 409,
   conversation_closed: 409,
+  learner_in_class: 409,
+  fee_change_pending: 409,
   internal_error: 500,
   service_unavailable: 503,
 } as const satisfies Record<ErrorCode, number>;

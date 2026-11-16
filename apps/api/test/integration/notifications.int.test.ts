@@ -38,6 +38,8 @@ import { createNotificationsService } from '../../src/modules/notifications/noti
 import type { ParentsService } from '../../src/modules/parents/parents.service.js';
 import { createRequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
 import { createSafetyService } from '../../src/modules/safety/safety.service.js';
+import type { ClassesService } from '../../src/modules/classes/classes.service.js';
+import type { LessonsService } from '../../src/modules/lessons/lessons.service.js';
 import type { TutorPostsService } from '../../src/modules/tutor-posts/tutor-posts.service.js';
 import type { TutorsService } from '../../src/modules/tutors/tutors.service.js';
 import type { AccountService } from '../../src/modules/users/account.service.js';
@@ -145,6 +147,8 @@ beforeAll(async () => {
     }),
     notifications,
     safety: createSafetyService({ dataSource: db, logger: silentLogger, publicFileUrl }),
+    classes: {} as ClassesService,
+    lessons: {} as LessonsService,
   });
 });
 

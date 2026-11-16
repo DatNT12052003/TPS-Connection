@@ -260,6 +260,7 @@ describe('tutor overview', () => {
       displayName: 'Thầy A',
       profile: tutorProfile({ missingForVerification: ['rate'] }),
       activity: { awaiting: [], unread: [] },
+      lessons: { todo: [], upcoming: [] },
       subjects: [],
       grades: [],
     });

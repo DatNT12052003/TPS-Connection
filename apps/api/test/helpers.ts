@@ -20,6 +20,8 @@ import type { ConnectionsService } from '../src/modules/connections/connections.
 import type { MessagingService } from '../src/modules/messaging/messaging.service.js';
 import type { NotificationsService } from '../src/modules/notifications/notifications.service.js';
 import type { SafetyService } from '../src/modules/safety/safety.service.js';
+import type { ClassesService } from '../src/modules/classes/classes.service.js';
+import type { LessonsService } from '../src/modules/lessons/lessons.service.js';
 
 export const silentLogger = createLogger({ LOG_LEVEL: 'silent', NODE_ENV: 'test' });
 
@@ -66,5 +68,7 @@ export function createTestApp(health?: Partial<HealthService>, auth?: Partial<Au
     messaging: {} as MessagingService,
     notifications: {} as NotificationsService,
     safety: {} as SafetyService,
+    classes: {} as ClassesService,
+    lessons: {} as LessonsService,
   });
 }

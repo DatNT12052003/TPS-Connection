@@ -6,7 +6,7 @@
 // Chấp nhận thì mở hội thoại trong cùng transaction (D14, đợt 2); hủy thì hội thoại chỉ còn xem (D32, suy ra từ
 // trạng thái yêu cầu ở module messaging). Thông báo (đợt 3) ghi trong cùng transaction: yêu cầu mới (bên nhận), được
 // chấp nhận / bị từ chối (bên gửi), xác nhận hợp tác (bên còn lại); đẩy đi sau commit. Hủy và hết hạn không thông báo
-// (nhắc trước hạn do job). Chưa làm: tạo lớp khi xác nhận hợp tác (G6).
+// (nhắc trước hạn do job). Xác nhận hợp tác tạo lớp trong cùng transaction (D9, G6).
 import {
   CONNECTION_LIMITS,
   type ConnectionEvent,
@@ -31,6 +31,7 @@ import { AppError, forbidden, invalidStateTransition, notFound } from '../../lib
 import type { Logger } from '../../lib/logger.js';
 import { assertCatalogRefs } from '../catalog/catalog-checks.js';
 import { noopRealtime, type RealtimePublisher } from '../../realtime/realtime.js';
+import { createClassesRepository } from '../classes/classes.repository.js';
 import { createLearnerAccess } from '../learners/learner-access.js';
 import { createMessagingRepository } from '../messaging/messaging.repository.js';
 import {
@@ -172,6 +173,7 @@ export function createConnectionsService(deps: {
       requestPostId: request.requestPostId,
       expiresAt: isOpen(request) ? request.expiresAt.toISOString() : null,
       conversationId: display.conversationId,
+      classId: display.classId,
       createdAt: request.createdAt.toISOString(),
       updatedAt: request.updatedAt.toISOString(),
     };
@@ -582,8 +584,8 @@ export function createConnectionsService(deps: {
     /**
      * Xác nhận hợp tác theo phiên bản `version` (phải là phiên bản mới nhất, khác: 409 `terms_outdated`). Khi phiên
      * bản có đủ xác nhận của hai bên, trong cùng transaction: yêu cầu sang `confirmed`, chốt `agreed_terms_id`; nếu
-     * yêu cầu đến từ bài tìm gia sư thì đóng bài (`found_tutor`) và hủy các ứng tuyển còn chờ của bài (D31). Tạo lớp
-     * ở G6.
+     * yêu cầu đến từ bài tìm gia sư thì đóng bài (`found_tutor`) và hủy các ứng tuyển còn chờ của bài (D31); tạo lớp,
+     * ghi danh và mức học phí đầu tiên từ phiên bản đã chốt (D9, B.5.1).
      */
     async confirm(
       actor: ConnectionActor,
@@ -635,6 +637,20 @@ export function createConnectionsService(deps: {
           fromStatus: 'negotiating',
           toStatus: 'confirmed',
           data: { version },
+        });
+        await createClassesRepository(manager).createFromTerms({
+          requestId: request.id,
+          tutorId: request.tutorId,
+          clientUserId: request.clientUserId,
+          learnerId: request.learnerId,
+          termsId: latest.id,
+          termsProposedBy: latest.proposedBy,
+          subjectId: latest.subjectId,
+          gradeLevelId: latest.gradeLevelId,
+          teachingMode: latest.teachingMode,
+          sessionPriceVnd: Number(latest.sessionPriceVnd),
+          sessionMinutes: latest.sessionMinutes,
+          startDate: latest.startDate,
         });
         if (request.requestPostId) {
           await createRequestPostsRepository(manager).closeFoundTutor(request.requestPostId);
