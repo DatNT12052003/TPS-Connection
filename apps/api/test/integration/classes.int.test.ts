@@ -640,12 +640,19 @@ describe('deleting a learner with classes', () => {
 // ---- Migration tạo lớp cho yêu cầu đã xác nhận trước G6 --------------------------------------------------
 
 describe('migration backfill', () => {
-  // Chạy sau cùng: gỡ migration buổi học và lớp học (xóa mọi lớp) rồi chạy lại.
+  // Chạy sau cùng: gỡ migration lớp học và các migration sau nó (xóa mọi lớp) rồi chạy lại.
   it('creates a class for every confirmed request', async () => {
     const { tutor, requestId } = await confirmedClass();
-    // Gỡ CreateLessons rồi CreateTeachingClasses, chạy lại cả hai.
-    await db.undoLastMigration();
-    await db.undoLastMigration();
+    // Gỡ các migration từ CreateTeachingClasses trở về sau (mới nhất trước), chạy lại.
+    while (
+      (
+        await db.query<{ name: string }[]>(
+          `SELECT name FROM typeorm_migrations WHERE name LIKE 'CreateTeachingClasses%'`,
+        )
+      ).length > 0
+    ) {
+      await db.undoLastMigration();
+    }
     await db.runMigrations();
     const [row] = await db.query<{ n: number }[]>(
       `SELECT count(*)::int AS n FROM connection_requests r

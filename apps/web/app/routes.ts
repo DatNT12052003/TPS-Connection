@@ -62,6 +62,9 @@ export default [
     route('classes/:classId/lessons/:lessonId', 'routes/app/classes/lesson.tsx'),
     route('schedule', 'routes/app/schedule.tsx'),
     route('grades', 'routes/app/grades.tsx'),
+    // Học phí (G7).
+    route('fees', 'routes/app/fees/index.tsx'),
+    route('fees/:enrollmentId', 'routes/app/fees/detail.tsx'),
     route('*', 'routes/app/not-found.tsx'),
   ]),
 

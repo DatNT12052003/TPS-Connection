@@ -385,6 +385,22 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 
 **Hoàn thành khi:** số liệu học phí khớp với lịch sử buổi học trong các test có buổi vắng, hủy muộn, học bù và khiếu nại.
 
+**Tiến độ:** làm theo hai đợt, **xong ngày 2026-11-16** (type-check, lint, build, toàn bộ test đều qua; trang web chưa thử tay trên trình duyệt).
+
+- **Đợt 1, database, API, job:** bảng `fee_statements`, `fee_statement_items`, `payments` (migration `CreateFeeStatements`, thêm loại thông báo `fee_statement`).
+  - Job `fee-statements` (hằng ngày 07:00) lập bảng tháng trước cho từng học sinh trong từng lớp (D23) từ các buổi đã chốt (xác nhận, tự chốt, Manager quyết định) và tính tiền (`held` + có mặt, C5) chưa thuộc bảng nào, với số tiền chụp lúc điểm danh (D17); buổi chốt muộn vào bảng tháng sau, không bao giờ tính hai lần (unique một phần trên `attendance_id`). Hạn ngày 5 tháng kế tiếp (D24); báo phụ huynh khi lập bảng và nhắc một lần khi đến hạn mà chưa trả đủ.
+  - API `/api/v1/fees`: tổng hợp tháng qua mọi lớp (`/overview?month=&as=`: số buổi theo trạng thái, bảng của tháng hoặc tạm tính, khoản chờ tôi xác nhận ở mọi tháng, số còn chưa trả các tháng khác), đối chiếu tháng của một học sinh (`/enrollments/:id?month=`: mọi buổi trong tháng kèm điểm danh, xác nhận, trạng thái tính tiền, kể cả buổi không tính tiền, hủy muộn, buổi tháng trước chốt muộn), ghi nhận thanh toán (một bên ghi nhận, bên kia xác nhận hoặc báo chưa nhận được, người ghi nhận hủy; chỉ khoản đã xác nhận được tính, D41; không vượt phần còn lại), gia sư hủy bảng để lập lại (B.10.1). Học sinh: 403; người ngoài: 404.
+  - Test: `apps/api/test/integration/fees.int.test.ts` (một tháng có buổi có mặt, tự chốt, vắng có báo, khiếu nại, hủy muộn, học bù sau khi tăng học phí, gia sư vắng); thử tay: `apps/api/http/fees.http`.
+- **Đợt 2, trang web** (canvas Tuition, TuitionTutor, TuitionMobile): `/app/fees?month=` (phụ huynh: thẻ từng bảng; gia sư: bảng tổng hợp; khoản chờ mình xác nhận), `/app/fees/:enrollmentId?month=` (bảng học phí, các buổi và lý do không tính tiền, thanh toán, `?pay=1` ghi nhận, `?void=1` gia sư hủy bảng), khối học phí trên trang tổng quan của phụ huynh và gia sư, liên kết từ trang lớp (tab học phí) và danh sách lớp, nội dung thông báo `fee_statement`. Test: `apps/web/app/routes/app/fees/fee-pages.test.ts`, `apps/web/app/lib/fees.test.ts`.
+- **Giả định đã chọn (owner xem lại nếu cần):**
+  - Thêm trạng thái thanh toán `declined` ("Chưa nhận được" trên canvas TuitionTutor); khoản bị báo chưa nhận không được tính, người trả ghi nhận lại nếu cần.
+  - Không lập bảng cho học sinh không có buổi nào tính tiền (bảng 0đ không có ý nghĩa); số buổi không tính tiền vẫn xem được ở trang đối chiếu tháng.
+  - Job chạy hằng ngày (không chỉ ngày 1) để bù lần chạy bị lỡ; bảng lập sau ngày 5 có hạn là ngày lập và không nhắc đến hạn riêng.
+  - Hủy bảng lập lại ngay bảng mới của cùng tháng từ các buổi đã chốt tới lúc đó (buổi khiếu nại vừa giải quyết vào luôn bảng này); khoản đang chờ xác nhận bị hủy theo. Chỉ hủy được khi chưa có khoản nào được xác nhận.
+  - Ghi nhận thanh toán không cần tài khoản `active` và vẫn làm được khi lớp đã kết thúc (đối chiếu sau khi kết thúc lớp).
+  - Gia sư không có mục "Học phí" trên thanh điều hướng (canvas không có); vào từ danh sách lớp, trang lớp, trang tổng quan.
+- **Chưa làm, chuyển sau:** dòng điều chỉnh (`adjustment`: giảm giá, phụ thu, D40) chưa có giao diện và API thêm dòng; OpenAPI cho endpoint G7 (như G5, G6); ẩn danh học phí khi tài khoản bị xóa (G8, D19).
+
 ### Giai đoạn 8. An toàn, kiểm duyệt và hoàn thiện ra mắt
 
 **Mục tiêu:** nền tảng đủ an toàn và ổn định để có người dùng thật.

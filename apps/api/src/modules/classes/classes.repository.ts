@@ -225,13 +225,24 @@ export function createClassesRepository(manager: EntityManager) {
       return rows.map(toClassRow);
     },
 
-    /** Mọi dòng "lớp × học sinh" U được xem (lịch học, việc cần làm). Lọc theo lớp, theo con nếu có. */
+    /**
+     * Mọi dòng "lớp × học sinh" U được xem (lịch học, việc cần làm, học phí). Lọc theo lớp, theo con, theo ghi danh
+     * nếu có.
+     */
     async allVisibleRows(
       userId: string,
-      filter: { classId?: string | undefined; learnerId?: string | undefined } = {},
+      filter: {
+        classId?: string | undefined;
+        learnerId?: string | undefined;
+        enrollmentId?: string | undefined;
+      } = {},
     ): Promise<ClassRow[]> {
       const params: unknown[] = [userId];
       let condition = '';
+      if (filter.enrollmentId) {
+        params.push(filter.enrollmentId);
+        condition += ` AND e.id = $${params.length}`;
+      }
       if (filter.classId) {
         params.push(filter.classId);
         condition += ` AND c.id = $${params.length}`;

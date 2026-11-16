@@ -1,0 +1,56 @@
+# Thử tay học phí (G7) bằng extension REST Client (humao.rest-client) trong VS Code.
+# Cần một lớp có buổi đã điểm danh và được xác nhận (chạy classes.http, lessons.http). Bảng học phí do job
+# `fee-statements` lập lúc 07:00 hằng ngày cho tháng trước; muốn thử ngay thì dời vài buổi đã chốt về tháng trước
+# trong database rồi khởi động lại API với WORKERS_ENABLED=true (job chạy theo lịch), hoặc chạy test
+# apps/api/test/integration/fees.int.test.ts. `statementId` và `paymentId` có trong kết quả bước 2.
+#
+# Cần chạy trước: npm run infra:up  và  npm run dev -w @tps/api
+
+@api = http://127.0.0.1:3000/api/v1
+@parentToken = dán-access-token-của-phụ-huynh
+@tutorToken = dán-access-token-của-gia-sư
+@enrollmentId = dán-enrollmentId
+@month = 2026-10
+@statementId = dán-id-bảng-học-phí
+@paymentId = dán-id-khoản-thanh-toán
+
+### 1. Tổng hợp tháng của gia sư (mọi lớp; khoản chờ mình xác nhận ở mọi tháng)
+GET {{api}}/fees/overview?month={{month}}&as=tutor
+Authorization: Bearer {{tutorToken}}
+
+### 2. Đối chiếu tháng của một học sinh (mọi buổi, bảng học phí, các khoản thanh toán)
+GET {{api}}/fees/enrollments/{{enrollmentId}}?month={{month}}
+Authorization: Bearer {{parentToken}}
+
+### 3. Xem theo id bảng (bảng đã hủy: trả bảng hiện hành của tháng đó)
+GET {{api}}/fees/statements/{{statementId}}
+Authorization: Bearer {{tutorToken}}
+
+### 4. Phụ huynh ghi nhận đã trả (chỉ được tính khi gia sư xác nhận)
+POST {{api}}/fees/statements/{{statementId}}/payments
+Authorization: Bearer {{parentToken}}
+Content-Type: application/json
+
+{ "amountVnd": 500000, "method": "bank_transfer", "paidOn": "2026-11-05", "reference": "CK 123" }
+
+### 5. Gia sư xác nhận đã nhận
+POST {{api}}/fees/statements/{{statementId}}/payments/{{paymentId}}/acknowledge
+Authorization: Bearer {{tutorToken}}
+
+### 6. Gia sư báo chưa nhận được
+POST {{api}}/fees/statements/{{statementId}}/payments/{{paymentId}}/decline
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "note": "Chưa thấy tiền về tài khoản" }
+
+### 7. Người ghi nhận hủy khoản của mình (khi bên kia chưa trả lời)
+POST {{api}}/fees/statements/{{statementId}}/payments/{{paymentId}}/void
+Authorization: Bearer {{parentToken}}
+
+### 8. Gia sư hủy bảng để lập lại (chỉ khi chưa có khoản nào được xác nhận)
+POST {{api}}/fees/statements/{{statementId}}/void
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "reason": "Thêm buổi vừa thống nhất khiếu nại" }

@@ -16,6 +16,8 @@ export interface MaintenanceTasks {
   'generate-lessons': () => Promise<number>;
   /** Nhắc buổi sắp tới, nhắc điểm danh, nhắc và tự chốt xác nhận, chuyển khiếu nại cho Manager (C5, D36). */
   'lessons-maintenance': () => Promise<number>;
+  /** Lập bảng học phí tháng trước, nhắc học phí đến hạn (C6, D24, D40). */
+  'fee-statements': () => Promise<number>;
 }
 export type MaintenanceTaskName = keyof MaintenanceTasks;
 
@@ -27,6 +29,8 @@ export const MAINTENANCE_SCHEDULE: Record<MaintenanceTaskName, string> = {
   'expire-connection-requests': '*/15 * * * *',
   'generate-lessons': '15 1 * * *',
   'lessons-maintenance': '*/15 * * * *',
+  // Sau 00:00 ngày 1 để tháng trước đã khép lại; chạy hằng ngày để bù lần chạy bị lỡ.
+  'fee-statements': '0 7 * * *',
 };
 
 export function createMaintenanceQueue(connection: ConnectionOptions): Queue {

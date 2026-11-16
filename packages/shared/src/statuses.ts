@@ -334,8 +334,32 @@ export type AssessmentKind = z.infer<typeof AssessmentKind>;
 export const FeeStatementStatus = z.enum(['draft', 'issued', 'partially_paid', 'paid', 'void']);
 export type FeeStatementStatus = z.infer<typeof FeeStatementStatus>;
 
-/** `payments.status` (B.10.2). Chỉ `acknowledged` được tính là đã trả (D41). */
-export const PaymentStatus = z.enum(['recorded', 'acknowledged', 'voided']);
+/**
+ * Trạng thái tính tiền của một buổi trong đối chiếu học phí (API, không phải cột DB):
+ * - `billed`: đã vào một bảng học phí (`billedIn` là tháng của bảng);
+ * - `billable`: đã chốt và tính tiền, sẽ vào bảng học phí kế tiếp;
+ * - `pending_confirmation`: chờ phụ huynh xác nhận (tiền là tạm tính);
+ * - `disputed`: đang khiếu nại, tạm chưa tính (C5);
+ * - `not_billable`: đã chốt nhưng không tính tiền (vắng, gia sư vắng);
+ * - `cancelled`: buổi bị hủy; `not_recorded`: đã đến giờ mà chưa điểm danh; `upcoming`: chưa diễn ra.
+ */
+export const FeeLineState = z.enum([
+  'billed',
+  'billable',
+  'pending_confirmation',
+  'disputed',
+  'not_billable',
+  'cancelled',
+  'not_recorded',
+  'upcoming',
+]);
+export type FeeLineState = z.infer<typeof FeeLineState>;
+
+/**
+ * `payments.status` (B.10.2). Chỉ `acknowledged` được tính là đã trả (D41). `declined`: bên còn lại báo "chưa nhận
+ * được" (canvas TuitionTutor); `voided`: bên ghi nhận tự hủy, hoặc bảng học phí bị hủy để lập lại.
+ */
+export const PaymentStatus = z.enum(['recorded', 'acknowledged', 'declined', 'voided']);
 export type PaymentStatus = z.infer<typeof PaymentStatus>;
 
 /** `payments.method`. */
@@ -387,6 +411,8 @@ export const NotificationType = z.enum([
   'lesson_to_confirm',
   'lesson_dispute',
   'assessment_new',
+  // Học phí (G7)
+  'fee_statement',
 ]);
 export type NotificationType = z.infer<typeof NotificationType>;
 
@@ -462,6 +488,7 @@ export const LABELLED_ENUMS = {
   attendanceDisputeStatus: AttendanceDisputeStatus,
   assessmentKind: AssessmentKind,
   feeStatementStatus: FeeStatementStatus,
+  feeLineState: FeeLineState,
   paymentStatus: PaymentStatus,
   paymentMethod: PaymentMethod,
   violationReportStatus: ViolationReportStatus,

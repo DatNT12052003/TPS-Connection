@@ -3,6 +3,7 @@
 import type { Notification } from '@tps/shared';
 import type { TFunction } from 'i18next';
 import { type CatalogOption, labelOf } from './catalog';
+import { shortMonth } from './fees';
 import { formatDateTime } from './format';
 
 export function notificationText(
@@ -73,6 +74,26 @@ export function notificationText(
       break;
     case 'assessment_new':
       return t('notificationText.assessmentNew', values);
+    case 'fee_statement': {
+      const fee = { ...values, month: shortMonth(notification.data.month) };
+      switch (notification.data.event) {
+        case 'issued':
+          return t('notificationText.feeIssued', fee);
+        case 'due':
+          return t('notificationText.feeDue', fee);
+        case 'voided':
+          return t('notificationText.feeVoided', fee);
+        case 'payment_recorded':
+          return t('notificationText.paymentRecorded', fee);
+        case 'payment_acknowledged':
+          return t('notificationText.paymentAcknowledged', fee);
+        case 'payment_declined':
+          return t('notificationText.paymentDeclined', fee);
+        case 'payment_voided':
+          return t('notificationText.paymentVoided', fee);
+      }
+      break;
+    }
     case 'lesson_upcoming':
     case 'lesson_changed':
     case 'attendance_reminder':

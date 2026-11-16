@@ -18,6 +18,7 @@ import {
   Star,
   User,
   Users,
+  Wallet,
 } from 'lucide-react';
 
 export type NavLabelKey = Extract<ParseKeys, `nav.${string}`>;
@@ -80,6 +81,8 @@ export const PATHS = {
   classes: '/app/classes',
   schedule: '/app/schedule',
   grades: '/app/grades',
+  // Học phí (G7).
+  fees: '/app/fees',
   adminDisputes: '/admin/disputes',
 } as const;
 
@@ -126,7 +129,7 @@ export const APP_NAV: Record<AppRole, NavConfig> = {
       item(PATHS.findTutors, 'nav.findTutors', Search),
       item(PATHS.connections, 'nav.connections', MessageSquare),
       item(PATHS.classes, 'nav.classes', BookOpen),
-      item('/app/fees', 'nav.fees', FileText),
+      item(PATHS.fees, 'nav.fees', Wallet),
     ],
     mobile: [
       item('/app', 'nav.home', Home, true),

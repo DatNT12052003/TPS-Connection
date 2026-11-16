@@ -38,12 +38,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     }),
     loadSubjects(context, locale),
   ]);
-  return { list, subjects, state, isTutor: user.roles.includes('tutor') };
+  return {
+    list,
+    subjects,
+    state,
+    isTutor: user.roles.includes('tutor'),
+    hasFees: user.roles.includes('tutor') || user.roles.includes('parent'),
+  };
 }
 
 export default function ClassesPage({ loaderData }: Route.ComponentProps) {
   const { t, i18n } = useTranslation();
-  const { list, subjects, state, isTutor } = loaderData;
+  const { list, subjects, state, isTutor, hasFees } = loaderData;
   const tab = (active: boolean) =>
     cn(
       'inline-flex min-h-control-md items-center border-b-2 px-3 font-semibold no-underline',
@@ -59,9 +65,16 @@ export default function ClassesPage({ loaderData }: Route.ComponentProps) {
           <h1 className="text-h1">{t('classes.title')}</h1>
           <p className="text-muted-foreground">{t('classes.lead')}</p>
         </div>
-        <Link to={PATHS.schedule} className={buttonVariants({ variant: 'secondary' })}>
-          {t('classes.openSchedule')}
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {hasFees && (
+            <Link to={PATHS.fees} className={buttonVariants({ variant: 'secondary' })}>
+              {t('fees.title')}
+            </Link>
+          )}
+          <Link to={PATHS.schedule} className={buttonVariants({ variant: 'secondary' })}>
+            {t('classes.openSchedule')}
+          </Link>
+        </div>
       </div>
 
       <nav aria-label={t('classes.stateFilter')} className="flex gap-1 border-b border-border">

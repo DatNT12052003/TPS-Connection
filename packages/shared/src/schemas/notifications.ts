@@ -38,6 +38,8 @@ export const NOTIFICATION_DEFAULTS: Record<
   lesson_to_confirm: { inApp: true, email: true },
   lesson_dispute: { inApp: true, email: true },
   assessment_new: { inApp: true, email: false },
+  // Học phí (G7).
+  fee_statement: { inApp: true, email: true },
 };
 
 // ---- Dữ liệu theo loại ----------------------------------------------------------------------------
@@ -131,6 +133,26 @@ export const AssessmentNotificationData = z.object({
 });
 export type AssessmentNotificationData = z.infer<typeof AssessmentNotificationData>;
 
+/**
+ * Học phí (G7) của một học sinh trong một lớp: bảng tháng mới, đến hạn, bị hủy để lập lại; khoản thanh toán được ghi
+ * nhận, xác nhận, báo chưa nhận được, hủy. Không có số tiền hay tên học sinh.
+ */
+export const FeeStatementNotificationData = z.object({
+  ...ClassNotificationBase,
+  enrollmentId: Id,
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  event: z.enum([
+    'issued',
+    'due',
+    'voided',
+    'payment_recorded',
+    'payment_acknowledged',
+    'payment_declined',
+    'payment_voided',
+  ]),
+});
+export type FeeStatementNotificationData = z.infer<typeof FeeStatementNotificationData>;
+
 const base = {
   id: Id,
   readAt: z.iso.datetime().nullable(),
@@ -159,6 +181,7 @@ export const Notification = z.discriminatedUnion('type', [
   }),
   z.object({ ...base, type: z.literal('lesson_dispute'), data: LessonDisputeNotificationData }),
   z.object({ ...base, type: z.literal('assessment_new'), data: AssessmentNotificationData }),
+  z.object({ ...base, type: z.literal('fee_statement'), data: FeeStatementNotificationData }),
 ]);
 export type Notification = z.infer<typeof Notification>;
 
@@ -201,6 +224,8 @@ export function notificationHref(notification: NotificationContent): string {
     case 'fee_change':
     case 'assessment_new':
       return `/app/classes/${notification.data.classId}`;
+    case 'fee_statement':
+      return `/app/fees/${notification.data.enrollmentId}?month=${notification.data.month}`;
     case 'lesson_upcoming':
     case 'lesson_changed':
     case 'attendance_reminder':
