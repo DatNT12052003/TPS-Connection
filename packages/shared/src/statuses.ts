@@ -200,6 +200,30 @@ export const ConnectionCancelReason = z.enum([
 ]);
 export type ConnectionCancelReason = z.infer<typeof ConnectionCancelReason>;
 
+/**
+ * `connection_events.event`: lịch sử của một yêu cầu kết nối (§5.3). `cancelled_by_system` là hủy do việc khác
+ * (bài nguồn đóng D31, hồ sơ con bị xóa, tài khoản bị khóa); `expired` là quá hạn (C3).
+ */
+export const ConnectionEventType = z.enum([
+  'created',
+  'accepted',
+  'rejected',
+  'withdrawn',
+  'terms_proposed',
+  'confirmed_by_tutor',
+  'confirmed_by_client',
+  'confirmed',
+  'cancelled_by_party',
+  'cancelled_by_system',
+  'expiry_reminded',
+  'expired',
+]);
+export type ConnectionEventType = z.infer<typeof ConnectionEventType>;
+
+/** Vai trò của một người trong yêu cầu kết nối: gia sư hay client (phụ huynh). */
+export const ConnectionParty = z.enum(['tutor', 'client']);
+export type ConnectionParty = z.infer<typeof ConnectionParty>;
+
 // ---- Lớp học ----------------------------------------------------------------------------------
 
 /** `tutoring_classes.status` (B.5.1). Chỉ gia sư chuyển (D35). */
@@ -335,6 +359,7 @@ export const LABELLED_ENUMS = {
   connectionDirection: ConnectionDirection,
   connectionRequestStatus: ConnectionRequestStatus,
   connectionCancelReason: ConnectionCancelReason,
+  connectionEventType: ConnectionEventType,
   tutoringClassStatus: TutoringClassStatus,
   enrollmentStatus: EnrollmentStatus,
   feeRateStatus: FeeRateStatus,

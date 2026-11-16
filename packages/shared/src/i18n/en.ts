@@ -42,6 +42,14 @@ export const en: Messages = {
       'This invitation link is more than 7 days old and has expired. Ask your parent to send a new invitation.',
     tutor_not_verified:
       'Your identity needs to be verified before you can publish posts or view tutor requests.',
+    limit_reached:
+      'You have reached the maximum number of open items. Close some, or wait for replies, then try again.',
+    connection_exists:
+      'There is already an open request between this tutor and your child for this subject. Find it under Requests.',
+    tutor_not_accepting:
+      'This tutor is not taking new students right now. Choose another tutor or come back later.',
+    terms_outdated:
+      'The other party has just changed the terms. Review the latest version, then confirm.',
     internal_error:
       'Something went wrong on our side while handling your request. Try again in a few minutes.',
     service_unavailable:
@@ -100,6 +108,9 @@ export const en: Messages = {
     invalid_calendar_date: 'This date is not valid. Choose the date again.',
     request_post_exists:
       'Your child already has a tutor request for this subject. Edit that post, or close it before posting a new one.',
+    invalid_session_minutes: 'Each session lasts from 15 to 600 minutes.',
+    subject_not_taught:
+      'This tutor does not teach this subject. Choose a subject from the tutor profile.',
   },
 
   emailCommon: {
@@ -1228,6 +1239,20 @@ export const en: Messages = {
     source_closed: 'Post was closed',
     expired_pending: 'No reply within 7 days',
     expired_negotiating: 'Negotiation passed 30 days',
+  },
+  connectionEventType: {
+    created: 'Request sent',
+    accepted: 'Request accepted',
+    rejected: 'Request declined',
+    withdrawn: 'Request withdrawn',
+    terms_proposed: 'Terms proposed',
+    confirmed_by_tutor: 'Tutor confirmed',
+    confirmed_by_client: 'Parent confirmed',
+    confirmed: 'Both sides confirmed',
+    cancelled_by_party: 'Request cancelled',
+    cancelled_by_system: 'Cancelled by the system',
+    expiry_reminded: 'Expiry reminder sent',
+    expired: 'Expired',
   },
   tutoringClassStatus: {
     active: 'Active',

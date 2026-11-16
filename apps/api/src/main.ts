@@ -27,6 +27,8 @@ import { createFilesMaintenanceService } from './modules/files/files-maintenance
 import { createAdminAccountsService } from './modules/admin/admin-accounts.service.js';
 import { createAdminCatalogService } from './modules/admin/admin-catalog.service.js';
 import { createAccountService } from './modules/users/account.service.js';
+import { createConnectionsMaintenance } from './modules/connections/connections-maintenance.js';
+import { createConnectionsService } from './modules/connections/connections.service.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -82,6 +84,7 @@ async function main() {
   }
   const emailSender = createSmtpEmailSender(env);
   const filesMaintenance = createFilesMaintenanceService({ dataSource, storage, logger });
+  const connectionsMaintenance = createConnectionsMaintenance({ dataSource });
   const jobs = createJobs({
     redisUrl: env.REDIS_URL,
     emailSender,
@@ -90,6 +93,7 @@ async function main() {
     maintenance: {
       'purge-verification-documents': () => filesMaintenance.purgeVerificationDocuments(),
       'cleanup-stale-uploads': () => filesMaintenance.cleanupStaleUploads(),
+      'expire-connection-requests': () => connectionsMaintenance.run(),
     },
   });
   jobs
@@ -168,6 +172,8 @@ async function main() {
     // Bài đăng (G4).
     tutorPosts: createTutorPostsService({ dataSource, logger, publicFileUrl }),
     requestPosts: createRequestPostsService({ dataSource, logger }),
+    // Kết nối (G5).
+    connections: createConnectionsService({ dataSource, logger, publicFileUrl }),
   });
   const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API chạy tại http://${env.HOST}:${env.PORT} (môi trường ${env.NODE_ENV})`);

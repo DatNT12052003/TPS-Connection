@@ -14,6 +14,7 @@ import type { DataSource } from 'typeorm';
 import { conflict, notFound } from '../../lib/app-error.js';
 import type { Logger } from '../../lib/logger.js';
 import { assertCatalogRefs } from '../catalog/catalog-checks.js';
+import { createConnectionsRepository } from '../connections/connections.repository.js';
 import { createRequestPostsRepository } from '../request-posts/request-posts.repository.js';
 import { createUsersRepository } from '../users/users.repository.js';
 import { createLearnerAccess, type LearnerViewer } from './learner-access.js';
@@ -234,6 +235,8 @@ export function createLearnersService(deps: {
         await createStudentInvitationsRepository(manager).revokeOpen(learnerId);
         await createUsersRepository(manager).withdrawChildDataConsent(learnerId);
         await createRequestPostsRepository(manager).softDeleteForLearner(learnerId);
+        // Yêu cầu kết nối đang mở của con cũng hủy theo.
+        await createConnectionsRepository(manager).cancelOpenForLearner(learnerId, actorId);
       });
       logger.info({ userId: actorId, learnerId }, 'Learner profile deleted');
     },

@@ -32,6 +32,7 @@ import { createLearnersService } from '../../src/modules/learners/learners.servi
 import type { StudentInvitationsService } from '../../src/modules/learners/student-invitations.service.js';
 import type { ParentsService } from '../../src/modules/parents/parents.service.js';
 import { createRequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
+import type { ConnectionsService } from '../../src/modules/connections/connections.service.js';
 import { createTutorPostsService } from '../../src/modules/tutor-posts/tutor-posts.service.js';
 import type { TutorsService } from '../../src/modules/tutors/tutors.service.js';
 import type { AccountService } from '../../src/modules/users/account.service.js';
@@ -113,6 +114,7 @@ beforeAll(async () => {
       publicFileUrl: (key) => `${CDN}/${key}`,
     }),
     requestPosts: createRequestPostsService({ dataSource: db, logger: silentLogger }),
+    connections: {} as ConnectionsService,
   });
 });
 

@@ -53,6 +53,9 @@ import {
   publicTutorPostsRouter,
 } from './modules/tutor-posts/tutor-posts.router.js';
 import type { TutorPostsService } from './modules/tutor-posts/tutor-posts.service.js';
+import { createConnectionsController } from './modules/connections/connections.controller.js';
+import { connectionsRouter } from './modules/connections/connections.router.js';
+import type { ConnectionsService } from './modules/connections/connections.service.js';
 import { createOpenApiDocument } from './openapi.js';
 
 export interface AppDeps {
@@ -74,6 +77,7 @@ export interface AppDeps {
   catalog: CatalogService;
   tutorPosts: TutorPostsService;
   requestPosts: RequestPostsService;
+  connections: ConnectionsService;
 }
 
 /** "true"/"false" -> boolean, số -> số hop proxy, còn lại (loopback, dải IP) giữ nguyên chuỗi. */
@@ -157,6 +161,15 @@ export function createApp(deps: AppDeps): Express {
   const requestPostsController = createRequestPostsController(deps.requestPosts);
   api.use('/me/request-posts', ownRequestPostsRouter(requestPostsController, authenticate()));
   api.use('/request-posts', tutorRequestPostsRouter(requestPostsController, authenticate()));
+  // Yêu cầu kết nối (G5).
+  api.use(
+    '/connection-requests',
+    connectionsRouter(
+      createConnectionsController(deps.connections),
+      deps.rateLimiter,
+      authenticate(),
+    ),
+  );
   const accountController = createAccountController(deps.account);
   // Sau /me/parent-profile, /me/tutor-profile: router này chỉ khớp /me và /me/avatar.
   api.use('/me', accountRouter(accountController, authenticate()));

@@ -18,6 +18,7 @@ import { AppError, conflict, forbidden, notFound } from '../../lib/app-error.js'
 import type { Logger } from '../../lib/logger.js';
 import { createAuditRepository } from '../audit/audit.repository.js';
 import { createAuthSessionsRepository } from '../auth/auth-sessions.repository.js';
+import { createConnectionsRepository } from '../connections/connections.repository.js';
 import { AccountSanction } from '../users/account-sanction.entity.js';
 import { UserRole } from '../users/user-role.entity.js';
 import { User } from '../users/user.entity.js';
@@ -176,6 +177,8 @@ export function createAdminAccountsService(deps: { dataSource: DataSource; logge
           }),
         );
         await createAuthSessionsRepository(manager).revokeAllForUser(userId, 'account_locked');
+        // Yêu cầu kết nối đang mở của người bị khóa tự hủy (B.1).
+        await createConnectionsRepository(manager).cancelOpenForUser(userId);
         await createAuditRepository(manager).record({
           actorUserId: actor.userId,
           actorRole: 'admin',

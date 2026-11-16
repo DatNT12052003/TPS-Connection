@@ -33,6 +33,7 @@ import { createMemoryRateLimiter } from '../../src/lib/rate-limiter.js';
 import { buildStorageKey, type Storage } from '../../src/lib/storage.js';
 import type { AuthService } from '../../src/modules/auth/auth.service.js';
 import type { RequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
+import type { ConnectionsService } from '../../src/modules/connections/connections.service.js';
 import type { TutorPostsService } from '../../src/modules/tutor-posts/tutor-posts.service.js';
 import { createCatalogService } from '../../src/modules/catalog/catalog.service.js';
 import { createFilesService } from '../../src/modules/files/files.service.js';
@@ -168,6 +169,7 @@ beforeAll(async () => {
     // Bài đăng: test riêng ở posts.int.test.ts.
     tutorPosts: {} as TutorPostsService,
     requestPosts: {} as RequestPostsService,
+    connections: {} as ConnectionsService,
   });
 });
 

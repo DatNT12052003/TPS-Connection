@@ -43,6 +43,14 @@ export const vi = {
       'Liên kết mời đã quá 7 ngày nên hết hạn. Hãy nhờ phụ huynh gửi lời mời mới.',
     tutor_not_verified:
       'Bạn cần được duyệt xác minh danh tính trước khi đăng bài hoặc xem nhu cầu tìm gia sư.',
+    limit_reached:
+      'Bạn đã đạt số lượng tối đa đang mở. Hãy đóng bớt hoặc chờ các mục cũ được trả lời rồi thử lại.',
+    connection_exists:
+      'Đã có một yêu cầu đang mở giữa gia sư này và con cho môn này. Hãy xem yêu cầu đó trong mục Yêu cầu.',
+    tutor_not_accepting:
+      'Gia sư đang tạm ngừng nhận học sinh mới. Hãy chọn gia sư khác hoặc quay lại sau.',
+    terms_outdated:
+      'Điều kiện hợp tác vừa được bên kia sửa. Hãy xem lại phiên bản mới nhất rồi xác nhận.',
     internal_error: 'Hệ thống gặp sự cố khi xử lý yêu cầu. Hãy thử lại sau ít phút.',
     service_unavailable: 'Hệ thống đang bảo trì hoặc quá tải. Hãy thử lại sau ít phút.',
   },
@@ -98,6 +106,8 @@ export const vi = {
     invalid_calendar_date: 'Ngày chưa hợp lệ. Hãy chọn lại ngày.',
     request_post_exists:
       'Con đã có một bài tìm gia sư cho môn này. Hãy sửa bài đó, hoặc đóng bài đó trước khi đăng bài mới.',
+    invalid_session_minutes: 'Thời lượng mỗi buổi từ 15 đến 600 phút.',
+    subject_not_taught: 'Gia sư chưa nhận dạy môn này. Hãy chọn môn khác trong hồ sơ gia sư.',
   },
 
   // ---- Email gửi người dùng (API dựng nội dung theo ngôn ngữ của người nhận) ----
@@ -1224,6 +1234,20 @@ export const vi = {
     source_closed: 'Bài đăng đã đóng',
     expired_pending: 'Quá 7 ngày không phản hồi',
     expired_negotiating: 'Quá 30 ngày trao đổi',
+  },
+  connectionEventType: {
+    created: 'Gửi yêu cầu',
+    accepted: 'Chấp nhận yêu cầu',
+    rejected: 'Từ chối yêu cầu',
+    withdrawn: 'Rút yêu cầu',
+    terms_proposed: 'Đề xuất điều kiện hợp tác',
+    confirmed_by_tutor: 'Gia sư xác nhận hợp tác',
+    confirmed_by_client: 'Phụ huynh xác nhận hợp tác',
+    confirmed: 'Hai bên đã xác nhận hợp tác',
+    cancelled_by_party: 'Hủy yêu cầu',
+    cancelled_by_system: 'Hệ thống hủy yêu cầu',
+    expiry_reminded: 'Nhắc sắp hết hạn',
+    expired: 'Hết hạn',
   },
   tutoringClassStatus: {
     active: 'Đang học',

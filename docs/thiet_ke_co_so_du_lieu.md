@@ -741,6 +741,15 @@ pending ──chấp nhận──► negotiating ──cả hai xác nhận cùn
 - Khi có phiên bản `connection_terms` mới, mọi xác nhận trên phiên bản cũ mất hiệu lực. Chỉ phiên bản lớn nhất được xác nhận. Khi phiên bản đó có đủ `tutor_confirmed_at` và `client_confirmed_at`, service trong **một transaction**: chuyển request sang `confirmed`, ghi `agreed_terms_id`, tạo lớp và ghi danh (mục 7.1), ghi `connection_events`.
 - Mọi chuyển trạng thái dùng `UPDATE ... WHERE id = $1 AND status = $old` để tránh hai thao tác đồng thời cùng thắng.
 
+**Đã làm ở G5 đợt 1 (migration `CreateConnections`), khác bản trên:**
+
+- `connection_requests` có thêm ảnh chụp nhu cầu lúc gửi: `grade_level_id`, `goal`, `goal_note`, `teaching_mode`, `province_id`, `commune_id` (cùng ràng buộc như `request_posts`). Gia sư chỉ đọc các cột này trong lúc trao đổi, không đọc `learners` (D16). `message` bắt buộc.
+- Ràng buộc thêm: `tutor_id <> client_user_id`; chiều `client_to_tutor` không có `request_post_id`, chiều `tutor_to_client` không có `tutor_post_id`; `closed_at` có khi và chỉ khi `rejected`/`cancelled`; `rejection_note` chỉ khi `rejected`.
+- Index danh sách là `(tutor_id, created_at DESC, id DESC)` và `(client_user_id, created_at DESC, id DESC)` (lọc trạng thái trên tập nhỏ của một người); thêm index một phần theo `request_post_id`, `tutor_post_id` và `learner_id` (đang mở).
+- `connection_terms`: `goal` là mã như `request_posts.goal` kèm `goal_note`; `schedule` (`[{weekday, startTime}]`) NOT NULL mặc định `[]`. Trigger chặn sửa nội dung và xóa dòng; chỉ `tutor_confirmed_at`, `client_confirmed_at` được ghi thêm.
+- `connection_events.event` có thêm `cancelled_by_system` (bài nguồn đóng D31, tài khoản bị khóa).
+- Thay cho `UPDATE ... WHERE status = $old`: service khóa dòng yêu cầu (`SELECT ... FOR UPDATE`) trong transaction rồi mới kiểm tra trạng thái. Job hết hạn dùng `FOR UPDATE SKIP LOCKED`.
+
 ### 6.5. Nhắn tin
 
 ```sql

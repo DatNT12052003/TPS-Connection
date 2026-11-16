@@ -131,6 +131,15 @@ export function createRequestPostsRepository(manager: EntityManager) {
       );
     },
 
+    /** Hệ thống đóng bài khi xác nhận hợp tác từ một ứng tuyển của bài (D31). Bài đã đóng, đã xóa: bỏ qua. */
+    async closeFoundTutor(id: string): Promise<void> {
+      await manager.query(
+        `UPDATE request_posts SET status = 'closed', closed_reason = 'found_tutor', updated_at = now()
+          WHERE id = $1 AND status <> 'closed' AND deleted_at IS NULL`,
+        [id],
+      );
+    },
+
     async softDelete(id: string): Promise<void> {
       await posts.update({ id }, { deletedAt: new Date() });
     },
