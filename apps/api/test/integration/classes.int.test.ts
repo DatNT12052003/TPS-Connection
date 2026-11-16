@@ -18,6 +18,7 @@ import type { AuthService } from '../../src/modules/auth/auth.service.js';
 import { createTokenService } from '../../src/modules/auth/tokens.js';
 import type { CatalogService } from '../../src/modules/catalog/catalog.service.js';
 import { createClassesService } from '../../src/modules/classes/classes.service.js';
+import type { LessonsService } from '../../src/modules/lessons/lessons.service.js';
 import { createConnectionsService } from '../../src/modules/connections/connections.service.js';
 import { createLearnerAccess } from '../../src/modules/learners/learner-access.js';
 import { createLearnersService } from '../../src/modules/learners/learners.service.js';
@@ -105,6 +106,7 @@ beforeAll(async () => {
     notifications: {} as NotificationsService,
     safety: {} as SafetyService,
     classes: createClassesService({ dataSource: db, logger: silentLogger, publicFileUrl }),
+    lessons: {} as LessonsService,
   });
 });
 
@@ -638,9 +640,11 @@ describe('deleting a learner with classes', () => {
 // ---- Migration tạo lớp cho yêu cầu đã xác nhận trước G6 --------------------------------------------------
 
 describe('migration backfill', () => {
-  // Chạy sau cùng: gỡ migration lớp học (xóa mọi lớp) rồi chạy lại.
+  // Chạy sau cùng: gỡ migration buổi học và lớp học (xóa mọi lớp) rồi chạy lại.
   it('creates a class for every confirmed request', async () => {
     const { tutor, requestId } = await confirmedClass();
+    // Gỡ CreateLessons rồi CreateTeachingClasses, chạy lại cả hai.
+    await db.undoLastMigration();
     await db.undoLastMigration();
     await db.runMigrations();
     const [row] = await db.query<{ n: number }[]>(

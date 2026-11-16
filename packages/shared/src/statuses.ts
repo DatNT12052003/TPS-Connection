@@ -238,6 +238,10 @@ export type MessageKind = z.infer<typeof MessageKind>;
 
 // ---- Lớp học ----------------------------------------------------------------------------------
 
+/** Vai trò của người xem trong một lớp: gia sư của lớp, client (phụ huynh đang quản lý học sinh) hoặc chính học sinh. */
+export const ClassRole = z.enum(['tutor', 'client', 'student']);
+export type ClassRole = z.infer<typeof ClassRole>;
+
 /** `tutoring_classes.status` (B.5.1). Chỉ gia sư chuyển (D35). */
 export const TutoringClassStatus = z.enum(['active', 'paused', 'ended']);
 export type TutoringClassStatus = z.infer<typeof TutoringClassStatus>;
@@ -264,6 +268,21 @@ export const LearningGoalStatus = z.enum([
 export type LearningGoalStatus = z.infer<typeof LearningGoalStatus>;
 
 // ---- Buổi học, điểm danh, khiếu nại ------------------------------------------------------------
+
+/** `class_schedules.status`: lịch lặp hằng tuần còn sinh buổi hay đã dừng. */
+export const ClassScheduleStatus = z.enum(['active', 'ended']);
+export type ClassScheduleStatus = z.infer<typeof ClassScheduleStatus>;
+
+/** Hình thức của một buổi học cụ thể (lớp "kết hợp" thì từng buổi chọn một). */
+export const LessonMode = z.enum(['online', 'in_person']);
+export type LessonMode = z.infer<typeof LessonMode>;
+
+/**
+ * `lessons.cancel_kind`: ai / việc gì hủy buổi. `party`: gia sư hoặc client báo hủy (có thể là hủy muộn, C5);
+ * `class_paused`, `class_ended`: hệ thống hủy khi lớp tạm nghỉ, kết thúc (B.5.1, không tính hủy muộn).
+ */
+export const LessonCancelKind = z.enum(['party', 'class_paused', 'class_ended']);
+export type LessonCancelKind = z.infer<typeof LessonCancelKind>;
 
 /** `lessons.status` (B.6). */
 export const LessonStatus = z.enum(['scheduled', 'held', 'cancelled', 'tutor_absent']);
@@ -304,6 +323,10 @@ export const AttendanceDisputeStatus = z.enum([
   'withdrawn',
 ]);
 export type AttendanceDisputeStatus = z.infer<typeof AttendanceDisputeStatus>;
+
+/** `assessments.kind`: điểm theo buổi, bài kiểm tra ngắn, bài kiểm tra (§9). `assignment` thêm ở bản 3 cùng bài tập. */
+export const AssessmentKind = z.enum(['lesson', 'quiz', 'test']);
+export type AssessmentKind = z.infer<typeof AssessmentKind>;
 
 // ---- Học phí ----------------------------------------------------------------------------------
 
@@ -355,6 +378,15 @@ export const NotificationType = z.enum([
   'connection_confirmed',
   'message_new',
   'verification_result',
+  // Lớp học (G6)
+  'class_status',
+  'fee_change',
+  'lesson_upcoming',
+  'lesson_changed',
+  'attendance_reminder',
+  'lesson_to_confirm',
+  'lesson_dispute',
+  'assessment_new',
 ]);
 export type NotificationType = z.infer<typeof NotificationType>;
 
@@ -421,10 +453,14 @@ export const LABELLED_ENUMS = {
   feeRateStatus: FeeRateStatus,
   learningGoalPeriod: LearningGoalPeriod,
   learningGoalStatus: LearningGoalStatus,
+  classScheduleStatus: ClassScheduleStatus,
+  lessonMode: LessonMode,
+  lessonCancelKind: LessonCancelKind,
   lessonStatus: LessonStatus,
   attendanceStatus: AttendanceStatus,
   attendanceConfirmationStatus: AttendanceConfirmationStatus,
   attendanceDisputeStatus: AttendanceDisputeStatus,
+  assessmentKind: AssessmentKind,
   feeStatementStatus: FeeStatementStatus,
   paymentStatus: PaymentStatus,
   paymentMethod: PaymentMethod,

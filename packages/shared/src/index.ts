@@ -9,6 +9,7 @@ export * from './schemas/posts.js';
 export * from './schemas/connections.js';
 export * from './schemas/messaging.js';
 export * from './schemas/classes.js';
+export * from './schemas/lessons.js';
 export * from './schemas/notifications.js';
 export * from './schemas/safety.js';
 export * from './schemas/search.js';

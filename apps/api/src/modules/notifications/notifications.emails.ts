@@ -38,6 +38,46 @@ function texts(
     }
     case 'verification_result':
       return null;
+    // Lớp học (G6): không có môn, tên học sinh hay nội dung buổi học trong email.
+    case 'class_status': {
+      const values = name(content.data.counterpartName);
+      return {
+        subject: t.classStatusSubject,
+        body: interpolate(t.classStatusBody, values),
+      };
+    }
+    case 'fee_change': {
+      const values = name(content.data.counterpartName);
+      return content.data.event === 'proposed'
+        ? {
+            subject: interpolate(t.feeProposedSubject, values),
+            body: interpolate(t.feeProposedBody, values),
+          }
+        : content.data.event === 'withdrawn'
+          ? null
+          : { subject: t.feeDecidedSubject, body: t.feeDecidedBody };
+    }
+    case 'lesson_upcoming':
+      return { subject: t.lessonUpcomingSubject, body: t.lessonUpcomingBody };
+    case 'lesson_changed':
+      return {
+        subject: t.lessonChangedSubject,
+        body: interpolate(t.lessonChangedBody, name(content.data.counterpartName)),
+      };
+    case 'attendance_reminder':
+      return { subject: t.attendanceReminderSubject, body: t.attendanceReminderBody };
+    case 'lesson_to_confirm':
+      return {
+        subject: t.lessonToConfirmSubject,
+        body: interpolate(t.lessonToConfirmBody, name(content.data.counterpartName)),
+      };
+    case 'lesson_dispute':
+      return { subject: t.lessonDisputeSubject, body: t.lessonDisputeBody };
+    case 'assessment_new':
+      return {
+        subject: t.assessmentSubject,
+        body: interpolate(t.assessmentBody, name(content.data.counterpartName)),
+      };
   }
 }
 

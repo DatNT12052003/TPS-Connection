@@ -8,8 +8,8 @@
 //   đề xuất và rút đề xuất học phí. Chỉ phụ huynh đồng ý hoặc từ chối đề xuất học phí (D17).
 // - Lớp đã kết thúc chỉ còn xem (§16.13): mọi thao tác ghi trả 409.
 // - Mọi thao tác ghi khóa dòng lớp trong transaction.
-// Chưa làm ở đợt này: hủy / sinh lại buổi học khi tạm nghỉ, học lại, kết thúc (đợt 2 cùng bảng buổi học); thông báo
-// đề xuất và kết quả đổi học phí (đợt 2 cùng các loại thông báo của lớp).
+// - Tạm nghỉ hủy các buổi tương lai, học lại khôi phục và sinh tiếp buổi, kết thúc hủy buổi tương lai và dừng lịch
+//   (B.5.1, G6 đợt 2). Thông báo cho phụ huynh, học sinh khi lớp đổi trạng thái; cho bên kia khi đổi học phí.
 import {
   type ClassDetail,
   type ClassEnrollment,
@@ -31,6 +31,14 @@ import type { DataSource, EntityManager } from 'typeorm';
 import { AppError, forbidden, invalidStateTransition, notFound } from '../../lib/app-error.js';
 import type { Logger } from '../../lib/logger.js';
 import { createLearnerAccess } from '../learners/learner-access.js';
+import { createLessonsRepository } from '../lessons/lessons.repository.js';
+import { toAssessmentDto, toScheduleDto } from '../lessons/lessons.service.js';
+import {
+  noopNotifier,
+  type Notifier,
+  type PendingNotification,
+} from '../notifications/notifications.service.js';
+import { type ClassRecipient, displayNameOf, recordClassNotices } from './class-notifications.js';
 import type { EnrollmentFeeRate, LearningGoalRow, TutoringClass } from './class.entity.js';
 import { type ClassRow, createClassesRepository } from './classes.repository.js';
 
@@ -71,8 +79,44 @@ export function createClassesService(deps: {
   logger: Logger;
   /** URL công khai của tệp ở bucket public (storage.publicUrl). */
   publicFileUrl: (storageKey: string) => string;
+  /** Thông báo đổi trạng thái lớp, đổi học phí. Mặc định: không thông báo. */
+  notifier?: Notifier;
 }) {
   const { dataSource, logger } = deps;
+  const notifier = deps.notifier ?? noopNotifier;
+
+  /** Thông báo đổi trạng thái lớp cho phụ huynh và học sinh. */
+  const classStatusNotice = (
+    manager: EntityManager,
+    classId: string,
+    status: 'paused' | 'active' | 'ended',
+  ) =>
+    recordClassNotices(manager, notifier, classId, ['clients', 'students'], (base) => ({
+      type: 'class_status',
+      data: { ...base, status },
+    }));
+
+  const feeNotice = async (
+    manager: EntityManager,
+    classId: string,
+    enrollmentId: string,
+    event: 'proposed' | 'accepted' | 'rejected' | 'withdrawn',
+    actorId: string,
+  ) => {
+    const to: ClassRecipient[] =
+      event === 'accepted' || event === 'rejected' ? ['tutor'] : ['clients'];
+    return recordClassNotices(
+      manager,
+      notifier,
+      classId,
+      to,
+      (base) => ({ type: 'fee_change', data: { ...base, event } }),
+      {
+        enrollmentId,
+        ...(to.includes('tutor') ? { actorName: await displayNameOf(manager, actorId) } : {}),
+      },
+    );
+  };
 
   function toSummary(row: ClassRow): ClassSummary {
     const isStudent = row.myRole === 'student';
@@ -129,6 +173,9 @@ export function createClassesService(deps: {
     const feeRates = role === 'student' ? [] : await repo.feeRatesOf(ids);
     const goals = await repo.goalsOf(ids);
     const need = await repo.agreedNeed(first.connectionRequestId);
+    const lessons = createLessonsRepository(manager);
+    const assessments = await lessons.assessmentsOf({ enrollmentIds: ids });
+    const schedules = await lessons.schedulesOf(classId);
 
     const learnerNames = new Map(rows.map((r) => [r.enrollmentId, r]));
     const enrollmentDtos = enrollments.map((e): ClassEnrollment => {
@@ -143,6 +190,7 @@ export function createClassesService(deps: {
         teachingNotes: role === 'tutor' ? e.teachingNotes : null,
         feeRates: feeRates.filter((r) => r.enrollmentId === e.id).map(toFeeRateDto),
         goals: goals.filter((g) => g.enrollmentId === e.id).map(toGoalDto),
+        assessments: assessments.filter((a) => a.enrollmentId === e.id).map(toAssessmentDto),
       };
     });
 
@@ -168,6 +216,7 @@ export function createClassesService(deps: {
       endedReason: first.endedReason,
       connectionRequestId: role === 'student' ? null : first.connectionRequestId,
       enrollments: enrollmentDtos,
+      schedules: schedules.map(toScheduleDto),
       contact,
       learnerIdentity,
     };
@@ -214,41 +263,62 @@ export function createClassesService(deps: {
       return loadDetail(userId, classId);
     },
 
-    /** active → paused (D35). Ghi danh tạm nghỉ theo. Hủy buổi tương lai: đợt 2. */
+    /**
+     * active → paused (D35): ghi danh tạm nghỉ theo, các buổi tương lai còn `scheduled` bị hủy (`class_paused`, không
+     * tính hủy muộn), ngừng sinh buổi mới. Báo phụ huynh và học sinh.
+     */
     async pause(userId: string, classId: string): Promise<ClassDetail> {
-      await mutate(userId, classId, ['tutor'], async ({ manager, cls }) => {
+      const pending = await mutate(userId, classId, ['tutor'], async ({ manager, cls }) => {
         if (cls.status !== 'active') throw invalidStateTransition(`Class is ${cls.status}`);
         const repo = createClassesRepository(manager);
         await repo.updateClass(cls.id, { status: 'paused', pausedAt: new Date() });
         await repo.setEnrollmentsStatus(cls.id, 'paused');
+        await createLessonsRepository(manager).cancelFutureOfClass(cls.id, 'class_paused');
+        return classStatusNotice(manager, cls.id, 'paused');
       });
+      await notifier.dispatch(pending);
       logger.info({ userId, classId }, 'Class paused');
       return loadDetail(userId, classId);
     },
 
-    /** paused → active (D35). Sinh lại buổi học: đợt 2. */
+    /**
+     * paused → active (D35): khôi phục các buổi tương lai đã hủy vì tạm nghỉ, sinh tiếp buổi theo lịch còn hiệu lực.
+     * Báo phụ huynh và học sinh.
+     */
     async resume(userId: string, classId: string): Promise<ClassDetail> {
-      await mutate(userId, classId, ['tutor'], async ({ manager, cls }) => {
+      const pending = await mutate(userId, classId, ['tutor'], async ({ manager, cls }) => {
         if (cls.status !== 'paused') throw invalidStateTransition(`Class is ${cls.status}`);
         const repo = createClassesRepository(manager);
         await repo.updateClass(cls.id, { status: 'active', pausedAt: null });
         await repo.setEnrollmentsStatus(cls.id, 'active');
+        const lessons = createLessonsRepository(manager);
+        await lessons.restorePausedOfClass(cls.id);
+        const scheduleIds = await lessons.activeScheduleIds(cls.id);
+        if (scheduleIds.length > 0) await lessons.generate(scheduleIds);
+        return classStatusNotice(manager, cls.id, 'active');
       });
+      await notifier.dispatch(pending);
       logger.info({ userId, classId }, 'Class resumed');
       return loadDetail(userId, classId);
     },
 
     /**
-     * active | paused → ended kèm lý do (D35, B.5.1): ghi danh rời lớp, đề xuất học phí còn chờ tự rút. Dữ liệu học
-     * tập giữ nguyên để tra cứu (§16.13). Đổi gia sư = kết thúc lớp và kết nối lại (D28).
+     * active | paused → ended kèm lý do (D35, B.5.1): ghi danh rời lớp, đề xuất học phí còn chờ tự rút, buổi tương lai
+     * bị hủy (`class_ended`), lịch dừng. Dữ liệu học tập giữ nguyên để tra cứu (§16.13). Đổi gia sư = kết thúc lớp và
+     * kết nối lại (D28). Báo phụ huynh và học sinh.
      */
     async end(userId: string, classId: string, reason: string): Promise<ClassDetail> {
-      await mutate(userId, classId, ['tutor'], async ({ manager, cls }) => {
+      const pending = await mutate(userId, classId, ['tutor'], async ({ manager, cls }) => {
         const repo = createClassesRepository(manager);
         await repo.endClass(cls.id, reason);
         await repo.leaveAll(cls.id);
         await repo.withdrawProposedFees(cls.id);
+        const lessons = createLessonsRepository(manager);
+        await lessons.cancelFutureOfClass(cls.id, 'class_ended');
+        await lessons.endSchedulesOfClass(cls.id);
+        return classStatusNotice(manager, cls.id, 'ended');
       });
+      await notifier.dispatch(pending);
       logger.info({ userId, classId }, 'Class ended');
       return loadDetail(userId, classId);
     },
@@ -282,7 +352,7 @@ export function createClassesService(deps: {
       enrollmentId: string,
       input: ProposeFeeRateRequest,
     ): Promise<ClassDetail> {
-      await mutate(userId, classId, ['tutor'], async ({ manager, rows }) => {
+      const pending = await mutate(userId, classId, ['tutor'], async ({ manager, rows }) => {
         assertEnrollmentVisible(rows, enrollmentId);
         const repo = createClassesRepository(manager);
         const enrollment = await repo.findEnrollment(classId, enrollmentId);
@@ -298,7 +368,9 @@ export function createClassesService(deps: {
           note: input.note,
           proposedBy: userId,
         });
+        return feeNotice(manager, classId, enrollmentId, 'proposed', userId);
       });
+      await notifier.dispatch(pending);
       logger.info({ userId, classId, enrollmentId }, 'Fee change proposed');
       return loadDetail(userId, classId);
     },
@@ -315,15 +387,28 @@ export function createClassesService(deps: {
       decision: 'accept' | 'reject' | 'withdraw',
     ): Promise<ClassDetail> {
       const roles: ClassRole[] = decision === 'withdraw' ? ['tutor'] : ['client'];
-      await mutate(userId, classId, roles, async ({ manager, rows }) => {
-        assertEnrollmentVisible(rows, enrollmentId);
-        const repo = createClassesRepository(manager);
-        const rate = await repo.findFeeRate(enrollmentId, rateId);
-        if (!rate) throw notFound('Fee rate');
-        if (rate.status !== 'proposed') throw invalidStateTransition(`Fee rate is ${rate.status}`);
-        if (decision === 'accept') await repo.activateFee(enrollmentId, rateId, userId);
-        else await repo.decideFee(rateId, decision === 'reject' ? 'rejected' : 'withdrawn', userId);
-      });
+      const pending: PendingNotification[] = await mutate(
+        userId,
+        classId,
+        roles,
+        async ({ manager, rows }) => {
+          assertEnrollmentVisible(rows, enrollmentId);
+          const repo = createClassesRepository(manager);
+          const rate = await repo.findFeeRate(enrollmentId, rateId);
+          if (!rate) throw notFound('Fee rate');
+          if (rate.status !== 'proposed') {
+            throw invalidStateTransition(`Fee rate is ${rate.status}`);
+          }
+          if (decision === 'accept') await repo.activateFee(enrollmentId, rateId, userId);
+          else {
+            await repo.decideFee(rateId, decision === 'reject' ? 'rejected' : 'withdrawn', userId);
+          }
+          const event =
+            decision === 'accept' ? 'accepted' : decision === 'reject' ? 'rejected' : 'withdrawn';
+          return feeNotice(manager, classId, enrollmentId, event, userId);
+        },
+      );
+      await notifier.dispatch(pending);
       logger.info({ userId, classId, enrollmentId, rateId, decision }, 'Fee change decided');
       return loadDetail(userId, classId);
     },

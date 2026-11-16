@@ -6,9 +6,9 @@ import type { EntityManager } from 'typeorm';
 import type { ConnectionRequest } from './connection.entity.js';
 import { createConnectionsRepository } from './connections.repository.js';
 
-type ConnectionNoticeType = Exclude<
+type ConnectionNoticeType = Extract<
   NotificationContent['type'],
-  'message_new' | 'verification_result' | 'connection_expiring'
+  'connection_received' | 'connection_accepted' | 'connection_rejected' | 'connection_confirmed'
 >;
 
 export interface ConnectionNotice {

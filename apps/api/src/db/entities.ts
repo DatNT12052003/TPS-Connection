@@ -9,6 +9,13 @@ import {
   TutoringClass,
 } from '../modules/classes/class.entity.js';
 import {
+  AssessmentRow,
+  AttendanceDisputeRow,
+  ClassScheduleRow,
+  LessonAttendanceRow,
+  LessonRow,
+} from '../modules/lessons/lesson.entity.js';
+import {
   ConnectionEventRow,
   ConnectionRequest,
   ConnectionTermsVersion,
@@ -110,4 +117,10 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   ClassEnrollmentRow,
   EnrollmentFeeRate,
   LearningGoalRow,
+  // Lịch, buổi học, điểm danh, khiếu nại, điểm (G6)
+  ClassScheduleRow,
+  LessonRow,
+  LessonAttendanceRow,
+  AttendanceDisputeRow,
+  AssessmentRow,
 ];

@@ -33,6 +33,8 @@ import { createMessagingService } from './modules/messaging/messaging.service.js
 import { createNotificationsService } from './modules/notifications/notifications.service.js';
 import { createSafetyService } from './modules/safety/safety.service.js';
 import { createClassesService } from './modules/classes/classes.service.js';
+import { createLessonsMaintenance } from './modules/lessons/lessons-maintenance.js';
+import { createLessonsService } from './modules/lessons/lessons.service.js';
 import {
   createRealtimeServer,
   type RealtimePublisher,
@@ -111,6 +113,7 @@ async function main() {
   });
   const { notifier } = notifications;
   const connectionsMaintenance = createConnectionsMaintenance({ dataSource, notifier });
+  const lessonsMaintenance = createLessonsMaintenance({ dataSource, notifier });
   const jobs = createJobs({
     redisUrl: env.REDIS_URL,
     emailSender,
@@ -120,6 +123,8 @@ async function main() {
       'purge-verification-documents': () => filesMaintenance.purgeVerificationDocuments(),
       'cleanup-stale-uploads': () => filesMaintenance.cleanupStaleUploads(),
       'expire-connection-requests': () => connectionsMaintenance.run(),
+      'generate-lessons': () => lessonsMaintenance.generate(),
+      'lessons-maintenance': () => lessonsMaintenance.run(),
     },
   });
   jobs
@@ -219,7 +224,8 @@ async function main() {
     notifications,
     safety: createSafetyService({ dataSource, logger, publicFileUrl }),
     // Lớp học (G6).
-    classes: createClassesService({ dataSource, logger, publicFileUrl }),
+    classes: createClassesService({ dataSource, logger, publicFileUrl, notifier }),
+    lessons: createLessonsService({ dataSource, logger, notifier }),
   });
   const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API chạy tại http://${env.HOST}:${env.PORT} (môi trường ${env.NODE_ENV})`);

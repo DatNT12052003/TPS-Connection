@@ -12,6 +12,10 @@ export interface MaintenanceTasks {
   'cleanup-stale-uploads': () => Promise<number>;
   /** Nhắc và tự hủy yêu cầu kết nối quá hạn (C3, D30). */
   'expire-connection-requests': () => Promise<number>;
+  /** Sinh buổi học từ lịch lặp tới 8 tuần tới (D27). */
+  'generate-lessons': () => Promise<number>;
+  /** Nhắc buổi sắp tới, nhắc điểm danh, nhắc và tự chốt xác nhận, chuyển khiếu nại cho Manager (C5, D36). */
+  'lessons-maintenance': () => Promise<number>;
 }
 export type MaintenanceTaskName = keyof MaintenanceTasks;
 
@@ -21,6 +25,8 @@ export const MAINTENANCE_SCHEDULE: Record<MaintenanceTaskName, string> = {
   'cleanup-stale-uploads': '30 3 * * *',
   // Mỗi 15 phút (docs/thiet_ke_co_so_du_lieu.md mục 13).
   'expire-connection-requests': '*/15 * * * *',
+  'generate-lessons': '15 1 * * *',
+  'lessons-maintenance': '*/15 * * * *',
 };
 
 export function createMaintenanceQueue(connection: ConnectionOptions): Queue {

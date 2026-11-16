@@ -8,6 +8,7 @@
 // - Lưu ý giảng dạy chỉ gia sư thấy. Học phí và năng lực ban đầu chỉ gia sư và phụ huynh thấy.
 import { z } from 'zod';
 import {
+  ClassRole,
   EnrollmentStatus,
   FeeRateStatus,
   LearningGoalPeriod,
@@ -23,6 +24,7 @@ import {
   ConnectionLearnerIdentity,
   ConnectionTutor,
 } from './connections.js';
+import { Assessment, ClassSchedule } from './lessons.js';
 
 export const CLASS_LIMITS = {
   nameLength: 120,
@@ -34,10 +36,6 @@ export const CLASS_LIMITS = {
   /** Số mục tiêu của một ghi danh. */
   goalsPerEnrollment: 100,
 } as const;
-
-/** Vai trò của người xem trong một lớp. */
-export const ClassRole = z.enum(['tutor', 'client', 'student']);
-export type ClassRole = z.infer<typeof ClassRole>;
 
 const CalendarDate = z.iso.date({ error: 'invalid_calendar_date' });
 
@@ -228,6 +226,8 @@ export const ClassEnrollment = z.object({
   feeRates: z.array(FeeRate),
   /** Mục tiêu học tập, mới nhất trước. */
   goals: z.array(LearningGoal),
+  /** Điểm và nhận xét (§9), mới nhất trước. */
+  assessments: z.array(Assessment),
 });
 export type ClassEnrollment = z.infer<typeof ClassEnrollment>;
 
@@ -241,6 +241,8 @@ export const ClassDetail = ClassSummary.extend({
   /** Yêu cầu kết nối đã tạo lớp (gia sư và phụ huynh; học sinh: null). */
   connectionRequestId: Id.nullable(),
   enrollments: z.array(ClassEnrollment),
+  /** Lịch lặp hằng tuần của lớp (cả lịch đã dừng). */
+  schedules: z.array(ClassSchedule),
   /** Liên hệ của bên kia (gia sư thấy phụ huynh, phụ huynh thấy gia sư; học sinh: null). */
   contact: ConnectionContact.nullable(),
   /** Danh tính học sinh cho gia sư (D16); người khác: null. */

@@ -14,6 +14,8 @@ import {
 import { type RequestHandler, Router } from 'express';
 import { requireRole } from '../../http/authorize.js';
 import { validate } from '../../http/validate.js';
+import type { LessonsController } from '../lessons/lessons.controller.js';
+import { mountClassLessonRoutes } from '../lessons/lessons.router.js';
 import type { ClassesController } from './classes.controller.js';
 
 /**
@@ -34,9 +36,15 @@ import type { ClassesController } from './classes.controller.js';
  *   POST  /:classId/enrollments/:enrollmentId/goals               201  gia sư thêm mục tiêu
  *   PATCH /:classId/enrollments/:enrollmentId/goals/:goalId       200  gia sư sửa mục tiêu, kết quả, tiến độ
  *
+ * Lịch, buổi lẻ và điểm của lớp: xem `mountClassLessonRoutes` (lessons.router.ts).
+ *
  * Quản lý lớp không cần tài khoản `active`: tài khoản bị hạn chế (B.9.3) vẫn dạy và ghi nhận lớp đang có.
  */
-export function classesRouter(controller: ClassesController, authenticate: RequestHandler): Router {
+export function classesRouter(
+  controller: ClassesController,
+  authenticate: RequestHandler,
+  lessons?: LessonsController,
+): Router {
   const router = Router();
   router.use(authenticate, requireRole('tutor', 'parent', 'student'));
   const cls = { params: ClassIdParams };
@@ -85,5 +93,6 @@ export function classesRouter(controller: ClassesController, authenticate: Reque
     validate({ params: LearningGoalParams, body: UpdateLearningGoalRequest }),
     controller.updateGoal,
   );
+  if (lessons) mountClassLessonRoutes(router, lessons);
   return router;
 }

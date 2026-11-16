@@ -118,6 +118,15 @@ export const en: Messages = {
     subject_not_taught:
       'This tutor does not teach this subject. Choose a subject from the tutor profile.',
     period_end_before_start: 'The end date must be on or after the start date.',
+    invalid_datetime: 'This date and time is not valid. Choose them again.',
+    range_too_long: 'This period is too long. View at most about two months.',
+    invalid_score: 'This score is not valid. Enter a number of 0 or more.',
+    score_above_max: 'The score cannot be higher than the maximum score.',
+    lesson_time_out_of_range:
+      'This lesson time is not allowed: a new lesson can be at most 30 days back and one year ahead; a moved lesson must be in the future.',
+    attendance_incomplete: 'Record attendance for every learner in the lesson.',
+    makeup_invalid:
+      'A make-up lesson must replace a cancelled or tutor-absent lesson of this class.',
   },
 
   emailCommon: {
@@ -182,6 +191,30 @@ export const en: Messages = {
       'Both sides have confirmed the collaboration. Contact details are now visible on the request page.',
     messageSubject: 'New message from {{name}}',
     messageBody: 'You have a new message from {{name}}. Open the conversation to read it.',
+    classStatusSubject: 'A class has changed',
+    classStatusBody:
+      '{{name}} changed the status of a class (paused, resumed or ended). Open the class to see the details.',
+    feeProposedSubject: '{{name}} proposed a new fee',
+    feeProposedBody:
+      '{{name}} proposed a new fee for a class. The new fee only applies once you accept it.',
+    feeDecidedSubject: 'Your fee proposal has an answer',
+    feeDecidedBody: 'Your fee change for a class has an answer. Open the class to see it.',
+    lessonUpcomingSubject: 'Upcoming lesson',
+    lessonUpcomingBody:
+      'You have a lesson in the next 24 hours. Open your schedule to see the time and place.',
+    lessonChangedSubject: 'Your schedule has changed',
+    lessonChangedBody:
+      '{{name}} moved or cancelled a lesson. Open your schedule to see the details.',
+    attendanceReminderSubject: 'A lesson has no attendance yet',
+    attendanceReminderBody:
+      'A lesson ended more than 24 hours ago and has no attendance yet. Record it so the parent can confirm.',
+    lessonToConfirmSubject: 'Please confirm a lesson',
+    lessonToConfirmBody:
+      '{{name}} recorded attendance for a lesson. You have 48 hours to confirm or dispute it; after that it is confirmed automatically.',
+    lessonDisputeSubject: 'Update on a lesson dispute',
+    lessonDisputeBody: 'A dispute about a lesson has an update. Open the lesson to see it.',
+    assessmentSubject: 'New score and feedback',
+    assessmentBody: '{{name}} added a new score and feedback. Open the class to see it.',
     action: 'Open TPS-Connection',
     settingsHint: 'You can turn these emails off under Account > Notifications.',
   },
@@ -547,6 +580,27 @@ export const en: Messages = {
     identityRejected: 'Your ID documents were not approved. See the reason on your profile page.',
     credentialApproved: '“{{title}}” has been verified.',
     credentialRejected: '“{{title}}” was not verified. See the reason on your profile page.',
+    classPaused: '{{name}} paused the {{subject}} class. Upcoming lessons were cancelled.',
+    classResumed: '{{name}} resumed the {{subject}} class.',
+    classEnded: '{{name}} ended the {{subject}} class. The learning history is kept.',
+    feeProposed: '{{name}} proposed a new fee for the {{subject}} class. Review and reply.',
+    feeAccepted: '{{name}} accepted the new fee for the {{subject}} class.',
+    feeRejected: '{{name}} declined the new fee for the {{subject}} class.',
+    feeWithdrawn: '{{name}} withdrew the new fee for the {{subject}} class.',
+    lessonUpcoming: '{{subject}} lesson at {{date}}.',
+    lessonRescheduled: '{{name}} moved the {{subject}} lesson to {{date}}.',
+    lessonCancelled: '{{name}} cancelled the {{subject}} lesson at {{date}}.',
+    attendanceReminder: 'The {{subject}} lesson at {{date}} has no attendance yet.',
+    lessonToConfirm:
+      '{{name}} recorded the {{subject}} lesson at {{date}}. Please confirm before {{due}}.',
+    lessonToConfirmReminder:
+      'The {{subject}} lesson at {{date}} will be confirmed automatically at {{due}} unless you reply.',
+    disputeOpened: '{{name}} disputed the attendance of the {{subject}} lesson at {{date}}.',
+    disputeSettled: '{{name}} accepted the attendance of the {{subject}} lesson at {{date}}.',
+    disputeWithdrawn: '{{name}} withdrew the dispute about the {{subject}} lesson at {{date}}.',
+    disputeEscalated: 'The dispute about the {{subject}} lesson at {{date}} went to a moderator.',
+    disputeResolved: 'A moderator decided the dispute about the {{subject}} lesson at {{date}}.',
+    assessmentNew: '{{name}} added a new score and feedback for the {{subject}} class.',
   },
   notificationSettings: {
     title: 'Notifications',
@@ -1552,6 +1606,24 @@ export const en: Messages = {
     partially_achieved: 'Partly achieved',
     not_achieved: 'Not achieved',
   },
+  classScheduleStatus: {
+    active: 'Active',
+    ended: 'Stopped',
+  },
+  lessonMode: {
+    online: 'Online',
+    in_person: 'In person',
+  },
+  lessonCancelKind: {
+    party: 'Cancelled by a party',
+    class_paused: 'Class paused',
+    class_ended: 'Class ended',
+  },
+  assessmentKind: {
+    lesson: 'Lesson',
+    quiz: 'Quiz',
+    test: 'Test',
+  },
   lessonStatus: {
     scheduled: 'Scheduled',
     held: 'Held',
@@ -1619,6 +1691,14 @@ export const en: Messages = {
     connection_confirmed: 'Collaboration confirmed',
     message_new: 'New message',
     verification_result: 'Verification result',
+    class_status: 'Class paused, resumed or ended',
+    fee_change: 'Fee changes',
+    lesson_upcoming: 'Upcoming lessons',
+    lesson_changed: 'Lessons moved or cancelled',
+    attendance_reminder: 'Attendance reminders',
+    lesson_to_confirm: 'Lessons to confirm',
+    lesson_dispute: 'Lesson disputes',
+    assessment_new: 'New scores and feedback',
   },
   moderationCaseType: {
     violation: 'Violation',

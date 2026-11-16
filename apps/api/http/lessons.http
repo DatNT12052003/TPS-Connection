@@ -1,0 +1,106 @@
+# Thử tay lịch, buổi học, điểm danh, khiếu nại, điểm (G6 đợt 2) bằng REST Client trong VS Code.
+# Cần một lớp đã có (chạy connections.http rồi classes.http). Đăng nhập bằng `Authorization: Bearer`.
+#
+# Cần chạy trước: npm run infra:up  và  npm run dev -w @tps/api
+
+@api = http://127.0.0.1:3000/api/v1
+@parentToken = dán-access-token-của-phụ-huynh
+@tutorToken = dán-access-token-của-gia-sư
+@managerToken = dán-access-token-của-manager
+@classId = dán-classId
+@enrollmentId = dán-enrollmentId
+@scheduleId = dán-id-lịch-từ-bước-1
+@lessonId = dán-id-buổi
+@attendanceId = dán-id-điểm-danh
+@disputeId = dán-id-khiếu-nại
+
+### 1. Gia sư thêm lịch thứ Hai, Tư, Sáu lúc 18:00 (sinh buổi 8 tuần tới) -> 201 chi tiết lớp
+POST {{api}}/classes/{{classId}}/schedules
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{
+  "weekdays": [1, 3, 5],
+  "startTime": "18:00",
+  "durationMinutes": 90,
+  "startDate": "2026-11-16",
+  "teachingMode": "online",
+  "onlineUrl": "https://meet.example.com/abc"
+}
+
+### 2. Sửa lịch (buổi tương lai sinh lại); dừng lịch: POST .../schedules/{{scheduleId}}/end
+PUT {{api}}/classes/{{classId}}/schedules/{{scheduleId}}
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "weekdays": [2, 4], "startTime": "19:00", "durationMinutes": 90, "startDate": "2026-11-16", "teachingMode": "online" }
+
+### 3. Lịch của tôi (tối đa 62 ngày)
+GET {{api}}/lessons?from=2026-11-16T00:00:00%2B07:00&to=2026-12-16T00:00:00%2B07:00
+Authorization: Bearer {{parentToken}}
+
+### 4. Việc cần làm (gia sư: chưa điểm danh; phụ huynh: chờ xác nhận)
+GET {{api}}/lessons/todo
+Authorization: Bearer {{tutorToken}}
+
+### 5. Gia sư tạo buổi lẻ (thêm "makeupForLessonId" để học bù)
+POST {{api}}/classes/{{classId}}/lessons
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "startsAt": "2026-11-20T19:00:00+07:00", "durationMinutes": 90, "teachingMode": "online" }
+
+### 6. Dời buổi (gia sư, trước giờ học)
+PATCH {{api}}/lessons/{{lessonId}}
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "startsAt": "2026-11-21T19:00:00+07:00" }
+
+### 7. Hủy buổi (gia sư hoặc phụ huynh; dưới 2 giờ là hủy muộn)
+POST {{api}}/lessons/{{lessonId}}/cancel
+Authorization: Bearer {{parentToken}}
+Content-Type: application/json
+
+{ "reason": "Con bị ốm" }
+
+### 8. Gia sư điểm danh sau giờ bắt đầu (gửi lại khi phụ huynh chưa xác nhận là sửa)
+PUT {{api}}/lessons/{{lessonId}}/attendance
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{
+  "outcome": "held",
+  "contentTaught": "Phương trình bậc nhất",
+  "actualMinutes": 90,
+  "attendances": [{ "enrollmentId": "{{enrollmentId}}", "status": "present", "comment": "Làm bài tốt" }]
+}
+
+### 9. Phụ huynh xác nhận trong 48 giờ
+POST {{api}}/lessons/{{lessonId}}/attendances/{{attendanceId}}/confirm
+Authorization: Bearer {{parentToken}}
+
+### 10. ... hoặc khiếu nại; rồi /dispute/settle, /dispute/withdraw (phụ huynh) hoặc /dispute/escalate (một bên)
+POST {{api}}/lessons/{{lessonId}}/attendances/{{attendanceId}}/dispute
+Authorization: Bearer {{parentToken}}
+Content-Type: application/json
+
+{ "reason": "Hôm đó con vắng có báo trước", "claimedStatus": "absent_notified" }
+
+### 11. Manager: hàng chờ khiếu nại đã chuyển, rồi quyết định
+GET {{api}}/admin/attendance-disputes
+Authorization: Bearer {{managerToken}}
+
+###
+POST {{api}}/admin/attendance-disputes/{{disputeId}}/resolve
+Authorization: Bearer {{managerToken}}
+Content-Type: application/json
+
+{ "lessonStatus": "held", "attendanceStatus": "absent_notified", "note": "Phụ huynh đã báo vắng trước buổi học" }
+
+### 12. Gia sư ghi điểm và nhận xét (điểm luôn kèm nhận xét)
+POST {{api}}/classes/{{classId}}/enrollments/{{enrollmentId}}/assessments
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "kind": "test", "title": "Kiểm tra 15 phút", "score": 8.5, "maxScore": 10, "comment": "Nắm chắc kiến thức", "assessedOn": "2026-11-20" }

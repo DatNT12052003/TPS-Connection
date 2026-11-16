@@ -29,6 +29,15 @@ export const NOTIFICATION_DEFAULTS: Record<
   // Email mỗi hội thoại tối đa một lần cho tới khi người nhận đọc; mặc định tắt để không làm phiền.
   message_new: { inApp: true, email: false },
   verification_result: { inApp: true, email: null },
+  // Lớp học (G6).
+  class_status: { inApp: true, email: true },
+  fee_change: { inApp: true, email: true },
+  lesson_upcoming: { inApp: true, email: false },
+  lesson_changed: { inApp: true, email: true },
+  attendance_reminder: { inApp: true, email: true },
+  lesson_to_confirm: { inApp: true, email: true },
+  lesson_dispute: { inApp: true, email: true },
+  assessment_new: { inApp: true, email: false },
 };
 
 // ---- Dữ liệu theo loại ----------------------------------------------------------------------------
@@ -65,6 +74,63 @@ export const VerificationNotificationData = z.object({
 });
 export type VerificationNotificationData = z.infer<typeof VerificationNotificationData>;
 
+/**
+ * Thông báo về một lớp (G6): id lớp, môn và tên hiển thị của bên kia (gia sư với phụ huynh và học sinh, phụ huynh với
+ * gia sư; null khi hệ thống làm). Không có tên học sinh, nội dung buổi học, điểm hay nhận xét.
+ */
+const ClassNotificationBase = {
+  classId: Id,
+  subjectId: z.int(),
+  counterpartName: CounterpartName,
+};
+
+export const ClassStatusNotificationData = z.object({
+  ...ClassNotificationBase,
+  status: z.enum(['paused', 'active', 'ended']),
+});
+export type ClassStatusNotificationData = z.infer<typeof ClassStatusNotificationData>;
+
+export const FeeChangeNotificationData = z.object({
+  ...ClassNotificationBase,
+  event: z.enum(['proposed', 'accepted', 'rejected', 'withdrawn']),
+});
+export type FeeChangeNotificationData = z.infer<typeof FeeChangeNotificationData>;
+
+const LessonNotificationBase = {
+  ...ClassNotificationBase,
+  lessonId: Id,
+  startsAt: z.iso.datetime(),
+};
+
+export const LessonNotificationData = z.object(LessonNotificationBase);
+export type LessonNotificationData = z.infer<typeof LessonNotificationData>;
+
+export const LessonChangedNotificationData = z.object({
+  ...LessonNotificationBase,
+  change: z.enum(['rescheduled', 'cancelled']),
+});
+export type LessonChangedNotificationData = z.infer<typeof LessonChangedNotificationData>;
+
+export const LessonToConfirmNotificationData = z.object({
+  ...LessonNotificationBase,
+  confirmDueAt: z.iso.datetime(),
+  /** Nhắc trước hạn (C5) thay vì báo lần đầu. */
+  reminder: z.boolean(),
+});
+export type LessonToConfirmNotificationData = z.infer<typeof LessonToConfirmNotificationData>;
+
+export const LessonDisputeNotificationData = z.object({
+  ...LessonNotificationBase,
+  event: z.enum(['opened', 'settled', 'withdrawn', 'escalated', 'resolved']),
+});
+export type LessonDisputeNotificationData = z.infer<typeof LessonDisputeNotificationData>;
+
+export const AssessmentNotificationData = z.object({
+  ...ClassNotificationBase,
+  assessmentId: Id,
+});
+export type AssessmentNotificationData = z.infer<typeof AssessmentNotificationData>;
+
 const base = {
   id: Id,
   readAt: z.iso.datetime().nullable(),
@@ -81,6 +147,18 @@ export const Notification = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('connection_confirmed'), data: ConnectionNotificationData }),
   z.object({ ...base, type: z.literal('message_new'), data: MessageNotificationData }),
   z.object({ ...base, type: z.literal('verification_result'), data: VerificationNotificationData }),
+  z.object({ ...base, type: z.literal('class_status'), data: ClassStatusNotificationData }),
+  z.object({ ...base, type: z.literal('fee_change'), data: FeeChangeNotificationData }),
+  z.object({ ...base, type: z.literal('lesson_upcoming'), data: LessonNotificationData }),
+  z.object({ ...base, type: z.literal('lesson_changed'), data: LessonChangedNotificationData }),
+  z.object({ ...base, type: z.literal('attendance_reminder'), data: LessonNotificationData }),
+  z.object({
+    ...base,
+    type: z.literal('lesson_to_confirm'),
+    data: LessonToConfirmNotificationData,
+  }),
+  z.object({ ...base, type: z.literal('lesson_dispute'), data: LessonDisputeNotificationData }),
+  z.object({ ...base, type: z.literal('assessment_new'), data: AssessmentNotificationData }),
 ]);
 export type Notification = z.infer<typeof Notification>;
 
@@ -119,6 +197,16 @@ export function notificationHref(notification: NotificationContent): string {
       return `/app/messages/${notification.data.conversationId}`;
     case 'verification_result':
       return '/app/profile';
+    case 'class_status':
+    case 'fee_change':
+    case 'assessment_new':
+      return `/app/classes/${notification.data.classId}`;
+    case 'lesson_upcoming':
+    case 'lesson_changed':
+    case 'attendance_reminder':
+    case 'lesson_to_confirm':
+    case 'lesson_dispute':
+      return `/app/classes/${notification.data.classId}/lessons/${notification.data.lessonId}`;
     default:
       return `/app/connections/${notification.data.requestId}`;
   }
