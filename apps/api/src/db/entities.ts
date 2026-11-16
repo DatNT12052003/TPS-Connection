@@ -3,6 +3,12 @@
 import { AuditLog } from '../modules/audit/audit-log.entity.js';
 import { AuthSession } from '../modules/auth/auth-session.entity.js';
 import {
+  ClassEnrollmentRow,
+  EnrollmentFeeRate,
+  LearningGoalRow,
+  TutoringClass,
+} from '../modules/classes/class.entity.js';
+import {
   ConnectionEventRow,
   ConnectionRequest,
   ConnectionTermsVersion,
@@ -99,4 +105,9 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   NotificationRow,
   NotificationPreferenceRow,
   ViolationReport,
+  // Lớp học (G6)
+  TutoringClass,
+  ClassEnrollmentRow,
+  EnrollmentFeeRate,
+  LearningGoalRow,
 ];

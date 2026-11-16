@@ -304,7 +304,7 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
     - Số yêu cầu phát sinh từ mỗi bài tuyển và số ứng tuyển trên mỗi bài tìm gia sư (MyPosts, `/app/requests`): API chưa có đếm theo bài; nhãn "Đã ứng tuyển" mới có ở bài đang chọn, chưa có trên từng dòng của danh sách.
     - Trang chi tiết yêu cầu không tự hiện tên môn/khối đã tắt trong danh mục (hiện trống).
 - **Chuyển sang giai đoạn sau:**
-  - G6: xác nhận hợp tác tạo lớp, ghi danh và mức học phí đầu tiên trong cùng transaction (D9). Yêu cầu đã `confirmed` trước khi có bảng lớp cần được tạo lớp bằng migration dữ liệu. Hàm `teachesStudent` dùng lớp; hiện "gia sư được xem danh tính trẻ" dựa vào `connection_requests.status = 'confirmed'`.
+  - ~~G6: xác nhận hợp tác tạo lớp, ghi danh và mức học phí đầu tiên trong cùng transaction (D9). Yêu cầu đã `confirmed` trước khi có bảng lớp cần được tạo lớp bằng migration dữ liệu. Hàm `teachesStudent` dùng lớp~~: xong ở G6 đợt 1. "Gia sư được xem danh tính trẻ" trong yêu cầu kết nối vẫn dựa vào `connection_requests.status = 'confirmed'`.
   - G8: thu hồi xác minh gia sư thì hủy các yêu cầu đang mở của gia sư (B.1); hiện gia sư bị thu hồi chỉ bị chặn chấp nhận và xác nhận.
 
 ### Giai đoạn 6. Lớp học, lịch, điểm danh và kết quả cơ bản
@@ -331,6 +331,17 @@ Theo _(D2)_, bản đầu gồm Web và API. Mobile là bản phát hành kế t
 **Đầu ra:** trang lớp học, lịch, điểm danh, xác nhận buổi, khiếu nại buổi, xem kết quả của con.
 
 **Hoàn thành khi:** chạy trọn luồng §14.3 từ bước 1 đến 5 và bước 8–9 (phần điểm, nhận xét); kết thúc lớp không làm mất dữ liệu; test quyền cho gia sư, phụ huynh và học sinh trên dữ liệu lớp.
+
+**Tiến độ:** làm theo ba đợt.
+
+- **Đợt 1, lớp học, ghi danh, học phí, mục tiêu (database và API):** **xong ngày 2026-11-16**. Bảng `tutoring_classes`, `class_enrollments`, `enrollment_fee_rates`, `learning_goals` (migration `CreateTeachingClasses`, tạo luôn lớp cho các yêu cầu đã `confirmed` ở G5; khóa ngoại `conversations.class_id`). Xác nhận hợp tác tạo lớp 1 kèm 1, ghi danh `active` và mức học phí `active` từ phiên bản điều khoản đã chốt trong cùng transaction (D9); ngày bắt đầu theo điều khoản, không có thì hôm nay (giờ Việt Nam); chi tiết yêu cầu kết nối có `classId`. API `/api/v1/classes`: danh sách theo vai trò (gia sư, phụ huynh đang quản lý học sinh, chính học sinh; đang học / đã kết thúc; theo con), chi tiết (gia sư thấy liên hệ phụ huynh và danh tính học sinh, phụ huynh thấy liên hệ gia sư, D16), đặt tên lớp, tạm nghỉ, cho học lại, kết thúc kèm lý do (chỉ gia sư, D35; kết thúc thì ghi danh rời lớp, đề xuất học phí còn chờ tự rút, lớp chỉ còn xem), năng lực ban đầu và lưu ý giảng dạy, đổi học phí (gia sư đề xuất kèm lời nhắn, phụ huynh đồng ý hoặc từ chối, gia sư rút; đồng ý thì mức cũ `superseded`, mức mới áp dụng từ lúc đó, D17; một đề xuất chờ mỗi ghi danh, 409 `fee_change_pending`), mục tiêu theo tháng / học kỳ / khoảng tự chọn kèm kết quả và ghi chú tiến độ. Người ngoài lớp: 404; thao tác không dành cho vai trò của mình: 403. Học sinh chỉ xem: không thấy học phí, năng lực ban đầu, liên hệ, hội thoại. Lưu ý giảng dạy chỉ gia sư thấy. `teachesStudent` trong `learner-access.ts` (gia sư dạy hoặc đã dạy học sinh qua lớp của chính mình, D28). Xóa hồ sơ con còn lớp đang học hoặc tạm nghỉ: 409 `learner_in_class` (C2); lớp đã kết thúc thì xóa được, gia sư vẫn tra cứu lịch sử. Mã lỗi mới: `learner_in_class`, `fee_change_pending`. Test: `apps/api/test/integration/classes.int.test.ts`; thử tay: `apps/api/http/classes.http`. Giả định đã chọn (owner xem lại nếu cần):
+  - Tên lớp để trống được: giao diện ghép từ môn và tên học sinh theo ngôn ngữ người xem; gia sư đặt tên riêng nếu muốn.
+  - Phụ huynh thấy năng lực ban đầu do gia sư ghi; học sinh thấy mục tiêu học tập nhưng không thấy học phí.
+  - Tài khoản bị hạn chế (B.9.3) vẫn quản lý được lớp đang có.
+  - Mục tiêu học tập không xóa được (giữ lịch sử học tập), chỉ sửa và đổi kết quả.
+- **Đợt 2, lịch, buổi học, điểm danh, xác nhận, khiếu nại, điểm (database, API, job):** chưa làm. Gồm cả việc đợt 1 để lại: tạm nghỉ / kết thúc lớp hủy buổi tương lai và lịch chuyển `ended`, học lại sinh lại buổi (B.5.1); thông báo đề xuất và kết quả đổi học phí cho phụ huynh và gia sư (cùng các loại thông báo của lớp); thông báo khi lớp tạm nghỉ, học lại, kết thúc.
+- **Đợt 3, trang web:** chưa làm (trang lớp, lịch, điểm danh, xác nhận buổi, khiếu nại, kết quả; khối trên trang tổng quan; liên kết "Đi tới lớp" ở yêu cầu kết nối đã xác nhận).
+- **Chưa làm, chuyển sau:** OpenAPI chưa có endpoint G6 (như G5); ẩn danh hóa tên học sinh trong lớp khi hồ sơ bị xóa quá 6 tháng làm cùng job ẩn danh hóa (C2, D19).
 
 ### Giai đoạn 7. Ghi nhận học phí
 

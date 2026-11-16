@@ -32,6 +32,7 @@ import { createConnectionsService } from './modules/connections/connections.serv
 import { createMessagingService } from './modules/messaging/messaging.service.js';
 import { createNotificationsService } from './modules/notifications/notifications.service.js';
 import { createSafetyService } from './modules/safety/safety.service.js';
+import { createClassesService } from './modules/classes/classes.service.js';
 import {
   createRealtimeServer,
   type RealtimePublisher,
@@ -217,6 +218,8 @@ async function main() {
     }),
     notifications,
     safety: createSafetyService({ dataSource, logger, publicFileUrl }),
+    // Lớp học (G6).
+    classes: createClassesService({ dataSource, logger, publicFileUrl }),
   });
   const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API chạy tại http://${env.HOST}:${env.PORT} (môi trường ${env.NODE_ENV})`);

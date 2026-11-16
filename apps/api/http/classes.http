@@ -1,0 +1,85 @@
+# Thử tay lớp học (G6 đợt 1) bằng extension REST Client (humao.rest-client) trong VS Code.
+# Lớp được tạo khi hai bên xác nhận hợp tác (chạy hết connections.http); `classId` có trong chi tiết yêu cầu kết nối,
+# `enrollmentId` và id mức học phí có trong chi tiết lớp (bước 2).
+# Đăng nhập bằng `Authorization: Bearer` như connections.http.
+#
+# Cần chạy trước: npm run infra:up  và  npm run dev -w @tps/api
+
+@api = http://127.0.0.1:3000/api/v1
+@parentToken = dán-access-token-của-phụ-huynh
+@tutorToken = dán-access-token-của-gia-sư
+@classId = dán-classId
+@enrollmentId = dán-enrollmentId
+@rateId = dán-id-mức-học-phí-đề-xuất
+@goalId = dán-id-mục-tiêu
+
+### 1. Lớp của tôi (gia sư): đang học, tạm nghỉ trước
+GET {{api}}/classes?as=tutor&state=current
+Authorization: Bearer {{tutorToken}}
+
+### 2. Chi tiết lớp (gia sư thấy liên hệ phụ huynh, danh tính học sinh, lưu ý giảng dạy)
+GET {{api}}/classes/{{classId}}
+Authorization: Bearer {{tutorToken}}
+
+### 3. Phụ huynh xem cùng lớp (không có lưu ý giảng dạy)
+GET {{api}}/classes/{{classId}}
+Authorization: Bearer {{parentToken}}
+
+### 4. Gia sư đặt tên lớp ("" để bỏ tên riêng)
+PATCH {{api}}/classes/{{classId}}
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "name": "Toán 8 – ôn thi vào 10" }
+
+### 5. Gia sư ghi năng lực ban đầu và lưu ý giảng dạy
+PATCH {{api}}/classes/{{classId}}/enrollments/{{enrollmentId}}
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "initialAssessment": "Nắm chắc đại số, yếu hình học", "teachingNotes": "Hay quên làm bài tập" }
+
+### 6. Gia sư đề xuất học phí mới -> 201 (đang có đề xuất: 409 fee_change_pending)
+POST {{api}}/classes/{{classId}}/enrollments/{{enrollmentId}}/fee-rates
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "sessionPriceVnd": 300000, "sessionMinutes": 120, "note": "Tăng thời lượng ôn thi" }
+
+### 7. Phụ huynh đồng ý (hoặc /reject); gia sư rút bằng /withdraw
+POST {{api}}/classes/{{classId}}/enrollments/{{enrollmentId}}/fee-rates/{{rateId}}/accept
+Authorization: Bearer {{parentToken}}
+
+### 8. Gia sư thêm mục tiêu tháng
+POST {{api}}/classes/{{classId}}/enrollments/{{enrollmentId}}/goals
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{
+  "periodType": "month",
+  "periodStart": "2026-12-01",
+  "periodEnd": "2026-12-31",
+  "description": "Làm chắc phương trình bậc nhất"
+}
+
+### 9. Gia sư cập nhật kết quả mục tiêu
+PATCH {{api}}/classes/{{classId}}/enrollments/{{enrollmentId}}/goals/{{goalId}}
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "status": "achieved", "progressNote": "Làm đúng 9/10 bài kiểm tra" }
+
+### 10. Tạm nghỉ / học lại (chỉ gia sư; phụ huynh: 403)
+POST {{api}}/classes/{{classId}}/pause
+Authorization: Bearer {{tutorToken}}
+
+###
+POST {{api}}/classes/{{classId}}/resume
+Authorization: Bearer {{tutorToken}}
+
+### 11. Kết thúc lớp (bắt buộc lý do); sau đó lớp chỉ còn xem (409 cho mọi thao tác ghi)
+POST {{api}}/classes/{{classId}}/end
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "reason": "Hết học kỳ" }

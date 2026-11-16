@@ -52,6 +52,10 @@ export const en: Messages = {
       'The other party has just changed the terms. Review the latest version, then confirm.',
     conversation_closed:
       'This connection request has ended, so the conversation is read-only. You cannot send new messages.',
+    learner_in_class:
+      'Your child still has an active or paused class, so the profile cannot be deleted yet. Ask the tutor to end the class first.',
+    fee_change_pending:
+      'A fee change is already waiting for the parent. Withdraw it before proposing a new one.',
     internal_error:
       'Something went wrong on our side while handling your request. Try again in a few minutes.',
     service_unavailable:
@@ -113,6 +117,7 @@ export const en: Messages = {
     invalid_session_minutes: 'Each session lasts from 15 to 600 minutes.',
     subject_not_taught:
       'This tutor does not teach this subject. Choose a subject from the tutor profile.',
+    period_end_before_start: 'The end date must be on or after the start date.',
   },
 
   emailCommon: {
@@ -1535,6 +1540,17 @@ export const en: Messages = {
     rejected: 'Rejected',
     superseded: 'Superseded',
     withdrawn: 'Withdrawn',
+  },
+  learningGoalPeriod: {
+    month: 'Monthly',
+    term: 'Per term',
+    custom: 'Custom period',
+  },
+  learningGoalStatus: {
+    active: 'In progress',
+    achieved: 'Achieved',
+    partially_achieved: 'Partly achieved',
+    not_achieved: 'Not achieved',
   },
   lessonStatus: {
     scheduled: 'Scheduled',

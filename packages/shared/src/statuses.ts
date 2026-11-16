@@ -250,6 +250,19 @@ export type EnrollmentStatus = z.infer<typeof EnrollmentStatus>;
 export const FeeRateStatus = z.enum(['proposed', 'active', 'rejected', 'superseded', 'withdrawn']);
 export type FeeRateStatus = z.infer<typeof FeeRateStatus>;
 
+/** `learning_goals.period_type`: mục tiêu theo tháng, học kỳ hoặc khoảng tự chọn (§6). */
+export const LearningGoalPeriod = z.enum(['month', 'term', 'custom']);
+export type LearningGoalPeriod = z.infer<typeof LearningGoalPeriod>;
+
+/** `learning_goals.status`. */
+export const LearningGoalStatus = z.enum([
+  'active',
+  'achieved',
+  'partially_achieved',
+  'not_achieved',
+]);
+export type LearningGoalStatus = z.infer<typeof LearningGoalStatus>;
+
 // ---- Buổi học, điểm danh, khiếu nại ------------------------------------------------------------
 
 /** `lessons.status` (B.6). */
@@ -406,6 +419,8 @@ export const LABELLED_ENUMS = {
   tutoringClassStatus: TutoringClassStatus,
   enrollmentStatus: EnrollmentStatus,
   feeRateStatus: FeeRateStatus,
+  learningGoalPeriod: LearningGoalPeriod,
+  learningGoalStatus: LearningGoalStatus,
   lessonStatus: LessonStatus,
   attendanceStatus: AttendanceStatus,
   attendanceConfirmationStatus: AttendanceConfirmationStatus,

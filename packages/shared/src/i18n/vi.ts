@@ -53,6 +53,10 @@ export const vi = {
       'Điều kiện hợp tác vừa được bên kia sửa. Hãy xem lại phiên bản mới nhất rồi xác nhận.',
     conversation_closed:
       'Yêu cầu kết nối đã kết thúc nên cuộc trò chuyện chỉ còn xem được, không gửi thêm tin nhắn.',
+    learner_in_class:
+      'Con còn lớp đang học hoặc tạm nghỉ nên chưa xóa được hồ sơ. Hãy nhờ gia sư kết thúc lớp trước.',
+    fee_change_pending:
+      'Đang có một đề xuất đổi học phí chờ phụ huynh trả lời. Hãy rút đề xuất đó trước khi gửi đề xuất mới.',
     internal_error: 'Hệ thống gặp sự cố khi xử lý yêu cầu. Hãy thử lại sau ít phút.',
     service_unavailable: 'Hệ thống đang bảo trì hoặc quá tải. Hãy thử lại sau ít phút.',
   },
@@ -110,6 +114,7 @@ export const vi = {
       'Con đã có một bài tìm gia sư cho môn này. Hãy sửa bài đó, hoặc đóng bài đó trước khi đăng bài mới.',
     invalid_session_minutes: 'Thời lượng mỗi buổi từ 15 đến 600 phút.',
     subject_not_taught: 'Gia sư chưa nhận dạy môn này. Hãy chọn môn khác trong hồ sơ gia sư.',
+    period_end_before_start: 'Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.',
   },
 
   // ---- Email gửi người dùng (API dựng nội dung theo ngôn ngữ của người nhận) ----
@@ -1529,6 +1534,17 @@ export const vi = {
     rejected: 'Bị từ chối',
     superseded: 'Đã thay thế',
     withdrawn: 'Đã rút',
+  },
+  learningGoalPeriod: {
+    month: 'Theo tháng',
+    term: 'Theo học kỳ',
+    custom: 'Khoảng thời gian khác',
+  },
+  learningGoalStatus: {
+    active: 'Đang theo đuổi',
+    achieved: 'Đã đạt',
+    partially_achieved: 'Đạt một phần',
+    not_achieved: 'Chưa đạt',
   },
   lessonStatus: {
     scheduled: 'Đã lên lịch',
