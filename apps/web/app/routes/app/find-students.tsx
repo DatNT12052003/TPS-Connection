@@ -1,7 +1,11 @@
 // /app/find-students: gia sư tìm nhu cầu của phụ huynh (canvas FindStudents, FindStudentsMobile). Chỉ gia sư đã duyệt
 // danh tính và đã đăng nhập mới xem được (C8). Danh sách bên trái, bài đang chọn (`?post=<id>`) bên phải. Không bao
-// giờ có hồ sơ con, người đăng hay danh tính của trẻ (§16.7): API không trả các thông tin đó. Ứng tuyển làm ở G5.
+// giờ có hồ sơ con, người đăng hay danh tính của trẻ (§16.7): API không trả các thông tin đó. Ứng tuyển (G5, §5.2):
+// form lời nhắn dưới bài đang chọn (intent `apply`); đã có ứng tuyển đang mở thì hiện "Đã ứng tuyển" và liên kết.
 import {
+  CONNECTION_LIMITS,
+  ConnectionRequestDetail,
+  ConnectionRequestList,
   OwnTutorProfile,
   RequestPostForTutor,
   RequestPostSearchResult,
@@ -10,7 +14,7 @@ import {
 } from '@tps/shared';
 import { Filter } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Form, Link, useSubmit } from 'react-router';
+import { data, Form, Link, redirect, useNavigation, useSubmit } from 'react-router';
 import { LocationFields } from '~/components/forms/location-fields';
 import { PageContainer } from '~/components/layout/page';
 import { KeyValue, KeyValueList } from '~/components/marketplace/key-value';
@@ -18,10 +22,11 @@ import { Pagination } from '~/components/marketplace/pagination';
 import { Alert } from '~/components/ui/alert';
 import { Button, buttonVariants } from '~/components/ui/button';
 import { Card, cardVariants } from '~/components/ui/card';
-import { CheckboxField, SelectField } from '~/components/ui/field';
+import { CheckboxField, SelectField, TextAreaField } from '~/components/ui/field';
 import { ApiError } from '~/lib/api';
 import { type AreaRef, labelOf } from '~/lib/catalog';
 import { loadAreaRefs, loadCatalogs, loadCommunes } from '~/lib/catalog.server';
+import { fieldErrorsFrom, formErrorFrom, formText } from '~/lib/form';
 import { formatDate } from '~/lib/format';
 import {
   areaLabel,
@@ -37,6 +42,7 @@ import { PATHS } from '~/lib/navigation';
 import { readPreferences } from '~/lib/preferences';
 import { getServerApi } from '~/lib/server-api.server';
 import { requireUser } from '~/lib/session.server';
+import { useMessage } from '~/lib/use-message';
 import { cn } from '~/lib/utils';
 import type { Route } from './+types/find-students';
 
@@ -99,7 +105,19 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         .filter((id): id is number => id !== null),
     ),
   ];
-  const areas = await loadAreaRefs(context, locale, communeIds).catch(() => []);
+  const [areas, application] = await Promise.all([
+    loadAreaRefs(context, locale, communeIds).catch(() => []),
+    // Ứng tuyển đang mở của tôi vào bài đang chọn (nếu có).
+    selected
+      ? api
+          .call(
+            `/api/v1/connection-requests?as=tutor&state=open&pageSize=1&requestPostId=${selected.id}`,
+            { schema: ConnectionRequestList },
+          )
+          .then((list) => list.items[0]?.id ?? null)
+          .catch(() => null)
+      : Promise.resolve(null),
+  ]);
   return {
     verified: true as const,
     filters,
@@ -109,7 +127,38 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     areas,
     selected,
     selectedMissing: Boolean(selectedId) && !selected,
+    applicationId: application,
+    applied: url.searchParams.get('applied') === '1',
   };
+}
+
+/** Gia sư ứng tuyển vào bài đang chọn (§5.2). Thành công: quay lại bài với thông báo "Đã gửi ứng tuyển". */
+export async function action({ request, context }: Route.ActionArgs) {
+  await requireUser(request, context, { roles: ['tutor'] });
+  const form = await request.formData();
+  if (formText(form, 'intent') !== 'apply') throw data(null, { status: 400 });
+  const postId = formText(form, 'requestPostId');
+  try {
+    await getServerApi(context).call('/api/v1/connection-requests', {
+      method: 'POST',
+      body: {
+        direction: 'tutor_to_client',
+        requestPostId: postId,
+        message: formText(form, 'message'),
+      },
+      schema: ConnectionRequestDetail,
+    });
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status === 0 || error.status >= 500) throw error;
+    const fields = fieldErrorsFrom(error, ['message']);
+    return data({
+      message: formText(form, 'message'),
+      error: fields.message ?? formErrorFrom(error),
+    });
+  }
+  const url = new URL(request.url);
+  url.searchParams.set('applied', '1');
+  throw redirect(`${url.pathname}?${url.searchParams.toString()}`);
 }
 
 /** "Hà Nội, Phường Ba Đình" hoặc "Trực tuyến". */
@@ -124,9 +173,11 @@ function placeOf(
   return labelOf(catalogs.provinces, post.provinceId) ?? t('teachingMode.online');
 }
 
-export default function FindStudentsPage({ loaderData }: Route.ComponentProps) {
+export default function FindStudentsPage({ loaderData, actionData }: Route.ComponentProps) {
   const { t, i18n } = useTranslation();
   const submit = useSubmit();
+  const navigation = useNavigation();
+  const tr = useMessage();
 
   if (!loaderData.verified) {
     return (
@@ -357,9 +408,46 @@ export default function FindStudentsPage({ loaderData }: Route.ComponentProps) {
                   )}
                 </KeyValueList>
               </Card>
-              <Card className="gap-2">
+              <Card className="gap-3">
                 <h2 className="text-h3">{t('findStudents.applyTitle')}</h2>
-                <p className="text-small text-muted-foreground">{t('findStudents.applySoon')}</p>
+                {loaderData.applied && (
+                  <Alert variant="success">{t('findStudents.appliedDone')}</Alert>
+                )}
+                {loaderData.applicationId ? (
+                  <>
+                    <p className="text-muted-foreground">{t('findStudents.applied')}</p>
+                    <Link
+                      to={`${PATHS.connections}/${loaderData.applicationId}`}
+                      className={buttonVariants({ variant: 'secondary' })}
+                    >
+                      {t('findStudents.appliedView')}
+                    </Link>
+                  </>
+                ) : (
+                  <Form method="post" className="flex flex-col gap-3">
+                    <input type="hidden" name="intent" value="apply" />
+                    <input type="hidden" name="requestPostId" value={selected.id} />
+                    <p className="text-small text-muted-foreground">
+                      {t('findStudents.applyLead')}
+                    </p>
+                    {actionData && 'error' in actionData && (
+                      <Alert variant="danger">{tr(actionData.error)}</Alert>
+                    )}
+                    <TextAreaField
+                      name="message"
+                      label={t('findStudents.applyMessage')}
+                      defaultValue={actionData?.message ?? ''}
+                      maxLength={CONNECTION_LIMITS.messageLength}
+                      rows={5}
+                      required
+                    />
+                    <div>
+                      <Button type="submit" disabled={navigation.state !== 'idle'}>
+                        {t('findStudents.applySubmit')}
+                      </Button>
+                    </div>
+                  </Form>
+                )}
               </Card>
             </>
           ) : (

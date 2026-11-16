@@ -4,8 +4,9 @@
 // `connection_events`. Không phụ thuộc Express.
 //
 // Chấp nhận thì mở hội thoại trong cùng transaction (D14, đợt 2); hủy thì hội thoại chỉ còn xem (D32, suy ra từ
-// trạng thái yêu cầu ở module messaging). Chưa làm: thông báo và email (đợt 3, dựa trên `connection_events`), tạo lớp
-// khi xác nhận hợp tác (G6).
+// trạng thái yêu cầu ở module messaging). Thông báo (đợt 3) ghi trong cùng transaction: yêu cầu mới (bên nhận), được
+// chấp nhận / bị từ chối (bên gửi), xác nhận hợp tác (bên còn lại); đẩy đi sau commit. Hủy và hết hạn không thông báo
+// (nhắc trước hạn do job). Chưa làm: tạo lớp khi xác nhận hợp tác (G6).
 import {
   CONNECTION_LIMITS,
   type ConnectionEvent,
@@ -32,6 +33,12 @@ import { assertCatalogRefs } from '../catalog/catalog-checks.js';
 import { noopRealtime, type RealtimePublisher } from '../../realtime/realtime.js';
 import { createLearnerAccess } from '../learners/learner-access.js';
 import { createMessagingRepository } from '../messaging/messaging.repository.js';
+import {
+  noopNotifier,
+  type Notifier,
+  type PendingNotification,
+} from '../notifications/notifications.service.js';
+import { connectionNotice } from './connection-notifications.js';
 import { createRequestPostsRepository } from '../request-posts/request-posts.repository.js';
 import type { ConnectionRequest, ConnectionTermsVersion } from './connection.entity.js';
 import {
@@ -111,9 +118,12 @@ export function createConnectionsService(deps: {
   publicFileUrl: (storageKey: string) => string;
   /** Đẩy `conversation:opened` khi chấp nhận. Mặc định: không đẩy. */
   realtime?: RealtimePublisher;
+  /** Thông báo yêu cầu mới, được chấp nhận/từ chối, xác nhận hợp tác. Mặc định: không thông báo. */
+  notifier?: Notifier;
 }) {
   const { dataSource, logger } = deps;
   const realtime = deps.realtime ?? noopRealtime;
+  const notifier = deps.notifier ?? noopNotifier;
 
   function toSummary(
     request: ConnectionRequest,
@@ -238,10 +248,15 @@ export function createConnectionsService(deps: {
     }
   }
 
-  /** Kiểm tra giới hạn và trùng lặp rồi ghi yêu cầu mới cùng sự kiện `created`, trong một transaction. */
+  /**
+   * Kiểm tra giới hạn và trùng lặp rồi ghi yêu cầu mới cùng sự kiện `created` và thông báo cho bên nhận, trong một
+   * transaction; đẩy thông báo sau commit.
+   */
   async function insertRequest(actorId: string, data: NewConnectionRequest): Promise<string> {
+    let pending: PendingNotification[] = [];
+    let id: string;
     try {
-      return await dataSource.transaction(async (manager) => {
+      id = await dataSource.transaction(async (manager) => {
         const repo = createConnectionsRepository(manager);
         if ((await repo.countPendingSent(actorId)) >= CONNECTION_LIMITS.pendingSent) {
           throw new AppError('limit_reached', 'Too many pending requests', undefined, {
@@ -259,12 +274,20 @@ export function createConnectionsService(deps: {
           fromStatus: null,
           toStatus: 'pending',
         });
+        const recipient = senderOf(created) === 'client' ? 'tutor' : 'client';
+        pending = await notifier.record(manager, [
+          await connectionNotice(manager, created, 'connection_received', recipient, {
+            accepted: false,
+          }),
+        ]);
         return created.id;
       });
     } catch (error) {
       if (isDuplicateViolation(error)) throw connectionExists();
       throw error;
     }
+    await notifier.dispatch(pending);
+    return id;
   }
 
   /** Phụ huynh gửi gia sư cho một hồ sơ con mình quản lý (§5.1). */
@@ -420,8 +443,14 @@ export function createConnectionsService(deps: {
           tutorId: request.tutorId,
           clientUserId: request.clientUserId,
         });
-        return { conversationId, userIds: [request.tutorId, request.clientUserId] };
+        const pending = await notifier.record(manager, [
+          await connectionNotice(manager, request, 'connection_accepted', senderOf(request), {
+            accepted: true,
+          }),
+        ]);
+        return { conversationId, userIds: [request.tutorId, request.clientUserId], pending };
       });
+      await notifier.dispatch(opened.pending);
       const event: ConversationOpenedEvent = {
         conversationId: opened.conversationId,
         connectionRequestId: requestId,
@@ -439,7 +468,7 @@ export function createConnectionsService(deps: {
       requestId: string,
       note: string | null,
     ): Promise<ConnectionRequestDetail> {
-      await dataSource.transaction(async (manager) => {
+      const pending = await dataSource.transaction(async (manager) => {
         const request = await lockOwn(manager, actorId, requestId, ['pending']);
         if (senderOf(request) === partyOf(request, actorId)) {
           throw forbidden('Only the recipient can reject');
@@ -457,7 +486,13 @@ export function createConnectionsService(deps: {
           fromStatus: 'pending',
           toStatus: 'rejected',
         });
+        return notifier.record(manager, [
+          await connectionNotice(manager, request, 'connection_rejected', senderOf(request), {
+            accepted: false,
+          }),
+        ]);
       });
+      await notifier.dispatch(pending);
       logger.info({ userId: actorId, requestId }, 'Connection request rejected');
       return loadDetail(actorId, requestId);
     },
@@ -556,6 +591,7 @@ export function createConnectionsService(deps: {
       version: number,
     ): Promise<ConnectionRequestDetail> {
       if (actor.status !== 'active') throw accountRestricted();
+      let pending: PendingNotification[] = [];
       const confirmed = await dataSource.transaction(async (manager) => {
         const request = await lockOwn(manager, actor.userId, requestId, ['negotiating']);
         await assertTutorVerified(manager, request, actor.userId);
@@ -604,8 +640,16 @@ export function createConnectionsService(deps: {
           await createRequestPostsRepository(manager).closeFoundTutor(request.requestPostId);
           await repo.cancelPendingApplications(request.requestPostId);
         }
+        // Người bấm xác nhận sau cùng đã biết; báo cho bên kia.
+        const other = party === 'tutor' ? 'client' : 'tutor';
+        pending = await notifier.record(manager, [
+          await connectionNotice(manager, request, 'connection_confirmed', other, {
+            accepted: true,
+          }),
+        ]);
         return true;
       });
+      await notifier.dispatch(pending);
       logger.info(
         { userId: actor.userId, requestId, version, confirmed },
         'Connection terms confirmed',

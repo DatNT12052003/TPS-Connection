@@ -6,11 +6,12 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { Logo } from '~/components/brand/logo';
 import { buttonVariants } from '~/components/ui/button';
+import { CountBadge } from '~/components/ui/count-badge';
 import { APP_NAV, PATHS, type AppRole } from '~/lib/navigation';
 import { cn } from '~/lib/utils';
 import type { SessionUser } from '~/lib/session';
 import { AccountControls } from './account-controls';
-import { BottomNav, TopNav } from './nav-links';
+import { BottomNav, type NavBadges, TopNav } from './nav-links';
 import { SkipLink } from './page';
 import { SettingsMenu } from './settings-menu';
 
@@ -18,12 +19,25 @@ interface AppShellProps {
   user: Pick<SessionUser, 'displayName'>;
   /** Vai trò dùng để dựng điều hướng (appRoleOf). */
   role: AppRole;
+  /** Số thông báo chưa đọc và số hội thoại có tin chưa đọc (G5). */
+  unread?: { notifications: number; conversations: number };
   children: ReactNode;
 }
 
-export function AppShell({ user, role, children }: AppShellProps) {
+export function AppShell({
+  user,
+  role,
+  unread = { notifications: 0, conversations: 0 },
+  children,
+}: AppShellProps) {
   const { t } = useTranslation();
   const nav = APP_NAV[role];
+  const badges: NavBadges = {
+    [PATHS.connections]: {
+      count: unread.conversations,
+      label: t('layout.unreadConversations', { count: unread.conversations }),
+    },
+  };
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -37,7 +51,7 @@ export function AppShell({ user, role, children }: AppShellProps) {
             labelClassName="lg:max-xl:sr-only"
           />
           <div className="hidden lg:block">
-            <TopNav items={nav.desktop} label={t('layout.primaryNav')} />
+            <TopNav items={nav.desktop} label={t('layout.primaryNav')} badges={badges} />
           </div>
           <span className="grow" />
           {/* Học sinh chỉ xem (v1), không có trang thông báo riêng (canvas StudentHome). */}
@@ -45,9 +59,17 @@ export function AppShell({ user, role, children }: AppShellProps) {
             <Link
               to={PATHS.notifications}
               aria-label={t('layout.notifications')}
-              className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'text-foreground')}
+              className={cn(
+                buttonVariants({ variant: 'ghost', size: 'icon' }),
+                'relative text-foreground',
+              )}
             >
               <Bell aria-hidden="true" />
+              <CountBadge
+                count={unread.notifications}
+                label={t('layout.unreadNotifications', { count: unread.notifications })}
+                className="absolute top-0.5 right-0"
+              />
             </Link>
           )}
           <SettingsMenu />
@@ -61,7 +83,7 @@ export function AppShell({ user, role, children }: AppShellProps) {
         {children}
       </main>
 
-      <BottomNav items={nav.mobile} label={t('layout.primaryNav')} />
+      <BottomNav items={nav.mobile} label={t('layout.primaryNav')} badges={badges} />
     </div>
   );
 }

@@ -190,6 +190,8 @@ export const REALTIME_EVENTS = {
   messageDeleted: 'message:deleted',
   conversationRead: 'conversation:read',
   conversationOpened: 'conversation:opened',
+  /** Thông báo mới (payload: `Notification`) hoặc thông báo tin nhắn vừa được gộp thêm. */
+  notificationNew: 'notification:new',
 } as const;
 
 export const MessageNewEvent = z.object({ conversationId: Id, message: Message });

@@ -318,6 +318,37 @@ export type PaymentMethod = z.infer<typeof PaymentMethod>;
 export const ViolationReportStatus = z.enum(['open', 'linked', 'closed']);
 export type ViolationReportStatus = z.infer<typeof ViolationReportStatus>;
 
+/** `violation_reports.reason_code`. */
+export const ReportReason = z.enum([
+  'spam',
+  'harassment',
+  'inappropriate_content',
+  'fake_profile',
+  'child_safety',
+  'fraud',
+  'other',
+]);
+export type ReportReason = z.infer<typeof ReportReason>;
+
+/**
+ * `notifications.type` (§12, bản đầu). Thêm loại mới: sửa ở đây, `NOTIFICATION_DEFAULTS`, cả hai file ngôn ngữ và
+ * CHECK của bảng `notifications`.
+ */
+export const NotificationType = z.enum([
+  'connection_received',
+  'connection_accepted',
+  'connection_rejected',
+  'connection_expiring',
+  'connection_confirmed',
+  'message_new',
+  'verification_result',
+]);
+export type NotificationType = z.infer<typeof NotificationType>;
+
+/** `notification_preferences.channel`. `push` thêm khi có app mobile. */
+export const NotificationChannel = z.enum(['in_app', 'email']);
+export type NotificationChannel = z.infer<typeof NotificationChannel>;
+
 /** `moderation_cases.case_type`. `appeal` do Admin xử lý (C1). */
 export const ModerationCaseType = z.enum(['violation', 'session_dispute', 'appeal']);
 export type ModerationCaseType = z.infer<typeof ModerationCaseType>;
@@ -383,6 +414,8 @@ export const LABELLED_ENUMS = {
   paymentStatus: PaymentStatus,
   paymentMethod: PaymentMethod,
   violationReportStatus: ViolationReportStatus,
+  reportReason: ReportReason,
+  notificationType: NotificationType,
   moderationCaseType: ModerationCaseType,
   moderationCaseStatus: ModerationCaseStatus,
   moderationDecision: ModerationDecision,

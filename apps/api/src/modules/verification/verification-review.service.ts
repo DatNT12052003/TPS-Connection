@@ -27,6 +27,11 @@ import { buildVerificationResultEmail } from './verification.emails.js';
 import { createVerificationReviewRepository } from './verification-review.repository.js';
 import type { VerificationRequest } from './verification-request.entity.js';
 import { createVerificationRepository } from './verification.repository.js';
+import {
+  noopNotifier,
+  type Notifier,
+  type PendingNotification,
+} from '../notifications/notifications.service.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -44,9 +49,33 @@ export function createVerificationReviewService(deps: {
   webUrl: string;
   logger: Logger;
   now?: () => Date;
+  /** Thông báo trong app "kết quả xác minh" (G5). Email kết quả vẫn gửi ở `notifyTutor`. */
+  notifier?: Notifier;
 }) {
   const { dataSource, storage, logger } = deps;
   const now = deps.now ?? (() => new Date());
+  const notifier = deps.notifier ?? noopNotifier;
+
+  /** Ghi thông báo kết quả cho gia sư trong transaction của quyết định. */
+  async function recordResult(
+    manager: EntityManager,
+    request: VerificationRequest,
+    outcome: 'approved' | 'rejected',
+  ): Promise<PendingNotification[]> {
+    const credential =
+      request.kind === 'credential'
+        ? await manager.getRepository(TutorCredential).findOneBy({ id: request.credentialId ?? '' })
+        : null;
+    return notifier.record(manager, [
+      {
+        userId: request.tutorId,
+        content: {
+          type: 'verification_result',
+          data: { kind: request.kind, outcome, credentialTitle: credential?.title ?? null },
+        },
+      },
+    ]);
+  }
 
   /**
    * Khóa yêu cầu đang chờ để quyết định; người duyệt không được là chính gia sư đó. Khóa theo cùng thứ tự với
@@ -233,7 +262,7 @@ export function createVerificationReviewService(deps: {
      * Bằng cấp: `verified`; bằng cấp loại `degree` bật `has_verified_degree` (D20). Ảnh xóa sau 30 ngày (C4).
      */
     async approve(requestId: string, reviewer: Reviewer): Promise<VerificationRequestDetail> {
-      await dataSource.transaction(async (manager) => {
+      const pending = await dataSource.transaction(async (manager) => {
         const request = await lockPending(manager, requestId, reviewer);
         const at = now();
         const profiles = manager.getRepository(TutorProfile);
@@ -261,8 +290,10 @@ export function createVerificationReviewService(deps: {
           }
         }
         await finish(manager, request, reviewer, at, { status: 'approved' });
+        return recordResult(manager, request, 'approved');
       });
       logger.info({ requestId, reviewerId: reviewer.userId }, 'Verification approved');
+      await notifier.dispatch(pending);
       await notifyTutor(requestId, 'approved');
       return this.detail(requestId, reviewer);
     },
@@ -276,7 +307,7 @@ export function createVerificationReviewService(deps: {
       input: RejectVerificationRequest,
       reviewer: Reviewer,
     ): Promise<VerificationRequestDetail> {
-      await dataSource.transaction(async (manager) => {
+      const pending = await dataSource.transaction(async (manager) => {
         const request = await lockPending(manager, requestId, reviewer);
         if (request.kind === 'identity') {
           await manager
@@ -298,8 +329,10 @@ export function createVerificationReviewService(deps: {
           rejectionCode: input.rejectionCode,
           rejectionNote: input.rejectionNote ?? null,
         });
+        return recordResult(manager, request, 'rejected');
       });
       logger.info({ requestId, reviewerId: reviewer.userId }, 'Verification rejected');
+      await notifier.dispatch(pending);
       await notifyTutor(requestId, 'rejected');
       return this.detail(requestId, reviewer);
     },

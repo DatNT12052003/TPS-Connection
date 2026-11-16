@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router';
 import type { NavItem } from '~/lib/navigation';
+import { CountBadge } from '~/components/ui/count-badge';
 import { cn } from '~/lib/utils';
 
 const focusRing =
@@ -16,7 +17,30 @@ const GRID_COLS: Record<number, string> = {
 };
 
 /** Thanh điều hướng ngang (máy tính). NavLink tự đặt aria-current="page" cho mục đang mở. */
-export function TopNav({ items, label }: { items: NavItem[]; label: string }) {
+/** Số chưa đọc theo đường dẫn của mục (ví dụ hội thoại có tin mới ở mục Kết nối). */
+export type NavBadges = Partial<Record<string, { count: number; label: string }>>;
+
+function NavCount({
+  badge,
+  className,
+}: {
+  badge: { count: number; label: string } | undefined;
+  className: string;
+}) {
+  return badge ? (
+    <CountBadge count={badge.count} label={badge.label} className={className} />
+  ) : null;
+}
+
+export function TopNav({
+  items,
+  label,
+  badges = {},
+}: {
+  items: NavItem[];
+  label: string;
+  badges?: NavBadges;
+}) {
   const { t } = useTranslation();
   return (
     // Luôn một hàng: 1024–1279 px thu gọn khoảng đệm, từ 1280 px giãn ra (header cũng gọn lại tương ứng).
@@ -34,6 +58,7 @@ export function TopNav({ items, label }: { items: NavItem[]; label: string }) {
           )}
         >
           {t(item.label)}
+          <NavCount badge={badges[item.to]} className="ml-1.5" />
         </NavLink>
       ))}
     </nav>
@@ -41,7 +66,15 @@ export function TopNav({ items, label }: { items: NavItem[]; label: string }) {
 }
 
 /** Thanh điều hướng dưới đáy (điện thoại, máy tính bảng dọc): icon + nhãn ngắn, tối đa 5 mục. */
-export function BottomNav({ items, label }: { items: NavItem[]; label: string }) {
+export function BottomNav({
+  items,
+  label,
+  badges = {},
+}: {
+  items: NavItem[];
+  label: string;
+  badges?: NavBadges;
+}) {
   const { t } = useTranslation();
   return (
     <nav
@@ -61,7 +94,10 @@ export function BottomNav({ items, label }: { items: NavItem[]; label: string })
                 focusRing,
               )}
             >
-              <Icon aria-hidden="true" className="size-5" />
+              <span className="relative">
+                <Icon aria-hidden="true" className="size-5" />
+                <NavCount badge={badges[to]} className="absolute -top-1.5 left-3" />
+              </span>
               {t(key)}
             </NavLink>
           </li>

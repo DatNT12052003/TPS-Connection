@@ -29,6 +29,8 @@ import { createConnectionsRepository } from '../../src/modules/connections/conne
 import { createConnectionsService } from '../../src/modules/connections/connections.service.js';
 import { createLearnersService } from '../../src/modules/learners/learners.service.js';
 import type { MessagingService } from '../../src/modules/messaging/messaging.service.js';
+import type { NotificationsService } from '../../src/modules/notifications/notifications.service.js';
+import type { SafetyService } from '../../src/modules/safety/safety.service.js';
 import type { StudentInvitationsService } from '../../src/modules/learners/student-invitations.service.js';
 import type { ParentsService } from '../../src/modules/parents/parents.service.js';
 import { createRequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
@@ -109,6 +111,8 @@ beforeAll(async () => {
     requestPosts: createRequestPostsService({ dataSource: db, logger: silentLogger }),
     connections: createConnectionsService({ dataSource: db, logger: silentLogger, publicFileUrl }),
     messaging: {} as MessagingService,
+    notifications: {} as NotificationsService,
+    safety: {} as SafetyService,
   });
 });
 

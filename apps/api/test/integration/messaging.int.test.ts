@@ -38,6 +38,8 @@ import { createFilesService } from '../../src/modules/files/files.service.js';
 import { createLearnersService } from '../../src/modules/learners/learners.service.js';
 import type { StudentInvitationsService } from '../../src/modules/learners/student-invitations.service.js';
 import { createMessagingService } from '../../src/modules/messaging/messaging.service.js';
+import type { NotificationsService } from '../../src/modules/notifications/notifications.service.js';
+import type { SafetyService } from '../../src/modules/safety/safety.service.js';
 import type { ParentsService } from '../../src/modules/parents/parents.service.js';
 import type { RequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
 import type { TutorPostsService } from '../../src/modules/tutor-posts/tutor-posts.service.js';
@@ -156,6 +158,8 @@ beforeAll(async () => {
       logger: silentLogger,
       publicFileUrl,
     }),
+    notifications: {} as NotificationsService,
+    safety: {} as SafetyService,
   });
 });
 
@@ -701,7 +705,16 @@ describe('CreateMessaging migration', () => {
   it('opens conversations for requests accepted before messaging existed', async () => {
     // Chạy cuối: gỡ migration làm mất dữ liệu nhắn tin của các test trên.
     const { tutor, parent, requestId } = await pendingRequest();
-    await db.undoLastMigration();
+    // Gỡ các migration từ CreateMessaging trở về sau (mới nhất trước).
+    while (
+      (
+        await db.query<{ name: string }[]>(
+          `SELECT name FROM typeorm_migrations WHERE name LIKE 'CreateMessaging%'`,
+        )
+      ).length > 0
+    ) {
+      await db.undoLastMigration();
+    }
     await db.query(
       `UPDATE connection_requests SET status = 'negotiating', accepted_at = now() - interval '1 day'
         WHERE id = $1`,

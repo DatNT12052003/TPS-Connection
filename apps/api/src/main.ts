@@ -30,6 +30,8 @@ import { createAccountService } from './modules/users/account.service.js';
 import { createConnectionsMaintenance } from './modules/connections/connections-maintenance.js';
 import { createConnectionsService } from './modules/connections/connections.service.js';
 import { createMessagingService } from './modules/messaging/messaging.service.js';
+import { createNotificationsService } from './modules/notifications/notifications.service.js';
+import { createSafetyService } from './modules/safety/safety.service.js';
 import {
   createRealtimeServer,
   type RealtimePublisher,
@@ -90,7 +92,24 @@ async function main() {
   }
   const emailSender = createSmtpEmailSender(env);
   const filesMaintenance = createFilesMaintenanceService({ dataSource, storage, logger });
-  const connectionsMaintenance = createConnectionsMaintenance({ dataSource });
+
+  // Realtime (G5): Socket.IO gắn vào HTTP server sau khi listen (để Express nhận request trước, Socket.IO chỉ lấy
+  // đường dẫn /socket.io). Service đẩy sự kiện qua `realtime` (null trước khi server sẵn sàng: bỏ qua).
+  let realtimeServer: RealtimeServer | null = null;
+  const realtime: RealtimePublisher = {
+    emitToUser: (userId, event, payload) =>
+      realtimeServer?.publisher.emitToUser(userId, event, payload),
+  };
+  // Thông báo (G5): module nào phát sinh sự kiện thì nhận `notifier`. `jobs` tạo ngay dưới (chỉ gọi khi gửi).
+  const notifications = createNotificationsService({
+    dataSource,
+    realtime,
+    sendEmail: (message) => jobs.enqueueEmail(message),
+    webUrl: env.WEB_URL,
+    logger,
+  });
+  const { notifier } = notifications;
+  const connectionsMaintenance = createConnectionsMaintenance({ dataSource, notifier });
   const jobs = createJobs({
     redisUrl: env.REDIS_URL,
     emailSender,
@@ -155,16 +174,9 @@ async function main() {
     sendEmail: (message) => jobs.enqueueEmail(message),
     webUrl: env.WEB_URL,
     logger,
+    notifier,
   });
   const catalog = createCatalogService({ dataSource });
-
-  // Realtime (G5): Socket.IO gắn vào HTTP server sau khi listen (để Express nhận request trước, Socket.IO chỉ lấy
-  // đường dẫn /socket.io). Service đẩy sự kiện qua `realtime` (null trước khi server sẵn sàng: bỏ qua).
-  let realtimeServer: RealtimeServer | null = null;
-  const realtime: RealtimePublisher = {
-    emitToUser: (userId, event, payload) =>
-      realtimeServer?.publisher.emitToUser(userId, event, payload),
-  };
 
   const app = createApp({
     env,
@@ -187,15 +199,24 @@ async function main() {
     tutorPosts: createTutorPostsService({ dataSource, logger, publicFileUrl }),
     requestPosts: createRequestPostsService({ dataSource, logger }),
     // Kết nối (G5).
-    connections: createConnectionsService({ dataSource, logger, publicFileUrl, realtime }),
+    connections: createConnectionsService({
+      dataSource,
+      logger,
+      publicFileUrl,
+      realtime,
+      notifier,
+    }),
     messaging: createMessagingService({
       dataSource,
       files,
       storage,
       realtime,
+      notifier,
       logger,
       publicFileUrl,
     }),
+    notifications,
+    safety: createSafetyService({ dataSource, logger, publicFileUrl }),
   });
   const server = app.listen(env.PORT, env.HOST, () => {
     logger.info(`API chạy tại http://${env.HOST}:${env.PORT} (môi trường ${env.NODE_ENV})`);

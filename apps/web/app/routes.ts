@@ -36,6 +36,18 @@ export default [
     // Tài khoản và cài đặt (mọi vai trò); đổi ảnh đại diện (chỉ action, trả JSON).
     route('account', 'routes/app/account.tsx'),
     route('account/avatar', 'routes/app/account-avatar.ts'),
+    // Kết nối, nhắn tin, thông báo (G5).
+    route('connections', 'routes/app/connections/index.tsx'),
+    route('connections/new', 'routes/app/connections/new.tsx'),
+    route('connections/:requestId', 'routes/app/connections/detail.tsx'),
+    route('messages', 'routes/app/messages/index.tsx'),
+    route('messages/:conversationId', 'routes/app/messages/detail.tsx'),
+    // Xin URL tải tệp đính kèm tin nhắn; mở tệp đính kèm (chuyển hướng tới URL tạm của kho).
+    route('messages/attachments/ticket', 'routes/app/messages/attachment-ticket.ts'),
+    route('messages/:conversationId/attachments/:fileId', 'routes/app/messages/attachment.ts'),
+    route('notifications', 'routes/app/notifications.tsx'),
+    // Làm mới phiên cho kết nối realtime (chỉ loader).
+    route('realtime/session', 'routes/app/realtime-session.ts'),
     // Bài đăng (G4). Gia sư: bài tuyển học sinh, tìm học sinh. Phụ huynh: bài tìm gia sư.
     route('posts', 'routes/app/posts/index.tsx'),
     route('posts/new', 'routes/app/posts/new.tsx'),

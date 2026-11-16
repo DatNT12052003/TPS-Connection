@@ -4,7 +4,7 @@ import type {
   ConnectionRequestListQuery,
   ConnectionRequestStatus,
 } from '@tps/shared';
-import { Brackets, type EntityManager } from 'typeorm';
+import { Brackets, type EntityManager, In } from 'typeorm';
 import {
   ConnectionEventRow,
   ConnectionRequest,
@@ -141,6 +141,11 @@ export function createConnectionsRepository(manager: EntityManager) {
         .andWhere('(r.tutorId = :userId OR r.clientUserId = :userId)', { userId });
       if (options.lock) query.setLock('pessimistic_write');
       return query.getOne();
+    },
+
+    /** Nhiều yêu cầu theo id (job, không kiểm tra quyền). */
+    findByIds(ids: string[]): Promise<ConnectionRequest[]> {
+      return ids.length === 0 ? Promise.resolve([]) : requests.findBy({ id: In(ids) });
     },
 
     async update(id: string, changes: Partial<ConnectionRequest>): Promise<void> {
@@ -431,6 +436,21 @@ export function createConnectionsRepository(manager: EntityManager) {
       });
     },
 
+    /** Một người chặn người kia: hủy mọi yêu cầu đang mở giữa hai người, người chặn là người hủy. */
+    cancelOpenBetween(blockerId: string, blockedId: string): Promise<number> {
+      return cancelWhere(
+        `((tutor_id = $6 AND client_user_id = $7) OR (tutor_id = $7 AND client_user_id = $6))`,
+        [blockerId, blockedId],
+        OPEN_STATUSES,
+        {
+          reason: 'ended_by_party',
+          event: 'cancelled_by_party',
+          actorUserId: blockerId,
+          data: { reason: 'ended_by_party', cause: 'blocked' },
+        },
+      );
+    },
+
     /** Tài khoản bị khóa: hủy mọi yêu cầu đang mở mà người đó là một bên (B.1). */
     cancelOpenForUser(userId: string): Promise<number> {
       return cancelWhere(`(tutor_id = $6 OR client_user_id = $6)`, [userId], OPEN_STATUSES, {
@@ -476,13 +496,13 @@ export function createConnectionsRepository(manager: EntityManager) {
 
     /**
      * Ghi nhắc sắp hết hạn: còn 24 giờ với yêu cầu chờ phản hồi, còn 3 ngày với yêu cầu đang trao đổi (D30). Mỗi
-     * giai đoạn nhắc một lần (chấp nhận thì đặt lại `expiry_reminded_at`). Thông báo gửi đi ở đợt 3 dựa trên sự kiện.
+     * giai đoạn nhắc một lần (chấp nhận thì đặt lại `expiry_reminded_at`). Trả id các yêu cầu vừa được nhắc.
      */
     async markExpiryReminders(
       limit: number,
       windows: { pendingHours: number; negotiatingDays: number },
-    ): Promise<number> {
-      const rows = await manager.query<unknown[]>(
+    ): Promise<string[]> {
+      const rows = await manager.query<{ request_id: string }[]>(
         `WITH due AS (
            SELECT id, status FROM connection_requests
             WHERE expiry_reminded_at IS NULL
@@ -504,7 +524,7 @@ export function createConnectionsRepository(manager: EntityManager) {
          RETURNING request_id`,
         [limit, windows.pendingHours, windows.negotiatingDays],
       );
-      return rows.length;
+      return rows.map((r) => r.request_id);
     },
   };
 }

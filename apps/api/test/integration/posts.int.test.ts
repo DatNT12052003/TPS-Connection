@@ -34,6 +34,8 @@ import type { ParentsService } from '../../src/modules/parents/parents.service.j
 import { createRequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
 import type { ConnectionsService } from '../../src/modules/connections/connections.service.js';
 import type { MessagingService } from '../../src/modules/messaging/messaging.service.js';
+import type { NotificationsService } from '../../src/modules/notifications/notifications.service.js';
+import type { SafetyService } from '../../src/modules/safety/safety.service.js';
 import { createTutorPostsService } from '../../src/modules/tutor-posts/tutor-posts.service.js';
 import type { TutorsService } from '../../src/modules/tutors/tutors.service.js';
 import type { AccountService } from '../../src/modules/users/account.service.js';
@@ -117,6 +119,8 @@ beforeAll(async () => {
     requestPosts: createRequestPostsService({ dataSource: db, logger: silentLogger }),
     connections: {} as ConnectionsService,
     messaging: {} as MessagingService,
+    notifications: {} as NotificationsService,
+    safety: {} as SafetyService,
   });
 });
 

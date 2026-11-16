@@ -13,6 +13,11 @@ import {
   MessageAttachmentRow,
   MessageRow,
 } from '../modules/messaging/conversation.entity.js';
+import {
+  NotificationPreferenceRow,
+  NotificationRow,
+} from '../modules/notifications/notification.entity.js';
+import { ViolationReport } from '../modules/safety/violation-report.entity.js';
 import { AdministrativeArea } from '../modules/catalog/administrative-area.entity.js';
 import { GradeLevel } from '../modules/catalog/grade-level.entity.js';
 import { Subject } from '../modules/catalog/subject.entity.js';
@@ -90,4 +95,8 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   ConversationParticipant,
   MessageRow,
   MessageAttachmentRow,
+  // Thông báo, báo cáo vi phạm (G5)
+  NotificationRow,
+  NotificationPreferenceRow,
+  ViolationReport,
 ];

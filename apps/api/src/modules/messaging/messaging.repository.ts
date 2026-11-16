@@ -161,6 +161,15 @@ export function createMessagingRepository(manager: EntityManager) {
       return row?.status ?? null;
     },
 
+    /** Tên hiển thị của một người dùng. */
+    async displayName(userId: string): Promise<string> {
+      const [row] = await manager.query<{ display_name: string }[]>(
+        `SELECT display_name FROM users WHERE id = $1`,
+        [userId],
+      );
+      return row?.display_name ?? '';
+    },
+
     /** Hai người có chặn nhau (một trong hai chiều) không? */
     async isBlocked(a: string, b: string): Promise<boolean> {
       const rows = await manager.query<unknown[]>(

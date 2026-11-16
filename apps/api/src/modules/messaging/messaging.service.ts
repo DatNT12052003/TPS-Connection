@@ -3,7 +3,8 @@
 // xem (D32). Người không tham gia hội thoại: 404. Sự kiện realtime đẩy sau khi transaction commit. Không phụ thuộc
 // Express.
 //
-// Chưa làm ở đợt này: thông báo và email tin nhắn mới, báo cáo tin nhắn, chặn từ giao diện (đợt 3).
+// Tin mới tạo (hoặc gộp vào) thông báo `message_new` của bên kia (đợt 3); đọc hội thoại thì thông báo đó thành đã đọc.
+// Chặn và báo cáo tin nhắn: module safety.
 import {
   type AttachmentUrl,
   type ConversationList,
@@ -29,6 +30,12 @@ import type { Logger } from '../../lib/logger.js';
 import type { Storage } from '../../lib/storage.js';
 import type { RealtimePublisher } from '../../realtime/realtime.js';
 import type { FilesService } from '../files/files.service.js';
+import { createNotificationsRepository } from '../notifications/notifications.repository.js';
+import {
+  noopNotifier,
+  type Notifier,
+  type PendingNotification,
+} from '../notifications/notifications.service.js';
 import {
   type ConversationContext,
   type ConversationRow,
@@ -68,11 +75,14 @@ export function createMessagingService(deps: {
   files: Pick<FilesService, 'claimUploaded'>;
   storage: Pick<Storage, 'createDownloadUrl'>;
   realtime: RealtimePublisher;
+  /** Thông báo tin nhắn mới cho bên kia. Mặc định: không thông báo. */
+  notifier?: Notifier;
   logger: Logger;
   /** URL công khai của tệp ở bucket public (ảnh đại diện). */
   publicFileUrl: (storageKey: string) => string;
 }) {
   const { dataSource, realtime, logger } = deps;
+  const notifier = deps.notifier ?? noopNotifier;
 
   function toMessage(
     record: MessageRecord,
@@ -214,6 +224,7 @@ export function createMessagingService(deps: {
       }
       let ctx: ConversationContext | undefined;
       let record: MessageRecord | undefined;
+      let pending: PendingNotification[] = [];
       try {
         await dataSource.transaction(async (manager) => {
           const repo = createMessagingRepository(manager);
@@ -249,6 +260,20 @@ export function createMessagingService(deps: {
           );
           await repo.touch(ctx.id, created.createdAt);
           await repo.markRead(ctx.id, actor.userId, created.id);
+          // Bên kia: một thông báo chưa đọc cho hội thoại, gộp số tin (đợt 3).
+          pending = await notifier.record(manager, [
+            {
+              userId: ctx.otherUserId,
+              content: {
+                type: 'message_new',
+                data: {
+                  conversationId: ctx.id,
+                  counterpartName: await repo.displayName(actor.userId),
+                  count: 1,
+                },
+              },
+            },
+          ]);
           record = {
             id: created.id,
             conversationId: ctx.id,
@@ -279,6 +304,7 @@ export function createMessagingService(deps: {
         };
         realtime.emitToUser(userId, REALTIME_EVENTS.messageNew, event);
       }
+      await notifier.dispatch(pending);
       logger.info(
         { userId: actor.userId, conversationId: context.id, messageId: saved.id },
         'Message sent',
@@ -292,6 +318,7 @@ export function createMessagingService(deps: {
       const repo = createMessagingRepository(dataSource.manager);
       if (!(await repo.messageExists(ctx.id, messageId))) throw notFound('Message');
       if (!(await repo.markRead(ctx.id, userId, messageId))) return;
+      await createNotificationsRepository(dataSource.manager).markConversationRead(userId, ctx.id);
       for (const target of [userId, ctx.otherUserId]) {
         const event: ConversationReadEvent = {
           conversationId: ctx.id,
