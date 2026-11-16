@@ -56,6 +56,9 @@ import type { TutorPostsService } from './modules/tutor-posts/tutor-posts.servic
 import { createConnectionsController } from './modules/connections/connections.controller.js';
 import { connectionsRouter } from './modules/connections/connections.router.js';
 import type { ConnectionsService } from './modules/connections/connections.service.js';
+import { createMessagingController } from './modules/messaging/messaging.controller.js';
+import { messagingRouter } from './modules/messaging/messaging.router.js';
+import type { MessagingService } from './modules/messaging/messaging.service.js';
 import { createOpenApiDocument } from './openapi.js';
 
 export interface AppDeps {
@@ -78,6 +81,7 @@ export interface AppDeps {
   tutorPosts: TutorPostsService;
   requestPosts: RequestPostsService;
   connections: ConnectionsService;
+  messaging: MessagingService;
 }
 
 /** "true"/"false" -> boolean, số -> số hop proxy, còn lại (loopback, dải IP) giữ nguyên chuỗi. */
@@ -169,6 +173,11 @@ export function createApp(deps: AppDeps): Express {
       deps.rateLimiter,
       authenticate(),
     ),
+  );
+  // Nhắn tin (G5).
+  api.use(
+    '/conversations',
+    messagingRouter(createMessagingController(deps.messaging), deps.rateLimiter, authenticate()),
   );
   const accountController = createAccountController(deps.account);
   // Sau /me/parent-profile, /me/tutor-profile: router này chỉ khớp /me và /me/avatar.

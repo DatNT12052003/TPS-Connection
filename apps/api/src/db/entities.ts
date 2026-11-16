@@ -7,6 +7,12 @@ import {
   ConnectionRequest,
   ConnectionTermsVersion,
 } from '../modules/connections/connection.entity.js';
+import {
+  Conversation,
+  ConversationParticipant,
+  MessageAttachmentRow,
+  MessageRow,
+} from '../modules/messaging/conversation.entity.js';
 import { AdministrativeArea } from '../modules/catalog/administrative-area.entity.js';
 import { GradeLevel } from '../modules/catalog/grade-level.entity.js';
 import { Subject } from '../modules/catalog/subject.entity.js';
@@ -79,4 +85,9 @@ export const ENTITIES: (abstract new (...args: never[]) => unknown)[] = [
   ConnectionRequest,
   ConnectionTermsVersion,
   ConnectionEventRow,
+  // Nhắn tin (G5)
+  Conversation,
+  ConversationParticipant,
+  MessageRow,
+  MessageAttachmentRow,
 ];

@@ -50,6 +50,8 @@ export const en: Messages = {
       'This tutor is not taking new students right now. Choose another tutor or come back later.',
     terms_outdated:
       'The other party has just changed the terms. Review the latest version, then confirm.',
+    conversation_closed:
+      'This connection request has ended, so the conversation is read-only. You cannot send new messages.',
     internal_error:
       'Something went wrong on our side while handling your request. Try again in a few minutes.',
     service_unavailable:

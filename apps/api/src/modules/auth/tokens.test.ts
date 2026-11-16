@@ -6,10 +6,10 @@ const SECRET = 'a-test-secret-that-is-at-least-32-chars';
 const claims = { userId: '0195f3c4-0000-7000-8000-000000000001', sessionFamilyId: 'family-1' };
 
 describe('access tokens', () => {
-  it('round-trip the user and session family', () => {
+  it('round-trip the user, session family and expiry', () => {
     const tokens = createTokenService({ secret: SECRET });
     const { token, expiresAt } = tokens.signAccessToken(claims);
-    expect(tokens.verifyAccessToken(token)).toEqual(claims);
+    expect(tokens.verifyAccessToken(token)).toEqual({ ...claims, expiresAt });
     expect(expiresAt.getTime() - Date.now()).toBeGreaterThan(14 * 60 * 1000);
   });
 

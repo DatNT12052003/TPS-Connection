@@ -32,6 +32,8 @@ export const ErrorCode = z.enum([
   'connection_exists',
   'tutor_not_accepting',
   'terms_outdated',
+  // Nhắn tin (G5): hội thoại chỉ còn xem được (yêu cầu kết nối đã hủy, D32).
+  'conversation_closed',
   'internal_error',
   'service_unavailable',
 ]);
@@ -62,6 +64,7 @@ export const ERROR_HTTP_STATUS = {
   connection_exists: 409,
   tutor_not_accepting: 409,
   terms_outdated: 409,
+  conversation_closed: 409,
   internal_error: 500,
   service_unavailable: 503,
 } as const satisfies Record<ErrorCode, number>;

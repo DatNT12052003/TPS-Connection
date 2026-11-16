@@ -1,0 +1,66 @@
+# Thử tay nhắn tin (G5 đợt 2) bằng extension REST Client (humao.rest-client) trong VS Code.
+# Cần một yêu cầu kết nối đã được bên nhận chấp nhận (connections.http bước accept): chấp nhận mở hội thoại, id nằm ở
+# `conversationId` trong chi tiết yêu cầu. Đăng nhập bằng `Authorization: Bearer` như connections.http.
+# Sự kiện realtime (Socket.IO, đường dẫn /socket.io) không thử được ở đây: dùng socket.io-client với `auth: { token }`.
+#
+# Cần chạy trước: npm run infra:up  và  npm run dev -w @tps/api
+
+@api = http://127.0.0.1:3000/api/v1
+@parentToken = dán-access-token-của-phụ-huynh
+@tutorToken = dán-access-token-của-gia-sư
+@conversationId = dán-conversationId-của-yêu-cầu
+@messageId = dán-id-tin-nhắn
+@fileId = dán-fileId-từ-bước-5
+
+### 1. Danh sách hội thoại của phụ huynh (tin cuối, số tin chưa đọc)
+GET {{api}}/conversations
+Authorization: Bearer {{parentToken}}
+
+### 2. Số hội thoại có tin chưa đọc của gia sư
+GET {{api}}/conversations/unread
+Authorization: Bearer {{tutorToken}}
+
+### 3. Phụ huynh gửi tin -> 201 (yêu cầu đã hủy: 409 conversation_closed)
+POST {{api}}/conversations/{{conversationId}}/messages
+Authorization: Bearer {{parentToken}}
+Content-Type: application/json
+
+{ "body": "Chào thầy, thầy dạy được tối thứ 3 không?" }
+
+### 4. Gia sư đọc tin (mới nhất; thêm ?before=<id> để tải tin cũ hơn, ?after=<id> để bắt kịp)
+GET {{api}}/conversations/{{conversationId}}/messages?limit=30
+Authorization: Bearer {{tutorToken}}
+
+### 5. Xin URL tải tệp đính kèm lên (PUT tệp lên uploadUrl với đúng Content-Type, rồi gửi fileId ở bước 6)
+POST {{api}}/files/uploads
+Authorization: Bearer {{parentToken}}
+Content-Type: application/json
+
+{
+  "purpose": "message_attachment",
+  "fileName": "de-kiem-tra.pdf",
+  "contentType": "application/pdf",
+  "sizeBytes": 2048
+}
+
+### 6. Gửi tin kèm tệp
+POST {{api}}/conversations/{{conversationId}}/messages
+Authorization: Bearer {{parentToken}}
+Content-Type: application/json
+
+{ "body": "Đề tuần trước", "fileIds": ["{{fileId}}"] }
+
+### 7. Gia sư xem tệp (URL 5 phút)
+GET {{api}}/conversations/{{conversationId}}/attachments/{{fileId}}
+Authorization: Bearer {{tutorToken}}
+
+### 8. Gia sư đánh dấu đã đọc đến một tin -> 204
+POST {{api}}/conversations/{{conversationId}}/read
+Authorization: Bearer {{tutorToken}}
+Content-Type: application/json
+
+{ "messageId": "{{messageId}}" }
+
+### 9. Phụ huynh xóa tin của mình -> 204 (tin của người khác: 404)
+DELETE {{api}}/conversations/{{conversationId}}/messages/{{messageId}}
+Authorization: Bearer {{parentToken}}

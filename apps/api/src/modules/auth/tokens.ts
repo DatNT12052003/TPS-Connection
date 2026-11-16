@@ -15,8 +15,8 @@ export interface AccessTokenClaims {
 
 export interface TokenService {
   signAccessToken(claims: AccessTokenClaims): { token: string; expiresAt: Date };
-  /** Trả claims nếu token hợp lệ (đúng chữ ký, issuer, audience, còn hạn); không thì null. */
-  verifyAccessToken(token: string): AccessTokenClaims | null;
+  /** Trả claims và hạn nếu token hợp lệ (đúng chữ ký, issuer, audience, còn hạn); không thì null. */
+  verifyAccessToken(token: string): (AccessTokenClaims & { expiresAt: Date }) | null;
 }
 
 export function createTokenService(options: {
@@ -47,10 +47,19 @@ export function createTokenService(options: {
           audience: AUDIENCE,
           clockTimestamp: Math.floor(now().getTime() / 1000),
         });
-        if (typeof payload === 'string' || !payload.sub || typeof payload.sid !== 'string') {
+        if (
+          typeof payload === 'string' ||
+          !payload.sub ||
+          typeof payload.sid !== 'string' ||
+          typeof payload.exp !== 'number'
+        ) {
           return null;
         }
-        return { userId: payload.sub, sessionFamilyId: payload.sid };
+        return {
+          userId: payload.sub,
+          sessionFamilyId: payload.sid,
+          expiresAt: new Date(payload.exp * 1000),
+        };
       } catch {
         return null;
       }

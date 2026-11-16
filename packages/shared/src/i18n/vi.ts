@@ -51,6 +51,8 @@ export const vi = {
       'Gia sư đang tạm ngừng nhận học sinh mới. Hãy chọn gia sư khác hoặc quay lại sau.',
     terms_outdated:
       'Điều kiện hợp tác vừa được bên kia sửa. Hãy xem lại phiên bản mới nhất rồi xác nhận.',
+    conversation_closed:
+      'Yêu cầu kết nối đã kết thúc nên cuộc trò chuyện chỉ còn xem được, không gửi thêm tin nhắn.',
     internal_error: 'Hệ thống gặp sự cố khi xử lý yêu cầu. Hãy thử lại sau ít phút.',
     service_unavailable: 'Hệ thống đang bảo trì hoặc quá tải. Hãy thử lại sau ít phút.',
   },

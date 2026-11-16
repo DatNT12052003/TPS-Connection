@@ -12,6 +12,7 @@ import { CreateAccountSanctions1794970700000 } from './1794970700000-CreateAccou
 import { CreateMarketplacePosts1794970800000 } from './1794970800000-CreateMarketplacePosts.js';
 import { AddMarketplaceSearch1794970900000 } from './1794970900000-AddMarketplaceSearch.js';
 import { CreateConnections1794971000000 } from './1794971000000-CreateConnections.js';
+import { CreateMessaging1794971100000 } from './1794971100000-CreateMessaging.js';
 
 export const MIGRATIONS = [
   InitExtensions1794960000000,
@@ -26,4 +27,5 @@ export const MIGRATIONS = [
   CreateMarketplacePosts1794970800000,
   AddMarketplaceSearch1794970900000,
   CreateConnections1794971000000,
+  CreateMessaging1794971100000,
 ];

@@ -3,8 +3,9 @@
 // khoản mới nhất (C3); nhánh rejected, cancelled. Mọi chuyển trạng thái khóa dòng yêu cầu trong transaction và ghi
 // `connection_events`. Không phụ thuộc Express.
 //
-// Chưa làm ở đợt này: mở hội thoại khi chấp nhận (đợt 2), thông báo và email (đợt 3, dựa trên `connection_events`),
-// tạo lớp khi xác nhận hợp tác (G6).
+// Chấp nhận thì mở hội thoại trong cùng transaction (D14, đợt 2); hủy thì hội thoại chỉ còn xem (D32, suy ra từ
+// trạng thái yêu cầu ở module messaging). Chưa làm: thông báo và email (đợt 3, dựa trên `connection_events`), tạo lớp
+// khi xác nhận hợp tác (G6).
 import {
   CONNECTION_LIMITS,
   type ConnectionEvent,
@@ -16,7 +17,9 @@ import {
   type ConnectionTerms,
   type CreateConnectionRequest,
   type ProposeTermsRequest,
+  type ConversationOpenedEvent,
   publicSlug,
+  REALTIME_EVENTS,
   type Role,
   type SendToTutorRequest,
   type ApplyToRequestPostRequest,
@@ -26,7 +29,9 @@ import type { DataSource, EntityManager } from 'typeorm';
 import { AppError, forbidden, invalidStateTransition, notFound } from '../../lib/app-error.js';
 import type { Logger } from '../../lib/logger.js';
 import { assertCatalogRefs } from '../catalog/catalog-checks.js';
+import { noopRealtime, type RealtimePublisher } from '../../realtime/realtime.js';
 import { createLearnerAccess } from '../learners/learner-access.js';
+import { createMessagingRepository } from '../messaging/messaging.repository.js';
 import { createRequestPostsRepository } from '../request-posts/request-posts.repository.js';
 import type { ConnectionRequest, ConnectionTermsVersion } from './connection.entity.js';
 import {
@@ -104,8 +109,11 @@ export function createConnectionsService(deps: {
   logger: Logger;
   /** URL công khai của tệp ở bucket public (storage.publicUrl). */
   publicFileUrl: (storageKey: string) => string;
+  /** Đẩy `conversation:opened` khi chấp nhận. Mặc định: không đẩy. */
+  realtime?: RealtimePublisher;
 }) {
   const { dataSource, logger } = deps;
+  const realtime = deps.realtime ?? noopRealtime;
 
   function toSummary(
     request: ConnectionRequest,
@@ -153,6 +161,7 @@ export function createConnectionsService(deps: {
       tutorPostId: request.tutorPostId,
       requestPostId: request.requestPostId,
       expiresAt: isOpen(request) ? request.expiresAt.toISOString() : null,
+      conversationId: display.conversationId,
       createdAt: request.createdAt.toISOString(),
       updatedAt: request.updatedAt.toISOString(),
     };
@@ -380,10 +389,13 @@ export function createConnectionsService(deps: {
       return loadDetail(actor.userId, requestId);
     },
 
-    /** Bên nhận chấp nhận: sang `negotiating`, hạn mới 30 ngày từ lúc chấp nhận (D15, C3). */
+    /**
+     * Bên nhận chấp nhận: sang `negotiating`, hạn mới 30 ngày từ lúc chấp nhận (D15, C3), mở hội thoại giữa gia sư
+     * và client (D14, C7). Sau commit: đẩy `conversation:opened` cho hai bên.
+     */
     async accept(actor: ConnectionActor, requestId: string): Promise<ConnectionRequestDetail> {
       if (actor.status !== 'active') throw accountRestricted();
-      await dataSource.transaction(async (manager) => {
+      const opened = await dataSource.transaction(async (manager) => {
         const request = await lockOwn(manager, actor.userId, requestId, ['pending']);
         if (senderOf(request) === partyOf(request, actor.userId)) {
           throw forbidden('Only the recipient can accept');
@@ -403,7 +415,20 @@ export function createConnectionsService(deps: {
           fromStatus: 'pending',
           toStatus: 'negotiating',
         });
+        const conversationId = await createMessagingRepository(manager).openForConnection({
+          connectionRequestId: request.id,
+          tutorId: request.tutorId,
+          clientUserId: request.clientUserId,
+        });
+        return { conversationId, userIds: [request.tutorId, request.clientUserId] };
       });
+      const event: ConversationOpenedEvent = {
+        conversationId: opened.conversationId,
+        connectionRequestId: requestId,
+      };
+      for (const userId of opened.userIds) {
+        realtime.emitToUser(userId, REALTIME_EVENTS.conversationOpened, event);
+      }
       logger.info({ userId: actor.userId, requestId }, 'Connection request accepted');
       return loadDetail(actor.userId, requestId);
     },

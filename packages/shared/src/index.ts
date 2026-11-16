@@ -7,6 +7,7 @@ export * from './schemas/profiles.js';
 export * from './schemas/tutors.js';
 export * from './schemas/posts.js';
 export * from './schemas/connections.js';
+export * from './schemas/messaging.js';
 export * from './schemas/search.js';
 export * from './schemas/verification.js';
 export * from './schemas/admin.js';

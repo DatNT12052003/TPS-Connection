@@ -282,6 +282,8 @@ export const ConnectionRequestSummary = z.object({
   requestPostId: Id.nullable(),
   /** Hạn tự hủy, chỉ khi còn mở. */
   expiresAt: z.iso.datetime().nullable(),
+  /** Hội thoại của yêu cầu, có từ khi bên nhận chấp nhận (D14). */
+  conversationId: Id.nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });

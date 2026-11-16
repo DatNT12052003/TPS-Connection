@@ -34,6 +34,7 @@ import { buildStorageKey, type Storage } from '../../src/lib/storage.js';
 import type { AuthService } from '../../src/modules/auth/auth.service.js';
 import type { RequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
 import type { ConnectionsService } from '../../src/modules/connections/connections.service.js';
+import type { MessagingService } from '../../src/modules/messaging/messaging.service.js';
 import type { TutorPostsService } from '../../src/modules/tutor-posts/tutor-posts.service.js';
 import { createCatalogService } from '../../src/modules/catalog/catalog.service.js';
 import { createFilesService } from '../../src/modules/files/files.service.js';
@@ -170,6 +171,7 @@ beforeAll(async () => {
     tutorPosts: {} as TutorPostsService,
     requestPosts: {} as RequestPostsService,
     connections: {} as ConnectionsService,
+    messaging: {} as MessagingService,
   });
 });
 

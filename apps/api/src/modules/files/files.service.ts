@@ -16,12 +16,14 @@ import { StoredFile } from './stored-file.entity.js';
 
 /**
  * Mục đích được tải lên qua endpoint chung, và vai trò được tải (`'any'`: mọi người đã đăng nhập). Giấy tờ
- * xác minh và bằng cấp chỉ gia sư tải (G3). Mục đích khác (tệp tin nhắn, bài tập) mở ở giai đoạn của nó.
+ * xác minh và bằng cấp chỉ gia sư tải (G3); tệp tin nhắn chỉ gia sư và phụ huynh (G5). Mục đích khác (bài tập) mở ở giai đoạn của nó.
  */
 export const UPLOAD_PURPOSE_ROLES: Partial<Record<FilePurpose, 'any' | readonly Role[]>> = {
   avatar: 'any',
   verification_document: ['tutor'],
   credential: ['tutor'],
+  // Tệp gửi trong tin nhắn (G5): chỉ hai bên được chat (C7).
+  message_attachment: ['tutor', 'parent'],
 };
 
 function canUpload(purpose: FilePurpose, roles: readonly Role[]): boolean {

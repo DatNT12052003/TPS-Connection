@@ -28,6 +28,7 @@ import { createConnectionsMaintenance } from '../../src/modules/connections/conn
 import { createConnectionsRepository } from '../../src/modules/connections/connections.repository.js';
 import { createConnectionsService } from '../../src/modules/connections/connections.service.js';
 import { createLearnersService } from '../../src/modules/learners/learners.service.js';
+import type { MessagingService } from '../../src/modules/messaging/messaging.service.js';
 import type { StudentInvitationsService } from '../../src/modules/learners/student-invitations.service.js';
 import type { ParentsService } from '../../src/modules/parents/parents.service.js';
 import { createRequestPostsService } from '../../src/modules/request-posts/request-posts.service.js';
@@ -107,6 +108,7 @@ beforeAll(async () => {
     tutorPosts: createTutorPostsService({ dataSource: db, logger: silentLogger, publicFileUrl }),
     requestPosts: createRequestPostsService({ dataSource: db, logger: silentLogger }),
     connections: createConnectionsService({ dataSource: db, logger: silentLogger, publicFileUrl }),
+    messaging: {} as MessagingService,
   });
 });
 

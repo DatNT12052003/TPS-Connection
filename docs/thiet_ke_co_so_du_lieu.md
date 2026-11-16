@@ -802,6 +802,15 @@ CREATE TABLE message_attachments (
 - Trước khi gửi tin, service kiểm tra `user_blocks` theo cả hai chiều.
 - Manager chỉ xem tin nhắn nằm trong báo cáo (`violation_reports.message_id`) và các tin lân cận được cấu hình, không xem toàn bộ hội thoại _(C1)_.
 
+**Đã làm ở G5 đợt 2 (migration `CreateMessaging`), khác bản trên:**
+
+- `conversations` có thêm `updated_at`; `connection_request_id` unique có tên `conversations_connection_request_uq`. `class_id` chưa có khóa ngoại (thêm ở G6 cùng `tutoring_classes`). Không có cột trạng thái: gửi được hay chỉ xem (D32) suy ra từ `connection_requests.status` (`negotiating`, `confirmed` thì gửi được).
+- `conversation_participants.last_read_message_id` là khóa ngoại tới `messages` (tạo sau bảng `messages`).
+- `messages.id` mặc định `uuidv7()` (sắp theo thời gian; tin chưa đọc là tin của người khác có id lớn hơn `last_read_message_id`). Ràng buộc thêm: tin hệ thống khi và chỉ khi không có người gửi; tin `text` có nội dung khác rỗng; nội dung tối đa 4000 ký tự. Tin có tệp là `attachment`, nội dung là chú thích (có thể rỗng).
+- `message_attachments.file_id` unique: một tệp chỉ thuộc một tin.
+- Dữ liệu: tạo hội thoại (thời điểm `accepted_at`) và hai người tham gia cho mọi yêu cầu đã được chấp nhận trước migration.
+- Gửi tin khóa chia sẻ (`FOR SHARE`) dòng yêu cầu kết nối nên không chen được với thao tác hủy (khóa ghi cùng dòng).
+
 ---
 
 ## 7. Giảng dạy

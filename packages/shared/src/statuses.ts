@@ -224,6 +224,18 @@ export type ConnectionEventType = z.infer<typeof ConnectionEventType>;
 export const ConnectionParty = z.enum(['tutor', 'client']);
 export type ConnectionParty = z.infer<typeof ConnectionParty>;
 
+/** `conversations.kind`. Bản đầu chỉ có hội thoại của một yêu cầu kết nối (D14); `class`, `support` để dành. */
+export const ConversationKind = z.enum(['connection', 'class', 'support']);
+export type ConversationKind = z.infer<typeof ConversationKind>;
+
+/** `conversation_participants.participant_role`. Bản đầu chỉ gia sư và client (C7). */
+export const ConversationParticipantRole = z.enum(['tutor', 'client', 'student', 'staff']);
+export type ConversationParticipantRole = z.infer<typeof ConversationParticipantRole>;
+
+/** `messages.kind`. `system`: tin của hệ thống, không có người gửi. */
+export const MessageKind = z.enum(['text', 'attachment', 'system']);
+export type MessageKind = z.infer<typeof MessageKind>;
+
 // ---- Lớp học ----------------------------------------------------------------------------------
 
 /** `tutoring_classes.status` (B.5.1). Chỉ gia sư chuyển (D35). */

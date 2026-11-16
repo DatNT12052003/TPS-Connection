@@ -22,6 +22,7 @@ export interface ConnectionDisplay {
   tutorName: string;
   tutorPublicCode: string;
   tutorAvatarKey: string | null;
+  conversationId: string | null;
   clientName: string;
   learnerName: string;
   latestTerms: { version: number; tutorConfirmed: boolean; clientConfirmed: boolean } | null;
@@ -280,6 +281,7 @@ export function createConnectionsRepository(manager: EntityManager) {
           tutor_name: string;
           public_code: string;
           avatar_key: string | null;
+          conversation_id: string | null;
           client_name: string;
           nickname: string | null;
           learner_full_name: string | null;
@@ -290,6 +292,7 @@ export function createConnectionsRepository(manager: EntityManager) {
       >(
         `SELECT r.id,
                 tu.display_name AS tutor_name, tp.public_code, f.storage_key AS avatar_key,
+                cv.id AS conversation_id,
                 cu.display_name AS client_name,
                 l.nickname, l.full_name AS learner_full_name,
                 lt.version AS terms_version,
@@ -299,6 +302,7 @@ export function createConnectionsRepository(manager: EntityManager) {
            JOIN users tu ON tu.id = r.tutor_id
            JOIN tutor_profiles tp ON tp.user_id = r.tutor_id
            LEFT JOIN files f ON f.id = tu.avatar_file_id AND f.status = 'ready'
+           LEFT JOIN conversations cv ON cv.connection_request_id = r.id
            JOIN users cu ON cu.id = r.client_user_id
            JOIN learners l ON l.id = r.learner_id
            LEFT JOIN LATERAL (
@@ -313,6 +317,7 @@ export function createConnectionsRepository(manager: EntityManager) {
           tutorName: r.tutor_name,
           tutorPublicCode: r.public_code,
           tutorAvatarKey: r.avatar_key,
+          conversationId: r.conversation_id,
           clientName: r.client_name,
           learnerName: r.nickname ?? r.learner_full_name ?? '',
           latestTerms:
